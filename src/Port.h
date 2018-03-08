@@ -1,0 +1,55 @@
+/*
+ * Port.h
+ *
+ *  Created on: 26 Feb 2018
+ *      Author: manupa
+ */
+
+#ifndef PORT_H_
+#define PORT_H_
+
+#include "DFGEdge.h"
+#include "DFGNode.h"
+#include <string>
+#include <vector>
+#include <map>
+
+
+
+namespace CGRAXMLCompile {
+
+class PE;
+class Module;
+
+enum PortType{IN,OUT,INT};
+
+class Port {
+public:
+	Port(std::string name, PortType pType, Module* mod);
+	std::string getName(){return name;}
+	std::string getFullName();
+
+	void clear(){node=NULL;}
+	PE* findParentPE();
+	Module* getMod(){return mod;}
+	PortType getType(){return pType;}
+
+	DFGNode* node=NULL;
+
+private:
+
+	std::string name;
+	Module* mod;
+	PortType pType;
+
+	bool operator==(const Port &other){
+		return (this->name.compare(other.name)==0);
+	}
+
+
+
+};
+
+} /* namespace CGRAXMLCompile */
+
+#endif /* PORT_H_ */

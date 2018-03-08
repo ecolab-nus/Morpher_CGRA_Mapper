@@ -1,0 +1,410 @@
+<DFG count="39">
+<Node idx="3"ASAP="0">
+<OP>SELECT</OP>
+<Inputs>
+	<Input idx="22"/>
+	<Input idx="21"/>
+</Inputs>
+<Outputs>
+	<Output idx="4" type="I1"/>
+	<Output idx="37" type="I1"/>
+	<Output idx="38" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="38"ASAP="1">
+<OP>LS</OP>
+<Inputs>
+	<Input idx="3"/>
+</Inputs>
+<Outputs>
+	<Output idx="14" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="37"ASAP="1">
+<OP>LS</OP>
+<Inputs>
+	<Input idx="3"/>
+</Inputs>
+<Outputs>
+	<Output idx="5" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="5"ASAP="2">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="37"/>
+</Inputs>
+<Outputs>
+	<Output idx="6" type="I2"/>
+</Outputs>
+</Node>
+
+<Node idx="14"ASAP="2">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="38"/>
+</Inputs>
+<Outputs>
+	<Output idx="15" type="I2"/>
+</Outputs>
+</Node>
+
+<Node idx="6"ASAP="3">
+<OP>LOADH</OP>
+<Inputs>
+	<Input idx="5"/>
+</Inputs>
+<Outputs>
+	<Output idx="7" type="I1"/>
+	<Output idx="12" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="15"ASAP="3">
+<OP>LOADH</OP>
+<Inputs>
+	<Input idx="14"/>
+</Inputs>
+<Outputs>
+	<Output idx="16" type="I1"/>
+	<Output idx="19" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="19"ASAP="4">
+<OP>SEXT</OP>
+<Inputs>
+	<Input idx="15"/>
+</Inputs>
+<Outputs>
+	<Output idx="20" type="I1"/>
+	<Output idx="29" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="16"ASAP="4">
+<OP>CLT</OP>
+<Inputs>
+	<Input idx="15"/>
+</Inputs>
+<Outputs>
+	<Output idx="27" type="I1"/>
+	<Output idx="28" type="P"/>
+</Outputs>
+</Node>
+
+<Node idx="12"ASAP="4">
+<OP>SEXT</OP>
+<Inputs>
+	<Input idx="6"/>
+</Inputs>
+<Outputs>
+	<Output idx="13" type="I1"/>
+	<Output idx="26" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="7"ASAP="4">
+<OP>CLT</OP>
+<Inputs>
+	<Input idx="6"/>
+</Inputs>
+<Outputs>
+	<Output idx="24" type="I1"/>
+	<Output idx="25" type="P"/>
+</Outputs>
+</Node>
+
+<Node idx="24"ASAP="5">
+<OP>XOR</OP>
+<Inputs>
+	<Input idx="7"/>
+</Inputs>
+<Outputs>
+	<Output idx="26" type="P"/>
+</Outputs>
+</Node>
+
+<Node idx="1"ASAP="5">
+<OP>LOAD</OP>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="0" type="I2"/>
+</Outputs>
+</Node>
+
+<Node idx="27"ASAP="5">
+<OP>XOR</OP>
+<Inputs>
+	<Input idx="16"/>
+</Inputs>
+<Outputs>
+	<Output idx="29" type="P"/>
+</Outputs>
+</Node>
+
+<Node idx="23"ASAP="5">
+<OP>LOADB</OP>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="30" type="I1"/>
+	<Output idx="31" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="20"ASAP="5">
+<OP>SUB</OP>
+<Inputs>
+	<Input idx="19"/>
+</Inputs>
+<Outputs>
+	<Output idx="28" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="13"ASAP="5">
+<OP>SUB</OP>
+<Inputs>
+	<Input idx="12"/>
+</Inputs>
+<Outputs>
+	<Output idx="25" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="4"ASAP="5">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="3"/>
+</Inputs>
+<Outputs>
+	<Output idx="0" type="I1"/>
+	<Output idx="21" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="36"ASAP="6">
+<OP>MOVC</OP>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="35" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="34"ASAP="6">
+<OP>MOVC</OP>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="33" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="31"ASAP="6">
+<OP>AND</OP>
+<Inputs>
+	<Input idx="23"/>
+</Inputs>
+<Outputs>
+	<Output idx="32" type="P"/>
+</Outputs>
+</Node>
+
+<Node idx="25"ASAP="6">
+<OP>CMERGE</OP>
+<Inputs>
+	<Input idx="13"/>
+	<Input idx="7"/>
+</Inputs>
+<Outputs>
+	<Output idx="8" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="26"ASAP="6">
+<OP>CMERGE</OP>
+<Inputs>
+	<Input idx="12"/>
+	<Input idx="24"/>
+</Inputs>
+<Outputs>
+	<Output idx="8" type="I2"/>
+</Outputs>
+</Node>
+
+<Node idx="28"ASAP="6">
+<OP>CMERGE</OP>
+<Inputs>
+	<Input idx="20"/>
+	<Input idx="16"/>
+</Inputs>
+<Outputs>
+	<Output idx="17" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="29"ASAP="6">
+<OP>CMERGE</OP>
+<Inputs>
+	<Input idx="19"/>
+	<Input idx="27"/>
+</Inputs>
+<Outputs>
+	<Output idx="17" type="I2"/>
+</Outputs>
+</Node>
+
+<Node idx="30"ASAP="6">
+<OP>AND</OP>
+<Inputs>
+	<Input idx="23"/>
+</Inputs>
+<Outputs>
+	<Output idx="22" type="P"/>
+</Outputs>
+</Node>
+
+<Node idx="17"ASAP="7">
+<OP>SELECT</OP>
+<Inputs>
+	<Input idx="28"/>
+	<Input idx="29"/>
+</Inputs>
+<Outputs>
+	<Output idx="18" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="8"ASAP="7">
+<OP>SELECT</OP>
+<Inputs>
+	<Input idx="25"/>
+	<Input idx="26"/>
+</Inputs>
+<Outputs>
+	<Output idx="9" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="32"ASAP="7">
+<OP>STOREB</OP>
+<Inputs>
+	<Input idx="31"/>
+</Inputs>
+<Outputs>
+</Outputs>
+</Node>
+
+<Node idx="22"ASAP="7">
+<OP>CMERGE</OP>
+<Inputs>
+	<Input idx="30"/>
+</Inputs>
+<Outputs>
+	<Output idx="3" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="9"ASAP="8">
+<OP>CGT</OP>
+<Inputs>
+	<Input idx="8"/>
+</Inputs>
+<Outputs>
+	<Output idx="10" type="I2"/>
+</Outputs>
+</Node>
+
+<Node idx="18"ASAP="8">
+<OP>CGT</OP>
+<Inputs>
+	<Input idx="17"/>
+</Inputs>
+<Outputs>
+	<Output idx="10" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="10"ASAP="9">
+<OP>OR</OP>
+<Inputs>
+	<Input idx="9"/>
+	<Input idx="18"/>
+</Inputs>
+<Outputs>
+	<Output idx="11" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="11"ASAP="10">
+<OP>OR</OP>
+<Inputs>
+	<Input idx="10"/>
+</Inputs>
+<Outputs>
+	<Output idx="0" type="P"/>
+	<Output idx="35" type="P"/>
+</Outputs>
+</Node>
+
+<Node idx="0"ASAP="11">
+<OP>CLT</OP>
+<Inputs>
+	<Input idx="1"/>
+	<Input idx="4"/>
+	<Input idx="11"/>
+</Inputs>
+<Outputs>
+	<Output idx="2" type="I1"/>
+</Outputs>
+</Node>
+
+<Node idx="35"ASAP="12">
+<OP>STOREB</OP>
+<Inputs>
+	<Input idx="11"/>
+	<Input idx="36"/>
+</Inputs>
+<Outputs>
+</Outputs>
+</Node>
+
+<Node idx="2"ASAP="12">
+<OP>OR</OP>
+<Inputs>
+	<Input idx="0"/>
+</Inputs>
+<Outputs>
+	<Output idx="21" type="P"/>
+	<Output idx="33" type="P"/>
+</Outputs>
+</Node>
+
+<Node idx="21"ASAP="13">
+<OP>CMERGE</OP>
+<Inputs>
+	<Input idx="4"/>
+	<Input idx="2"/>
+</Inputs>
+<Outputs>
+	<Output idx="3" type="I2"/>
+</Outputs>
+</Node>
+
+<Node idx="33"ASAP="13">
+<OP>STOREB</OP>
+<Inputs>
+	<Input idx="2"/>
+	<Input idx="34"/>
+</Inputs>
+<Outputs>
+</Outputs>
+</Node>
+
+</DFG>

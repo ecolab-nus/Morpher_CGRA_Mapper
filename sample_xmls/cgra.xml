@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<TILE>
+<main_inputs style="common" count="4" globalPortTag="GPT_MAIN_INPUTS">
+  <input>NORTH</input>
+  <input>EAST</input>
+  <input>WEST</input>
+  <input>SOUTH</input>
+</main_inputs>
+
+<main_outputs style="common" count="4" globalPortTag="GPT_MAIN_OUTPUTS">
+  <output>NORTH</output>
+  <output>EAST</output>
+  <output>WEST</output>
+  <output>SOUTH</output>
+</main_outputs>
+
+<regfile name="regfile0">
+ <regs count="8" globalPortTag="GPT_REGS">
+    <reg>R0</reg>
+    <reg>R1</reg>
+    <reg>R2</reg>
+    <reg>R3</reg>
+    <reg>R4</reg>
+    <reg>R5</reg>
+    <reg>R6</reg>
+    <reg>R7</reg>
+ </regs>
+ <readports count="8" globalPortTag="GPT_REG_RDPS">
+    <rdp>RDP0</rdp>
+    <rdp>RDP1</rdp>
+    <rdp>RDP2</rdp>
+    <rdp>RDP3</rdp>
+    <rdp>RDP4</rdp>
+    <rdp>RDP5</rdp>
+    <rdp>RDP6</rdp>
+    <rdp>RDP7</rdp>
+ </readports>
+ <writeports count="8" globalPortTag="GPT_REG_WRPS">
+    <wrp>WRP0</wrp>
+    <wrp>WRP1</wrp>
+    <wrp>WRP2</wrp>
+    <wrp>WRP3</wrp>
+    <wrp>WRP4</wrp>
+    <wrp>WRP5</wrp>
+    <wrp>WRP6</wrp>
+    <wrp>WRP7</wrp>
+ </writeports>
+</regfile>
+
+<FUs>
+<FU name="ALU" latency="1">
+    <ops>
+        <op>ADD</op>
+        <op>MUL</op>
+        <op>SEXT</op>
+        <op>LS</op>
+        <op>RS</op>
+        <op>ARS</op>
+        <op>AND</op>
+        <op>OR</op>
+        <op>XOR</op>
+        <op>SELECT</op>
+        <op>CMERGE</op>
+        <op>CMP</op>
+        <op>CLT</op>
+        <op>CGT</op>
+        <op>BR</op>
+        <op>MOVCL</op>
+        <op>JUMPL</op>
+        <op>MOVC</op>
+    </ops>
+    <DPs>
+        <count>2</count>
+        <DP name="DP0">
+            <inputs count="3" globalPortTag="GPT_ALU_DP0_INPUTS">
+                <input>Pred</input> 
+                <input>I1</input>
+                <input>I2</input>
+            </inputs>
+            <output>T</output>
+        </DP>
+        <DP name="DP1">
+            <inputs count="3" globalPortTag="GPT_ALU_DP1_INPUTS">
+                <input>Pred</input> 
+                <input>I1</input>
+                <input>I2</input>
+             </inputs>
+            <output>T</output>
+        </DP>
+    </DPs>    
+</FU>
+
+<FU name="LSU" latency="2">
+    <ops>
+        <op>LOADCL</op>
+        <op>LOAD</op>
+        <op>LOADH</op>
+        <op>LOADB</op>
+        <op>STORE</op>
+        <op>STOREH</op>
+        <op>STOREB</op>
+    </ops>
+    <DPs>
+        <count>1</count>
+        <DP name="DP0">
+            <inputs count="3" globalPortTag="GPT_LSU_DP0_INPUTS">
+                <input>Pred</input> 
+                <input>I1</input>
+                <input>I2</input>
+            </inputs>
+            <output>T</output>
+        </DP>
+    </DPs>    
+</FU>
+</FUs>
+
+<!-- N2N CGRA-->
+<ConnectionRULES>
+    <RULE>main_inputs.NORTH:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_REG_WRPS</RULE>
+    <RULE>main_inputs.EAST:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_REG_WRPS</RULE>
+    <RULE>main_inputs.WEST:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_REG_WRPS</RULE>
+    <RULE>main_inputs.SOUTH:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_REG_WRPS</RULE>
+
+    <RULE>regfile0.writeports.WRP0:GPT_REGS</RULE>
+    <RULE>regfile0.writeports.WRP1:GPT_REGS</RULE>
+    <RULE>regfile0.writeports.WRP2:GPT_REGS</RULE>
+    <RULE>regfile0.writeports.WRP3:GPT_REGS</RULE>
+    <RULE>regfile0.writeports.WRP4:GPT_REGS</RULE>
+    <RULE>regfile0.writeports.WRP5:GPT_REGS</RULE>
+    <RULE>regfile0.writeports.WRP6:GPT_REGS</RULE>
+    <RULE>regfile0.writeports.WRP7:GPT_REGS</RULE>
+
+    <RULE>regfile0.regs.R0:regfile0.regs.R0,GPT_REG_RDPS</RULE>
+    <RULE>regfile0.regs.R1:regfile0.regs.R1,GPT_REG_RDPS</RULE>
+    <RULE>regfile0.regs.R2:regfile0.regs.R2,GPT_REG_RDPS</RULE>
+    <RULE>regfile0.regs.R3:regfile0.regs.R3,GPT_REG_RDPS</RULE>
+    <RULE>regfile0.regs.R4:regfile0.regs.R4,GPT_REG_RDPS</RULE>
+    <RULE>regfile0.regs.R5:regfile0.regs.R5,GPT_REG_RDPS</RULE>
+    <RULE>regfile0.regs.R6:regfile0.regs.R6,GPT_REG_RDPS</RULE>
+    <RULE>regfile0.regs.R7:regfile0.regs.R7,GPT_REG_RDPS</RULE>
+
+    <RULE>regfile0.readports.RDP0:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_MAIN_OUTPUTS</RULE>
+    <RULE>regfile0.readports.RDP1:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_MAIN_OUTPUTS</RULE>
+    <RULE>regfile0.readports.RDP2:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_MAIN_OUTPUTS</RULE>
+    <RULE>regfile0.readports.RDP3:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_MAIN_OUTPUTS</RULE>
+    <RULE>regfile0.readports.RDP4:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_MAIN_OUTPUTS</RULE>
+    <RULE>regfile0.readports.RDP5:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_MAIN_OUTPUTS</RULE>
+    <RULE>regfile0.readports.RDP6:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_MAIN_OUTPUTS</RULE>
+    <RULE>regfile0.readports.RDP7:GPT_ALU_DP0_INPUTS,GPT_ALU_DP1_INPUTS,GPT_LSU_DP0_INPUTS,GPT_MAIN_OUTPUTS</RULE>
+
+    <RULE>ALU.DP0.T:GPT_REG_WRPS,GPT_MAIN_OUTPUTS</RULE>
+    <RULE>ALU.DP1.T:GPT_REG_WRPS,GPT_MAIN_OUTPUTS</RULE>
+    <RULE>LSU.DP0.T:GPT_REG_WRPS,GPT_MAIN_OUTPUTS</RULE>
+</ConnectionRULES>
+
+
+</TILE>
+
+
+
