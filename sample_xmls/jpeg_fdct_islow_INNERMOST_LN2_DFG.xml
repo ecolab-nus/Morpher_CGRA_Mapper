@@ -1,11 +1,11 @@
 <MutexBB>
 </MutexBB>
-<DFG count="104">
+<DFG count="102">
 <Node idx="4"ASAP="0"BB="for.body">
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="91"/>
-	<Input idx="88"/>
+	<Input idx="5"/>
 </Inputs>
 <Outputs>
 	<Output idx="5" type="I1"/>
@@ -357,7 +357,7 @@
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="89"/>
-	<Input idx="87"/>
+	<Input idx="3"/>
 </Inputs>
 <Outputs>
 	<Output idx="1" type="I1"/>
@@ -477,9 +477,10 @@
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="4"/>
+	<Input idx="2"/>
 </Inputs>
 <Outputs>
-	<Output idx="88" type="I1"/>
+	<Output idx="4" type="I2"/>
 </Outputs>
 </Node>
 
@@ -508,9 +509,10 @@
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="0"/>
+	<Input idx="2"/>
 </Inputs>
 <Outputs>
-	<Output idx="87" type="I1"/>
+	<Output idx="0" type="I2"/>
 </Outputs>
 </Node>
 
@@ -564,9 +566,9 @@
 	<Input idx="1"/>
 </Inputs>
 <Outputs>
-	<Output idx="87" type="P"/>
-	<Output idx="88" type="P"/>
 	<Output idx="95" type="P"/>
+	<Output idx="3" type="P"/>
+	<Output idx="5" type="P"/>
 </Outputs>
 </Node>
 
@@ -744,28 +746,6 @@
 	<Input idx="96"/>
 </Inputs>
 <Outputs>
-</Outputs>
-</Node>
-
-<Node idx="87"ASAP="7"BB="for.body">
-<OP>CMERGE</OP>
-<Inputs>
-	<Input idx="2"/>
-	<Input idx="3"/>
-</Inputs>
-<Outputs>
-	<Output idx="0" type="I2"/>
-</Outputs>
-</Node>
-
-<Node idx="88"ASAP="7"BB="for.body">
-<OP>CMERGE</OP>
-<Inputs>
-	<Input idx="2"/>
-	<Input idx="5"/>
-</Inputs>
-<Outputs>
-	<Output idx="4" type="I2"/>
 </Outputs>
 </Node>
 

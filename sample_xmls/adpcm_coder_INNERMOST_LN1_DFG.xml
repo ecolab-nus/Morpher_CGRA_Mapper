@@ -6,12 +6,12 @@
 	<BB2 name="if.then54"/>
 </BB1>
 </MutexBB>
-<DFG count="147">
+<DFG count="138">
 <Node idx="71"ASAP="0"BB="for.body">
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="109"/>
-	<Input idx="108"/>
+	<Input idx="74"/>
 </Inputs>
 <Outputs>
 	<Output idx="72" type="I2"/>
@@ -22,8 +22,8 @@
 <Node idx="49"ASAP="1"BB="for.body">
 <OP>SELECT</OP>
 <Inputs>
-	<Input idx="102"/>
 	<Input idx="101"/>
+	<Input idx="103"/>
 </Inputs>
 <Outputs>
 	<Output idx="28" type="I2"/>
@@ -68,8 +68,8 @@
 <Node idx="63"ASAP="3"BB="for.body">
 <OP>SELECT</OP>
 <Inputs>
-	<Input idx="105"/>
-	<Input idx="104"/>
+	<Input idx="106"/>
+	<Input idx="19"/>
 </Inputs>
 <Outputs>
 	<Output idx="64" type="I1"/>
@@ -86,10 +86,10 @@
 	<Input idx="50"/>
 </Inputs>
 <Outputs>
-	<Output idx="122" type="P"/>
 	<Output idx="123" type="I1"/>
-	<Output idx="131" type="P"/>
 	<Output idx="132" type="I1"/>
+	<Output idx="59" type="P"/>
+	<Output idx="34" type="P"/>
 </Outputs>
 </Node>
 
@@ -97,9 +97,10 @@
 <OP>SUB</OP>
 <Inputs>
 	<Input idx="50"/>
+	<Input idx="62"/>
 </Inputs>
 <Outputs>
-	<Output idx="131" type="I1"/>
+	<Output idx="51" type="I1"/>
 </Outputs>
 </Node>
 
@@ -110,17 +111,6 @@
 </Inputs>
 <Outputs>
 	<Output idx="133" type="P"/>
-</Outputs>
-</Node>
-
-<Node idx="131"ASAP="5"BB="for.body">
-<OP>CMERGE</OP>
-<Inputs>
-	<Input idx="59"/>
-	<Input idx="62"/>
-</Inputs>
-<Outputs>
-	<Output idx="51" type="I1"/>
 </Outputs>
 </Node>
 
@@ -150,8 +140,8 @@
 <Node idx="51"ASAP="7"BB="for.body">
 <OP>SELECT</OP>
 <Inputs>
-	<Input idx="131"/>
 	<Input idx="133"/>
+	<Input idx="59"/>
 </Inputs>
 <Outputs>
 	<Output idx="52" type="I1"/>
@@ -275,8 +265,8 @@
 <Node idx="48"ASAP="12"BB="for.body">
 <OP>SELECT</OP>
 <Inputs>
-	<Input idx="99"/>
 	<Input idx="98"/>
+	<Input idx="100"/>
 </Inputs>
 <Outputs>
 	<Output idx="14" type="I2"/>
@@ -321,8 +311,8 @@
 	<Input idx="53"/>
 </Inputs>
 <Outputs>
-	<Output idx="22" type="P"/>
 	<Output idx="0" type="P"/>
+	<Output idx="22" type="P"/>
 	<Output idx="37" type="P"/>
 	<Output idx="39" type="I1"/>
 	<Output idx="81" type="I2"/>
@@ -336,7 +326,7 @@
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="95"/>
-	<Input idx="84"/>
+	<Input idx="45"/>
 </Inputs>
 <Outputs>
 	<Output idx="41" type="I1"/>
@@ -451,18 +441,20 @@
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="71"/>
+	<Input idx="69"/>
 </Inputs>
 <Outputs>
-	<Output idx="108" type="I1"/>
+	<Output idx="71" type="I2"/>
 </Outputs>
 </Node>
 
 <Node idx="100"ASAP="18"BB="for.body">
 <OP>LOAD</OP>
 <Inputs>
+	<Input idx="140"/>
 </Inputs>
 <Outputs>
-	<Output idx="99" type="I1"/>
+	<Output idx="48" type="I1"/>
 </Outputs>
 </Node>
 
@@ -474,12 +466,12 @@
 <Outputs>
 	<Output idx="95" type="P"/>
 	<Output idx="97" type="P"/>
-	<Output idx="99" type="P"/>
-	<Output idx="102" type="P"/>
-	<Output idx="105" type="P"/>
 	<Output idx="107" type="P"/>
 	<Output idx="109" type="P"/>
 	<Output idx="110" type="P"/>
+	<Output idx="103" type="P"/>
+	<Output idx="100" type="P"/>
+	<Output idx="106" type="P"/>
 </Outputs>
 </Node>
 
@@ -496,18 +488,20 @@
 <Node idx="103"ASAP="18"BB="for.body">
 <OP>LOAD</OP>
 <Inputs>
+	<Input idx="140"/>
 </Inputs>
 <Outputs>
-	<Output idx="102" type="I1"/>
+	<Output idx="49" type="I1"/>
 </Outputs>
 </Node>
 
 <Node idx="106"ASAP="18"BB="for.body">
 <OP>LOAD</OP>
 <Inputs>
+	<Input idx="140"/>
 </Inputs>
 <Outputs>
-	<Output idx="105" type="I1"/>
+	<Output idx="63" type="I1"/>
 </Outputs>
 </Node>
 
@@ -527,7 +521,7 @@
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="90"/>
-	<Input idx="89"/>
+	<Input idx="9"/>
 </Inputs>
 <Outputs>
 	<Output idx="11" type="I1"/>
@@ -585,28 +579,6 @@
 </Outputs>
 </Node>
 
-<Node idx="102"ASAP="19"BB="for.body">
-<OP>CMERGE</OP>
-<Inputs>
-	<Input idx="103"/>
-	<Input idx="140"/>
-</Inputs>
-<Outputs>
-	<Output idx="49" type="I1"/>
-</Outputs>
-</Node>
-
-<Node idx="99"ASAP="19"BB="for.body">
-<OP>CMERGE</OP>
-<Inputs>
-	<Input idx="100"/>
-	<Input idx="140"/>
-</Inputs>
-<Outputs>
-	<Output idx="48" type="I1"/>
-</Outputs>
-</Node>
-
 <Node idx="110"ASAP="19"BB="for.body">
 <OP>CMERGE</OP>
 <Inputs>
@@ -653,17 +625,6 @@
 </Inputs>
 <Outputs>
 	<Output idx="36" type="I1"/>
-</Outputs>
-</Node>
-
-<Node idx="105"ASAP="19"BB="for.body">
-<OP>CMERGE</OP>
-<Inputs>
-	<Input idx="106"/>
-	<Input idx="140"/>
-</Inputs>
-<Outputs>
-	<Output idx="63" type="I1"/>
 </Outputs>
 </Node>
 
@@ -843,9 +804,10 @@
 <OP>SUB</OP>
 <Inputs>
 	<Input idx="26"/>
+	<Input idx="62"/>
 </Inputs>
 <Outputs>
-	<Output idx="122" type="I1"/>
+	<Output idx="27" type="I1"/>
 </Outputs>
 </Node>
 
@@ -919,17 +881,6 @@
 </Outputs>
 </Node>
 
-<Node idx="122"ASAP="25"BB="if.end19">
-<OP>CMERGE</OP>
-<Inputs>
-	<Input idx="34"/>
-	<Input idx="62"/>
-</Inputs>
-<Outputs>
-	<Output idx="27" type="I1"/>
-</Outputs>
-</Node>
-
 <Node idx="14"ASAP="25"BB="if.end19">
 <OP>ADD</OP>
 <Inputs>
@@ -979,8 +930,8 @@
 <Node idx="27"ASAP="26"BB="if.end19">
 <OP>SELECT</OP>
 <Inputs>
-	<Input idx="122"/>
 	<Input idx="124"/>
+	<Input idx="34"/>
 </Inputs>
 <Outputs>
 	<Output idx="28" type="I1"/>
@@ -994,8 +945,8 @@
 </Inputs>
 <Outputs>
 	<Output idx="82" type="I1"/>
-	<Output idx="89" type="P"/>
 	<Output idx="111" type="P"/>
+	<Output idx="9" type="P"/>
 </Outputs>
 </Node>
 
@@ -1269,14 +1220,14 @@
 </Inputs>
 <Outputs>
 	<Output idx="83" type="P"/>
-	<Output idx="84" type="P"/>
 	<Output idx="85" type="P"/>
 	<Output idx="86" type="P"/>
 	<Output idx="98" type="P"/>
 	<Output idx="101" type="P"/>
-	<Output idx="104" type="P"/>
-	<Output idx="108" type="P"/>
 	<Output idx="143" type="P"/>
+	<Output idx="45" type="P"/>
+	<Output idx="74" type="P"/>
+	<Output idx="19" type="P"/>
 </Outputs>
 </Node>
 
@@ -1284,9 +1235,10 @@
 <OP>AND</OP>
 <Inputs>
 	<Input idx="8"/>
+	<Input idx="79"/>
 </Inputs>
 <Outputs>
-	<Output idx="89" type="I1"/>
+	<Output idx="10" type="I2"/>
 </Outputs>
 </Node>
 
@@ -1294,9 +1246,10 @@
 <OP>OR</OP>
 <Inputs>
 	<Input idx="44"/>
+	<Input idx="69"/>
 </Inputs>
 <Outputs>
-	<Output idx="84" type="I1"/>
+	<Output idx="40" type="I2"/>
 </Outputs>
 </Node>
 
@@ -1365,17 +1318,6 @@
 </Outputs>
 </Node>
 
-<Node idx="84"ASAP="30"BB="for.body">
-<OP>CMERGE</OP>
-<Inputs>
-	<Input idx="69"/>
-	<Input idx="45"/>
-</Inputs>
-<Outputs>
-	<Output idx="40" type="I2"/>
-</Outputs>
-</Node>
-
 <Node idx="127"ASAP="30"BB="if.end19">
 <OP>CMERGE</OP>
 <Inputs>
@@ -1405,28 +1347,6 @@
 </Inputs>
 <Outputs>
 	<Output idx="75" type="I2"/>
-</Outputs>
-</Node>
-
-<Node idx="89"ASAP="30"BB="if.end60">
-<OP>CMERGE</OP>
-<Inputs>
-	<Input idx="9"/>
-	<Input idx="79"/>
-</Inputs>
-<Outputs>
-	<Output idx="10" type="I2"/>
-</Outputs>
-</Node>
-
-<Node idx="108"ASAP="30"BB="for.body">
-<OP>CMERGE</OP>
-<Inputs>
-	<Input idx="74"/>
-	<Input idx="69"/>
-</Inputs>
-<Outputs>
-	<Output idx="71" type="I2"/>
 </Outputs>
 </Node>
 
@@ -1614,16 +1534,6 @@
 <OP>LOAD</OP>
 <Inputs>
 	<Input idx="18"/>
-</Inputs>
-<Outputs>
-	<Output idx="104" type="I1"/>
-</Outputs>
-</Node>
-
-<Node idx="104"ASAP="37"BB="for.body">
-<OP>CMERGE</OP>
-<Inputs>
-	<Input idx="19"/>
 	<Input idx="69"/>
 </Inputs>
 <Outputs>
