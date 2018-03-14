@@ -23,6 +23,7 @@
 namespace CGRAXMLCompile {
 
 //struct definitions
+class HeuristicMapper;
 
 struct dest_child_with_cost{
 	DFGNode* child;
@@ -73,13 +74,13 @@ struct dest_with_cost{
 	dest_with_cost(std::priority_queue<parent_cand_src_with_cost> parentStartLocs,
 				   std::priority_queue<dest_child_with_cost> alreadyMappedChilds,
 				   DataPath* dest, DFGNode* node, int cost,
-				   int unmappedMemNodeCount) :
+				   int unmappedMemNodeCount, HeuristicMapper* hm) :
 		parentStartLocs(parentStartLocs),alreadyMappedChilds(alreadyMappedChilds), dest(dest), node(node){
-		bestCost = sumBestCosts(unmappedMemNodeCount);
+		bestCost = sumBestCosts(unmappedMemNodeCount, hm);
 	}
 
 
-	int sumBestCosts(int unmappedMemNodeCount){
+	int sumBestCosts(int unmappedMemNodeCount, HeuristicMapper* hm){
 		int cost=0;
 //		for(std::pair<DFGNode*,std::priority_queue<cand_src_with_cost>> pair : parentStartLocs){
 //			assert(!pair.second.empty());
@@ -105,7 +106,7 @@ struct dest_with_cost{
 			int freePorts=0;
 			for(Port &p : dest->getPE()->outputPorts){
 				Module* parent = dest->getPE()->getParent();
-				if(parent->connections[&p].empty()) continue;
+				if(parent->getNextPorts(&p,hm).empty()) continue;
 				if(p.getNode()==NULL){
 					freePorts++;
 				}

@@ -20,6 +20,7 @@ namespace CGRAXMLCompile {
 class CGRA;
 class PE;
 class FU;
+class HeuristicMapper;
 
 class Module {
 public:
@@ -29,7 +30,7 @@ public:
 	std::vector<Port> outputPorts;
 	std::vector<Port> internalPorts;
 	std::vector<Module*> subModules;
-	std::map<Port*,std::vector<Port*> > connections;
+
 
 	Port* getInPort(std::string Pname);
 	Port* getOutPort(std::string Pname);
@@ -43,7 +44,11 @@ public:
 	PE* getPE();
 	FU* getFU();
 
+	std::vector<Port*> getNextPorts(Port* currPort, HeuristicMapper* hm);
+	std::vector<Port*> getConflictPorts(Port* currPort);
 
+protected:
+	std::map<Port*,std::vector<Port*>> connections;
 	std::map<Port*,std::vector<Port*>> conflictPorts;
 
 private:

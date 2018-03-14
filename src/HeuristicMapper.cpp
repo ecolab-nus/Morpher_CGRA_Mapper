@@ -74,8 +74,8 @@ bool CGRAXMLCompile::HeuristicMapper::Map(CGRA* cgra, DFG* dfg) {
 //	SortSCCDFG();
 	SortTopoGraphicalDFG();
 
-	std::string mappingLogFileName = fNameLog1 + "_II=" + std::to_string(cgra->get_t_max()) + ".mapping.csv";
-	std::string mappingLog2FileName = fNameLog1 + "_II=" + std::to_string(cgra->get_t_max()) + ".routeInfo.log";
+	std::string mappingLogFileName = fNameLog1 + cgra->peType + "_II=" + std::to_string(cgra->get_t_max()) + ".mapping.csv";
+	std::string mappingLog2FileName = fNameLog1 + cgra->peType + "_II=" + std::to_string(cgra->get_t_max()) + ".routeInfo.log";
 	mappingLog.open(mappingLogFileName.c_str());
 	mappingLog2.open(mappingLog2FileName.c_str());
 
@@ -385,7 +385,7 @@ if(detailedDebug)				std::cout << "Estimating Path" << destPort->getFullName() <
 
 	    assert(pathFromParentExist);
 	    assert(pathExistMappedChild);
-		dest_with_cost dest_with_cost_ins(parentStartLocs,alreadyMappedChilds,dest,node,0,this->dfg->unmappedMemOps);
+		dest_with_cost dest_with_cost_ins(parentStartLocs,alreadyMappedChilds,dest,node,0,this->dfg->unmappedMemOps,this);
 		estimatedRoutes.push(dest_with_cost_ins);
 	}
 //	std::cout << "EstimateEouting end!\n";
@@ -865,15 +865,16 @@ if(detailedDebug) std::cout << "currPort=" << currPort->getFullName() << "\n";
 			break;
 		}
 
-		std::vector<Port*> nextPorts = currPort->getMod()->connections[currPort];
-		if(currPort->getType()==OUT){
-			if(currPort->getMod()->getParent()){
-				for(Port* p : currPort->getMod()->getParent()->connections[currPort]){
-//					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
-					nextPorts.push_back(p);
-				}
-			}
-		}
+//		std::vector<Port*> nextPorts = currPort->getMod()->connections[currPort];
+//		if(currPort->getType()==OUT){
+//			if(currPort->getMod()->getParent()){
+//				for(Port* p : currPort->getMod()->getParent()->connections[currPort]){
+////					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
+//					nextPorts.push_back(p);
+//				}
+//			}
+//		}
+		std::vector<Port*> nextPorts = currPort->getMod()->getNextPorts(currPort,this);
 
 //		std::cout << "nextPorts size = " << nextPorts.size() << "\n";
 		int q_len = q.size();
@@ -989,7 +990,7 @@ int CGRAXMLCompile::HeuristicMapper::calculateCost(Port* src,
 		int freePorts=0;
 		for(Port &p : nextPE->outputPorts){
 			Module* parent = nextPE->getParent();
-			if(parent->connections[&p].empty()) continue;
+			if(parent->getNextPorts(&p,this).empty()) continue;
 			if(p.getNode()==NULL){
 				freePorts++;
 			}
@@ -1044,7 +1045,8 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog() {
 				std::stringstream dpHeader;
 				std::stringstream dpOp;
 
-				peHeader << "PE_" << t << y << x  << ",";
+//				peHeader << "PE_" << t << y << x  << ",";
+				peHeader << "X=" << x << ",";
 				PE* pe = cgra->PEArr[t][y][x];
 
 				int fuCount=0;
@@ -1071,7 +1073,17 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog() {
 							if(DataPath* dp = dynamic_cast<DataPath*>(mod)){
 								dpHeader << dp->getName() << ",";
 								if(dp->getMappedNode()){
-									dpOp << dp->getMappedNode()->idx << ":" << dp->getMappedNode()->op << ",";
+									dpOp << dp->getMappedNode()->idx << ":" << dp->getMappedNode()->op;
+									dpOp << "(";
+									for(DFGNode* parent : dp->getMappedNode()->parents){
+										dpOp << parent->idx << "-";
+									}
+									dpOp << "|";
+									for(DFGNode* child : dp->getMappedNode()->children){
+										dpOp << child->idx << "-";
+									}
+									dpOp << ")";
+									dpOp << ",";
 								}
 								else{
 									dpOp << "---,";
@@ -1084,7 +1096,7 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog() {
 				for(Port& ip : pe->inputPorts){
 					dpHeader << ip.getName() << ",";
 					if(ip.getNode()){
-						dpOp << ip.getNode()->idx << ":" << ip.getNode()->op << ",";
+						dpOp << ip.getNode()->idx /*<< ":" << ip.getNode()->op */<< ",";
 					}
 					else{
 						dpOp << "---,";
@@ -1094,14 +1106,14 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog() {
 				for(Port& op : pe->outputPorts){
 					dpHeader << op.getName() << ",";
 					if(op.getNode()){
-						dpOp << op.getNode()->idx << ":" << op.getNode()->op << ",";
+						dpOp << op.getNode()->idx /*<< ":" << op.getNode()->op */ << ",";
 					}
 					else{
 						dpOp << "---,";
 					}
 				}
 
-				util::repeatedPush(peHeader,",",totalColumns);
+				util::repeatedPush(peHeader,",",totalColumns-1);
 				util::repeatedPush(fuHeader,",",totalColumns-fuCount);
 
 				lineMatrix[t][y][x].push_back(peHeader.str());
@@ -1123,6 +1135,21 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog() {
 				}
 				for (int x = 0; x < cgra->get_x_max(); ++x) {
 					assert(lineMatrix[t][y][x].size()==lineCount);
+
+					if(y==0){
+						mappingLog << "T=" << t << ",";
+					}
+					else{
+						mappingLog << ",";
+					}
+
+					if(x==0){
+						mappingLog << "Y=" << y << ",";
+					}
+					else{
+						mappingLog << ",";
+					}
+
 					mappingLog << lineMatrix[t][y][x][l] << ",";
 				}
 				mappingLog << "\n";
@@ -1205,15 +1232,17 @@ bool CGRAXMLCompile::HeuristicMapper::LeastCostPathDjk(Port* start, Port* end,
 				break;
 			}
 
-			std::vector<Port*> nextPorts = currPort->getMod()->connections[currPort];
-			if(currPort->getType()==OUT){
-				if(currPort->getMod()->getParent()){
-					for(Port* p : currPort->getMod()->getParent()->connections[currPort]){
-	//					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
-						nextPorts.push_back(p);
-					}
-				}
-			}
+
+			std::vector<Port*> nextPorts = currPort->getMod()->getNextPorts(currPort,this);
+//			std::vector<Port*> nextPorts = currPort->getMod()->connections[currPort];
+//			if(currPort->getType()==OUT){
+//				if(currPort->getMod()->getParent()){
+//					for(Port* p : currPort->getMod()->getParent()->connections[currPort]){
+//	//					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
+//						nextPorts.push_back(p);
+//					}
+//				}
+//			}
 
 	//		std::cout << "nextPorts size = " << nextPorts.size() << "\n";
 			for(Port* nextPort : nextPorts){
@@ -1342,15 +1371,15 @@ bool CGRAXMLCompile::HeuristicMapper::dataPathCheck(DataPath* dp,
 			}
 		}
 
-		for(Port* p : currPort->getMod()->connections[currPort]){
+		for(Port* p : currPort->getMod()->getNextPorts(currPort,this)){
 			q.push(p);
 		}
-
-		if(currPort->getType()==OUT){
-			for(Port* p : currPort->getMod()->getParent()->connections[currPort]){
-				q.push(p);
-			}
-		}
+//
+//		if(currPort->getType()==OUT){
+//			for(Port* p : currPort->getMod()->getParent()->connections[currPort]){
+//				q.push(p);
+//			}
+//		}
 
 		if(connectingDPs.size() == fanoutNode){
 			return true;

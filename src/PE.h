@@ -37,6 +37,21 @@ public:
 		else if(peType == "HyCUBE_4REG"){
 			createOriginalHyCUBEPE(isMEMpe,numDPs);
 		}
+		else if(peType == "N2N_8REGF"){
+			createN2NPE(isMEMpe,numDPs,8);
+		}
+		else if(peType == "N2N_4REGF"){
+			createN2NPE(isMEMpe,numDPs,4);
+		}
+		else if(peType == "STDNOC_8REGF"){
+			createStdNoCPE_RegFile(isMEMpe,numDPs,8);
+		}
+		else if(peType == "STDNOC_4REGF"){
+			createStdNoCPE_RegFile(isMEMpe,numDPs,4);
+		}
+		else if(peType == "STDNOC_4REG"){
+			createStdNoCPE(isMEMpe,numDPs);
+		}
 		else{
 			assert(false);
 		}
@@ -51,7 +66,10 @@ public:
 	bool isMemPE=false;
 
 	void createGenericPE(bool isMEMpe, int numberofDPs=1, int regs=8);
-	void createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs=1, int regs=8);
+	void createStdNoCPE(bool isMEMpe, int numberofDPs=1);
+	void createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=1, int nRDP=2);
+	void createN2NPE(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=1, int nRDP=2);
+	void createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=1, int nRDP=2);
 	void createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs=1);
 	void getNonMEMIns(std::map<std::string,int>& supportedOPs);
 	void getMEMIns(std::map<std::string,int>& supportedOPs);

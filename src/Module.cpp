@@ -35,6 +35,49 @@ FU* Module::getFU() {
 	return NULL;
 }
 
+std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
+	std::vector<Port*> nextPorts;
+
+	for(Port* p : connections[currPort]){
+		bool conflicted=false;
+		for(Port* conflict_port : conflictPorts[p]){
+			if(conflict_port->getNode()!=NULL){
+				conflicted=true;
+				break;
+			}
+		}
+		if(!conflicted){
+			nextPorts.push_back(p);
+		}
+	}
+
+	if(currPort->getType()==OUT){
+		if(getParent()){
+			for(Port* p : currPort->getMod()->getParent()->connections[currPort]){
+//					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
+//				nextPorts.push_back(p);
+
+				bool conflicted=false;
+				for(Port* conflict_port : getParent()->getConflictPorts(currPort)){
+					if(conflict_port->getNode()!=NULL){
+						conflicted=true;
+						break;
+					}
+				}
+				if(!conflicted){
+					nextPorts.push_back(p);
+				}
+
+			}
+		}
+	}
+	return nextPorts;
+}
+
+std::vector<Port*> Module::getConflictPorts(Port* currPort) {
+	return conflictPorts[currPort];
+}
+
 } /* namespace CGRAXMLCompile */
 
 CGRAXMLCompile::Port* CGRAXMLCompile::Module::getInPort(std::string Pname) {
