@@ -206,6 +206,8 @@ public:
 	bool enableMutexPaths=false;
 	int backTrackLimit=4;
 
+	void printMappingLog();
+	void printMappingLog2();
 
 private:
 	int regDiscourageFactor=10;
@@ -220,8 +222,6 @@ private:
 	std::ofstream mappingLog;
 	std::ofstream mappingLog2;
 	std::vector<DFGNode*> sortedNodeList;
-	void printMappingLog();
-	void printMappingLog2();
 
 
 };
