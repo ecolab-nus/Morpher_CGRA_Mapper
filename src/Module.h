@@ -43,6 +43,9 @@ public:
 	PE* getPE();
 	FU* getFU();
 
+
+	std::map<Port*,std::vector<Port*>> conflictPorts;
+
 private:
 	const Module* Parent;
 	std::string name;

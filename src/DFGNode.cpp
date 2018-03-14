@@ -9,7 +9,10 @@
 #include "Port.h"
 #include <algorithm>
 #include <assert.h>
+#include <iostream>
 #include "DataPath.h"
+#include "CGRA.h"
+#include "DFG.h"
 
 namespace CGRAXMLCompile {
 
@@ -21,23 +24,54 @@ DFGNode::DFGNode() {
 } /* namespace CGRAXMLCompile */
 
 
-void CGRAXMLCompile::DFGNode::clear() {
-	rootDP->clear();
-	rootDP=NULL;
-	for(Port* P : routingPorts){
-		P->clear();
+void CGRAXMLCompile::DFGNode::clear(DFG* dfg) {
+	if(rootDP!=NULL){
+		rootDP->clear();
+
+		CGRA* cgra = rootDP->getCGRA();
+		FU* fu = rootDP->getFU();
+		if(fu->supportedOPs.find("LOAD")!=fu->supportedOPs.end()){
+			cgra->freeMemNodes++;
+		}
+
+		if(this->isMemOp()){
+			dfg->unmappedMemOps++;
+		}
+
+		rootDP=NULL;
 	}
+
+	for(std::pair<Port*,int> pair : routingPorts){
+		Port* p = pair.first;
+		p->clear();
+	}
+
+	this->routingPorts.clear();
+
 
 	for(DFGNode* parent : parents){
-		for(Port* p : parent->routingPorts){
-			assert(parent->routingPortDestMap.find(p)!=parent->routingPortDestMap.end());
-			DFGNode* dest = routingPortDestMap[p];
+		std::set<std::pair<Port*,int>> delPorts;
+		for(std::pair<Port*,int> pair : parent->routingPorts){
+			Port* p = pair.first;
+			int destIdx = pair.second;
+//			assert(parent->routingPortDestMap.find(p)!=parent->routingPortDestMap.end());
+//			int dest_idx = routingPortDestMap[p];
+//			assert(dest!=NULL);
 
-			if(dest==this){
+			if(destIdx==this->idx){
 				p->clear();
+				delPorts.insert(pair);
 			}
+
 		}
+		std::cout << "delPorts.size = " << delPorts.size() << "\n";
+		std::cout << "parentRoutingPort size(before) = " << parent->routingPorts.size() << "\n";
+		for(std::pair<Port*,int> pair : delPorts){
+			parent->routingPorts.erase(std::find(parent->routingPorts.begin(),parent->routingPorts.end(),pair));
+		}
+		std::cout << "parentRoutingPort size(after) = " << parent->routingPorts.size() << "\n";
 	}
+
 
 }
 
@@ -45,4 +79,28 @@ std::string CGRAXMLCompile::DFGNode::getOPtype(DFGNode* child) {
 	assert(std::find(children.begin(),children.end(),child)!=children.end());
 	assert(childrenOPType.find(child)!=childrenOPType.end());
 	return childrenOPType[child];
+}
+
+bool CGRAXMLCompile::DFGNode::isMemOp() {
+	if(this->op.compare("LOAD")==0){
+		return true;
+	}
+	else if(this->op.compare("LOADH")==0){
+		return true;
+	}
+	else if(this->op.compare("LOADB")==0){
+		return true;
+	}
+	else if(this->op.compare("STORE")==0){
+		return true;
+	}
+	else if(this->op.compare("STOREH")==0){
+		return true;
+	}
+	else if(this->op.compare("STOREB")==0){
+		return true;
+	}
+	else{
+		return false;
+	}
 }

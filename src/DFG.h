@@ -28,6 +28,7 @@ public:
 	std::map<std::string,std::set<std::string>> mutexBBs;
 
 	std::vector<std::set<DFGNode*>> getSCCs();
+	int unmappedMemOps=0;
 
 private:
 	void strongconnect(DFGNode* v,

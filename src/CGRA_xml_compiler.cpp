@@ -36,7 +36,11 @@ int main(int argn, char* argc[]) {
 	currDFG.parseXML(inputDFG_filename);
 	currDFG.printDFG();
 
-	CGRA testCGRA(NULL,"testCGRA",1,ydim,xdim);
+	bool isGenericPE;
+	std::string PEType(argc[2]);
+	int numberOfDPs=atoi(argc[3]);
+
+	CGRA testCGRA(NULL,"testCGRA",1,ydim,xdim,PEType,numberOfDPs);
 
 	HeuristicMapper hm(inputDFG_filename);
 	int II = hm.getMinimumII(&testCGRA,&currDFG);
@@ -45,13 +49,10 @@ int main(int argn, char* argc[]) {
 	int initUserII = atoi(argc[5]);
 	II = std::max(initUserII,II);
 
-
 	hm.enableBackTracking=true;
 	hm.enableMutexPaths=true;
 	hm.backTrackLimit=atoi(argc[4]);
-	bool isGenericPE;
-	std::string PEType(argc[2]);
-	int numberOfDPs=atoi(argc[3]);
+
 
 	bool mappingSuccess=false;
 	while(!mappingSuccess){

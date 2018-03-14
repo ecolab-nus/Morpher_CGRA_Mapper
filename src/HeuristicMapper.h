@@ -15,6 +15,9 @@
 #include <assert.h>
 #include <iostream>
 #include <fstream>
+#include <math.h>
+
+#define MRC 8000
 
 
 namespace CGRAXMLCompile {
@@ -65,16 +68,18 @@ struct dest_with_cost{
 	std::priority_queue<dest_child_with_cost> alreadyMappedChilds;
 	int bestCost;
 	DataPath* dest;
+	DFGNode* node;
 	dest_with_cost(){}
 	dest_with_cost(std::priority_queue<parent_cand_src_with_cost> parentStartLocs,
 				   std::priority_queue<dest_child_with_cost> alreadyMappedChilds,
-				   DataPath* dest, int cost=0) :
-		parentStartLocs(parentStartLocs),alreadyMappedChilds(alreadyMappedChilds), dest(dest){
-		bestCost = sumBestCosts();
+				   DataPath* dest, DFGNode* node, int cost,
+				   int unmappedMemNodeCount) :
+		parentStartLocs(parentStartLocs),alreadyMappedChilds(alreadyMappedChilds), dest(dest), node(node){
+		bestCost = sumBestCosts(unmappedMemNodeCount);
 	}
 
 
-	int sumBestCosts(){
+	int sumBestCosts(int unmappedMemNodeCount){
 		int cost=0;
 //		for(std::pair<DFGNode*,std::priority_queue<cand_src_with_cost>> pair : parentStartLocs){
 //			assert(!pair.second.empty());
@@ -101,11 +106,64 @@ struct dest_with_cost{
 			for(Port &p : dest->getPE()->outputPorts){
 				Module* parent = dest->getPE()->getParent();
 				if(parent->connections[&p].empty()) continue;
-				if(p.node==NULL){
+				if(p.getNode()==NULL){
 					freePorts++;
 				}
 			}
-			cost = cost + (15 - freePorts)*100;
+			cost = cost + (15 - freePorts)*1000;
+
+			int primaryCost=0;
+			for(DFGNode* child : node->children){
+				for(DFGNode* parentil : child->parents){
+					if(parentil->rootDP!=NULL && parentil != node){
+						PE* parentilPE = parentil->rootDP->getPE();
+						PE* destPE = dest->getPE();
+						CGRA* cgra = destPE->getCGRA();
+
+						int dx = std::abs(parentilPE->X-destPE->X);
+						int dy = std::abs(parentilPE->Y-destPE->Y);
+						int dt = (destPE->T - parentilPE->T + cgra->get_t_max()) % cgra->get_t_max();
+						primaryCost = primaryCost + dt;
+					}
+				}
+			}
+			cost = cost + primaryCost*100;
+
+			int secondaryCost=0;
+			for(DFGNode* child : node->children){
+				for(DFGNode* childchild : node->children){
+					for(DFGNode* childparent : childchild->parents){
+						if(childparent!=childchild){
+							for(DFGNode* parent : childparent->parents){
+								if(parent!=node && parent->rootDP!=NULL){
+									PE* parentilPE = parent->rootDP->getPE();
+									PE* destPE = dest->getPE();
+									CGRA* cgra = destPE->getCGRA();
+
+									int dx = std::abs(parentilPE->X-destPE->X);
+									int dy = std::abs(parentilPE->Y-destPE->Y);
+									int dt = (destPE->T - parentilPE->T + cgra->get_t_max()) % cgra->get_t_max();
+									secondaryCost = secondaryCost + dx + dy + dt;
+								}
+							}
+						}
+					}
+				}
+			}
+//			cost = cost + secondaryCost*10;
+
+			FU* fu = dest->getFU();
+			CGRA* cgra = dest->getCGRA();
+			int memcost=0;
+			if(fu->supportedOPs.find("LOAD")!=fu->supportedOPs.end()){
+				double memrescost_dbl = (double)unmappedMemNodeCount/(double)cgra->freeMemNodes;
+				memrescost_dbl = memrescost_dbl*(double)MRC;
+				memcost = (int)memrescost_dbl;
+			}
+
+			cost = cost + memcost;
+
+
 			std::cout << dest->getPE()->getName() << ",cost=" << cost << "\n";
 		}
 
@@ -123,8 +181,9 @@ class HeuristicMapper {
 public:
 //	HeuristicMapper(CGRA* cgra, DFG* dfg) : cgra(cgra), dfg(dfg){};
 	HeuristicMapper(std::string fName){
-		fName = fName + ".mapping.csv";
-		mappingLog.open(fName.c_str());
+		fNameLog1 = fName;
+//		mappingLog.open(fName.c_str());
+//		mappingLog2.open(fName2.c_str());
 	}
 	CGRA* cgra;
 	DFG* dfg;
@@ -133,12 +192,14 @@ public:
 	void SortTopoGraphicalDFG();
 	void SortSCCDFG();
 	bool Map(CGRA* cgra, DFG* dfg);
-	bool LeastCostPath(Port* start, Port* end, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths);
-	int calculateCost(Port* src, Port* next_to_src);
+	bool LeastCostPathAstar(Port* start, Port* end, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
+	bool LeastCostPathDjk(Port* start, Port* end, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths);
+	int calculateCost(Port* src, Port* next_to_src, Port* dest);
 
-	bool estimateRouting(DFGNode& node, std::priority_queue<dest_with_cost>& estimatedRoutes);
-	bool Route(DFGNode& node, std::priority_queue<dest_with_cost>& estimatedRoutes);
+	bool estimateRouting(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes);
+	bool Route(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes);
 	void assignPath(DFGNode* src, DFGNode* dest, std::vector<Port*> path);
+	bool dataPathCheck(DataPath* dp, DFGNode* node);
 
 	bool enableBackTracking=false;
 	bool enableMutexPaths=false;
@@ -149,10 +210,14 @@ private:
 	int regDiscourageFactor=10;
 	int PETransitionCostFactor=100;
 	int PortTransitionCost=1;
-	int UOPCostFactor=100;
-	int MEMResourceCost = 10000;
+	int UOPCostFactor=1000;
+	int MEMResourceCost = MRC;
+
+	std::string fNameLog1;
+	std::string fNameLog2;
 
 	std::ofstream mappingLog;
+	std::ofstream mappingLog2;
 	std::vector<DFGNode*> sortedNodeList;
 	void printMappingLog();
 	void printMappingLog2();

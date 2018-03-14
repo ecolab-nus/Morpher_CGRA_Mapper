@@ -48,6 +48,7 @@ public:
 	int Y;
 	int T;
 	std::vector<RegFile*> allRegs;
+	bool isMemPE=false;
 
 	void createGenericPE(bool isMEMpe, int numberofDPs=1, int regs=8);
 	void createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs=1, int regs=8);

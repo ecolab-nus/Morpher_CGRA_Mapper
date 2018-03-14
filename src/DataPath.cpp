@@ -9,6 +9,7 @@
 #include "FU.h"
 #include "Port.h"
 #include "CGRA.h"
+#include "DFG.h"
 #include <assert.h>
 #include <iostream>
 
@@ -72,7 +73,7 @@ CGRAXMLCompile::Port* CGRAXMLCompile::DataPath::getOutputPort(int latency) {
 	return outputPort;
 }
 
-void CGRAXMLCompile::DataPath::assignNode(DFGNode* node) {
+void CGRAXMLCompile::DataPath::assignNode(DFGNode* node, DFG* dfg) {
 
 	this->mappedNode = node;
 
@@ -90,12 +91,22 @@ void CGRAXMLCompile::DataPath::assignNode(DFGNode* node) {
 
 	int latency = fu->supportedOPs[node->op];
 	int next_t = (pe->T + latency)%cgra->get_t_max();
+	std::cout << "assigning node=" << node->idx << ",to=" << pe->getName() << ",starting t=" << next_t << "\n";
 
 	PE* nextPE = cgra->PEArr[next_t][pe->Y][pe->X];
 	FU* nextFU = static_cast<FU*>(nextPE->getSubMod(fu->getName()));
 	DataPath* nextDP = static_cast<DataPath*>(nextFU->getSubMod(this->getName()));
 
 	this->outputDP = nextDP;
+
+	if(fu->supportedOPs.find("LOAD")!=fu->supportedOPs.end()){
+		cgra->freeMemNodes--;
+	}
+
+	if(node->isMemOp()){
+		dfg->unmappedMemOps--;
+	}
+
 }
 
 void CGRAXMLCompile::DataPath::clear() {

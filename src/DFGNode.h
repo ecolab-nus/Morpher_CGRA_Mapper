@@ -13,11 +13,13 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 
 namespace CGRAXMLCompile {
 
 class DataPath;
 class Port;
+class DFG;
 
 
 class DFGNode {
@@ -32,15 +34,16 @@ public:
 	std::vector<DFGNode*> phiChildren;
 
 	DataPath* rootDP=NULL;
-	std::vector<Port*> routingPorts;
-	std::map<Port*,DFGNode*> routingPortDestMap;
+	std::vector<std::pair<Port*,int>> routingPorts;
+//	std::map<Port*,int> routingPortDestMap;
 
 	std::map<DFGNode*,std::string> childrenOPType;
 
 	std::string BB;
 
-	void clear();
+	void clear(DFG* dfg);
 	std::string getOPtype(DFGNode* child);
+	bool isMemOp();
 
 	bool operator==(const DFGNode& rhs){
 		return this->idx == rhs.idx;

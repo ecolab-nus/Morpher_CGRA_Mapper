@@ -24,6 +24,7 @@ void CGRAXMLCompile::PE::createGenericPE(bool isMEMpe, int numberofDPs, int regs
 
 	assert(!alreadyInit);
 	alreadyInit=true;
+	this->isMemPE=isMemPE;
 
 //	int numberofDPs=1;
 	std::map<std::string,int> supportedOPs;
@@ -176,7 +177,7 @@ void CGRAXMLCompile::PE::getNonMEMIns(
 void CGRAXMLCompile::PE::getMEMIns(std::map<std::string, int>& supportedOPs) {
 
 	supportedOPs["NOP"]=2;
-	supportedOPs["ADD"]=21;
+	supportedOPs["ADD"]=2;
 	supportedOPs["SUB"]=2;
 	supportedOPs["MUL"]=2;
 	supportedOPs["SEXT"]=2;
@@ -212,6 +213,7 @@ void CGRAXMLCompile::PE::createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs, i
 
 	assert(!alreadyInit);
 	alreadyInit=true;
+	this->isMemPE=isMemPE;
 
 //	int numberofDPs=1;
 	std::map<std::string,int> supportedOPs;
@@ -356,6 +358,7 @@ void CGRAXMLCompile::PE::createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs) {
 
 	assert(!alreadyInit);
 	alreadyInit=true;
+	this->isMemPE=isMemPE;
 
 //	int numberofDPs=1;
 	std::map<std::string,int> supportedOPs;

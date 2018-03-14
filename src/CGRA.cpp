@@ -29,7 +29,7 @@ void CGRAXMLCompile::CGRA::createGenericCGRA(int x_max, int y_max, int t_max, st
 				PE* newPE;
 				std::string PE_name = "PE_" + std::to_string(t) + "," + std::to_string(y) + "," + std::to_string(x);
 				if(x==0){
-					newPE = new PE(this,PE_name,x,y,t,peType,true,1);
+					newPE = new PE(this,PE_name,x,y,t,peType,true,numberofDPs);
 				}
 				else{
 					newPE = new PE(this,PE_name,x,y,t,peType,false,numberofDPs);

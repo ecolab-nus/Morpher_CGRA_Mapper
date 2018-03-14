@@ -34,13 +34,16 @@ public:
 	Module* getMod(){return mod;}
 	PortType getType(){return pType;}
 
-	DFGNode* node=NULL;
+	void setNode(DFGNode* node){this->node=node;}
+	DFGNode* getNode(){return this->node;}
+
 
 private:
 
 	std::string name;
 	Module* mod;
 	PortType pType;
+	DFGNode* node=NULL;
 
 	bool operator==(const Port &other){
 		return (this->name.compare(other.name)==0);

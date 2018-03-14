@@ -41,7 +41,7 @@ public:
 	CGRA* getCGRA();
 	Port* getOutputPort(int latency);
 
-	void assignNode(DFGNode* node);
+	void assignNode(DFGNode* node, DFG* dfg);
 	DFGNode* getMappedNode(){return mappedNode;}
 	DataPath* getOutputDP(){return outputDP;}
 	void clear();
