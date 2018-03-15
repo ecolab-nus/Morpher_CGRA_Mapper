@@ -67,9 +67,9 @@ public:
 
 	void createGenericPE(bool isMEMpe, int numberofDPs=1, int regs=8);
 	void createStdNoCPE(bool isMEMpe, int numberofDPs=1);
-	void createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=1, int nRDP=2);
-	void createN2NPE(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=1, int nRDP=2);
-	void createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=1, int nRDP=2);
+	void createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=2, int nRDP=2);
+	void createN2NPE(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=2, int nRDP=2);
+	void createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=2, int nRDP=2);
 	void createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs=1);
 	void getNonMEMIns(std::map<std::string,int>& supportedOPs);
 	void getMEMIns(std::map<std::string,int>& supportedOPs);
