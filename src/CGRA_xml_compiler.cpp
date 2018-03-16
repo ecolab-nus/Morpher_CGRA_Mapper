@@ -70,10 +70,8 @@ int main(int argn, char* argc[]) {
 			delete tempCGRA;
 			II++;
 
-			if(II==25){
-				hm.printMappingLog();
-				hm.printMappingLog2();
-				std::cout << "II max of 25 has been reached and exiting...\n";
+			if(II==33){
+				std::cout << "II max of 32 has been reached and exiting...\n";
 				return 0;
 			}
 

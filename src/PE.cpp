@@ -1006,9 +1006,11 @@ void CGRAXMLCompile::PE::getArithmeticIns(
 
 void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 		int numberofDPs, int regs, int nWRP, int nRDP) {
+
 }
 
 void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs) {
+
 }
 
 void CGRAXMLCompile::PE::getMemOnlyIns(std::map<std::string, int>& supportedOPs) {
