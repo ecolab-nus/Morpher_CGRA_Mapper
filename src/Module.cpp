@@ -38,7 +38,7 @@ FU* Module::getFU() {
 std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 	std::vector<Port*> nextPorts;
 
-	for(Port* p : connections[currPort]){
+	for(Port* p : connectedTo[currPort]){
 		bool conflicted=false;
 		for(Port* conflict_port : conflictPorts[p]){
 			if(conflict_port->getNode()!=NULL){
@@ -53,7 +53,7 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 
 	if(currPort->getType()==OUT){
 		if(getParent()){
-			for(Port* p : currPort->getMod()->getParent()->connections[currPort]){
+			for(Port* p : currPort->getMod()->getParent()->connectedTo[currPort]){
 //					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
 //				nextPorts.push_back(p);
 
@@ -76,6 +76,51 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 
 std::vector<Port*> Module::getConflictPorts(Port* currPort) {
 	return conflictPorts[currPort];
+}
+
+std::vector<Port*> Module::getFromPorts(Port* currPort, HeuristicMapper* hm) {
+	std::vector<Port*> fromPorts;
+
+	for(Port* p : connectedFrom[currPort]){
+		bool conflicted=false;
+		for(Port* conflict_port : conflictPorts[p]){
+			if(conflict_port->getNode()!=NULL){
+				conflicted=true;
+				break;
+			}
+		}
+		if(!conflicted){
+			fromPorts.push_back(p);
+		}
+	}
+
+	if(currPort->getType()==IN){
+		if(getParent()){
+			for(Port* p : currPort->getMod()->getParent()->connectedFrom[currPort]){
+//					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
+//				nextPorts.push_back(p);
+
+				bool conflicted=false;
+				for(Port* conflict_port : getParent()->getConflictPorts(currPort)){
+					if(conflict_port->getNode()!=NULL){
+						conflicted=true;
+						break;
+					}
+				}
+				if(!conflicted){
+					fromPorts.push_back(p);
+				}
+
+			}
+		}
+	}
+
+	return fromPorts;
+}
+
+void Module::insertConnection(Port* src, Port* dest) {
+	connectedTo[src].push_back(dest);
+	connectedFrom[dest].push_back(src);
 }
 
 } /* namespace CGRAXMLCompile */

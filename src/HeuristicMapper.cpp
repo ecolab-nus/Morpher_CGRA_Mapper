@@ -988,6 +988,7 @@ int CGRAXMLCompile::HeuristicMapper::calculateCost(Port* src,
 
 	if(srcPE!=nextPE){
 		int freePorts=0;
+
 		for(Port &p : nextPE->outputPorts){
 			Module* parent = nextPE->getParent();
 			if(parent->getNextPorts(&p,this).empty()) continue;
@@ -995,7 +996,20 @@ int CGRAXMLCompile::HeuristicMapper::calculateCost(Port* src,
 				freePorts++;
 			}
 		}
-		distance = distance + (15 - freePorts)*UOPCostFactor;
+
+//		for(Port &p : nextPE->inputPorts){
+//			Module* parent = nextPE->getParent();
+//			if(parent->getFromPorts(&p,this).empty()) continue;
+//			if(p.getNode()==NULL){
+//				freePorts++;
+//			}
+//		}
+
+//		distance = distance + (nextPE->outputPorts.size() + nextPE->inputPorts.size() - freePorts)*UOPCostFactor;
+//		distance = distance + (nextPE->outputPorts.size() - freePorts)*UOPCostFactor;
+//		distance = distance + (1 + nextPE->outputPorts.size() - freePorts)*UOPCostFactor;
+		distance = distance + (nextPE->outputPorts.size()*2-(freePorts))*UOPCostFactor;
+
 	}
 
 //	int unmappedMemNodeCount=0;

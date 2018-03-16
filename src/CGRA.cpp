@@ -28,6 +28,12 @@ void CGRAXMLCompile::CGRA::createGenericCGRA(int x_max, int y_max, int t_max, st
 			for (int x = 0; x < x_max; ++x) {
 				PE* newPE;
 				std::string PE_name = "PE_" + std::to_string(t) + "," + std::to_string(y) + "," + std::to_string(x);
+
+//				bool isCorner = (x==0)&&(y==0);
+//				isCorner = isCorner | ((x==0)&&(y==y_max-1));
+//				isCorner = isCorner | ((x==x_max-1)&&(y==0));
+//				isCorner = isCorner | ((x==x_max-1)&&(y==y_max-1));
+
 				if(x==0){
 					newPE = new PE(this,PE_name,x,y,t,peType,true,numberofDPs);
 				}
@@ -51,28 +57,32 @@ void CGRAXMLCompile::CGRA::createGenericCGRA(int x_max, int y_max, int t_max, st
 					Port* currPE_WestO = currPE->getOutPort("WEST_O");
 					PE* westPE = PEArr[t][y][x-1];
 					Port* westPE_EastI = westPE->getInPort("EAST_I");
-					connections[currPE_WestO].push_back(westPE_EastI);
+//					connectedTo[currPE_WestO].push_back(westPE_EastI);
+					insertConnection(currPE_WestO,westPE_EastI);
 				}
 
 				if(x+1 < x_max){
 					Port* currPE_EastO = currPE->getOutPort("EAST_O");
 					PE* eastPE = PEArr[t][y][x+1];
 					Port* eastPE_WestI = eastPE->getInPort("WEST_I");
-					connections[currPE_EastO].push_back(eastPE_WestI);
+//					connectedTo[currPE_EastO].push_back(eastPE_WestI);
+					insertConnection(currPE_EastO,eastPE_WestI);
 				}
 
 				if(y-1 >= 0){
 					Port* currPE_NorthO = currPE->getOutPort("NORTH_O");
 					PE* northPE = PEArr[t][y-1][x];
 					Port* northPE_SouthI = northPE->getInPort("SOUTH_I");
-					connections[currPE_NorthO].push_back(northPE_SouthI);
+//					connectedTo[currPE_NorthO].push_back(northPE_SouthI);
+					insertConnection(currPE_NorthO,northPE_SouthI);
 				}
 
 				if(y+1 < y_max){
 					Port* currPE_SouthO = currPE->getOutPort("SOUTH_O");
 					PE* southPE = PEArr[t][y+1][x];
 					Port* southPE_NorthI = southPE->getInPort("NORTH_I");
-					connections[currPE_SouthO].push_back(southPE_NorthI);
+//					connectedTo[currPE_SouthO].push_back(southPE_NorthI);
+					insertConnection(currPE_SouthO,southPE_NorthI);
 				}
 
 				int t_next = (t+1)%t_max;
@@ -82,7 +92,8 @@ void CGRAXMLCompile::CGRA::createGenericCGRA(int x_max, int y_max, int t_max, st
 						Port* reg_i = nextCyclePE->getInPort(RF->getName() + "_REG_I" + std::to_string(i));
 						Port* reg_o = currPE->getOutPort(RF->getName() + "_REG_O" + std::to_string(i));
 
-						connections[reg_o].push_back(reg_i);
+//						connectedTo[reg_o].push_back(reg_i);
+						insertConnection(reg_o,reg_i);
 					}
 				}
 			}

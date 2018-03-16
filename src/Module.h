@@ -45,13 +45,17 @@ public:
 	FU* getFU();
 
 	std::vector<Port*> getNextPorts(Port* currPort, HeuristicMapper* hm);
+	std::vector<Port*> getFromPorts(Port* currPort, HeuristicMapper* hm);
+
 	std::vector<Port*> getConflictPorts(Port* currPort);
+	void insertConnection(Port* src, Port* dest);
 
 protected:
-	std::map<Port*,std::vector<Port*>> connections;
 	std::map<Port*,std::vector<Port*>> conflictPorts;
 
 private:
+	std::map<Port*,std::vector<Port*>> connectedTo;
+	std::map<Port*,std::vector<Port*>> connectedFrom;
 	const Module* Parent;
 	std::string name;
 };

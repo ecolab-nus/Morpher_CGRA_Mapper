@@ -63,6 +63,7 @@ public:
 	int Y;
 	int T;
 	std::vector<RegFile*> allRegs;
+	std::vector<FU*> allFUs;
 	bool isMemPE=false;
 
 	void createGenericPE(bool isMEMpe, int numberofDPs=1, int regs=8);

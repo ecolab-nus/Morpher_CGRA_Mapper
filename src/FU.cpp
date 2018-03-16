@@ -91,10 +91,16 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 		DataPath* newDP = static_cast<DataPath*>(this->getSubMod(dataPathName));
 
 		//make connections
-		connections[getInPort(portName_P)].push_back(newDP->getInPort("P"));
-		connections[getInPort(portName_I1)].push_back(newDP->getInPort("I1"));
-		connections[getInPort(portName_I2)].push_back(newDP->getInPort("I2"));
-		connections[newDP->getOutPort("T")].push_back(getOutPort(portName_T));
+//		connectedTo[getInPort(portName_P)].push_back(newDP->getInPort("P"));
+//		connectedTo[getInPort(portName_I1)].push_back(newDP->getInPort("I1"));
+//		connectedTo[getInPort(portName_I2)].push_back(newDP->getInPort("I2"));
+//		connectedTo[newDP->getOutPort("T")].push_back(getOutPort(portName_T));
+
+		insertConnection(getInPort(portName_P),newDP->getInPort("P"));
+		insertConnection(getInPort(portName_I1),newDP->getInPort("I1"));
+		insertConnection(getInPort(portName_I2),newDP->getInPort("I2"));
+		insertConnection(newDP->getOutPort("T"),getOutPort(portName_T));
+
 
 	}
 
@@ -105,9 +111,14 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 			for(Module* submod : this->subModules){
 				if(DataPath* dp2 = dynamic_cast<DataPath*>(submod)){
 					if(dp1 == dp2) continue;
-					connections[dp1->getOutPort("T")].push_back(dp2->getInPort("P"));
-					connections[dp1->getOutPort("T")].push_back(dp2->getInPort("I1"));
-					connections[dp1->getOutPort("T")].push_back(dp2->getInPort("I2"));
+//					connectedTo[dp1->getOutPort("T")].push_back(dp2->getInPort("P"));
+//					connectedTo[dp1->getOutPort("T")].push_back(dp2->getInPort("I1"));
+//					connectedTo[dp1->getOutPort("T")].push_back(dp2->getInPort("I2"));
+
+					insertConnection(dp1->getOutPort("T"),dp2->getInPort("P"));
+					insertConnection(dp1->getOutPort("T"),dp2->getInPort("I1"));
+					insertConnection(dp1->getOutPort("T"),dp2->getInPort("I2"));
+
 				}
 			}
 

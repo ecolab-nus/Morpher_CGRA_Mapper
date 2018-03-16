@@ -51,7 +51,8 @@ void CGRAXMLCompile::RegFile::createRegFile(int nWRPs, int nRegs, int nRDPs) {
 		for (int j = 0; j < nRegs; ++j) {
 			std::stringstream regOName;
 			regOName << "REG_O" << j;
-			connections[getInPort(wrpName.str())].push_back(getOutPort(regOName.str()));
+//			connectedTo[getInPort(wrpName.str())].push_back(getOutPort(regOName.str()));
+			insertConnection(getInPort(wrpName.str()),getOutPort(regOName.str()));
 		}
 	}
 
@@ -61,7 +62,8 @@ void CGRAXMLCompile::RegFile::createRegFile(int nWRPs, int nRegs, int nRDPs) {
 		for (int j = 0; j < nRDPs; ++j) {
 			std::stringstream rdpName;
 			rdpName << "RDP" << j;
-			connections[getInPort(regIName.str())].push_back(getOutPort(rdpName.str()));
+//			connectedTo[getInPort(regIName.str())].push_back(getOutPort(rdpName.str()));
+			insertConnection(getInPort(regIName.str()),getOutPort(rdpName.str()));
 		}
 
 //		std::stringstream regOName;

@@ -18,6 +18,7 @@
 #include <math.h>
 
 #define MRC 8000
+#define UOP 1000
 
 
 namespace CGRAXMLCompile {
@@ -111,7 +112,8 @@ struct dest_with_cost{
 					freePorts++;
 				}
 			}
-			cost = cost + (15 - freePorts)*1000;
+//			cost = cost + (dest->getPE()->outputPorts.size() - freePorts)*UOP;
+			cost = cost + (15-freePorts)*UOP;
 
 			int primaryCost=0;
 			for(DFGNode* child : node->children){
@@ -213,7 +215,7 @@ private:
 	int regDiscourageFactor=10;
 	int PETransitionCostFactor=100;
 	int PortTransitionCost=1;
-	int UOPCostFactor=1000;
+	int UOPCostFactor=UOP;
 	int MEMResourceCost = MRC;
 
 	std::string fNameLog1;

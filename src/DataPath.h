@@ -28,9 +28,13 @@ public:
 		outputPorts.push_back(Port("T",OUT,this));
 
 		//create output to input connection
-		connections[getOutPort("T")].push_back(getInPort("P"));
-		connections[getOutPort("T")].push_back(getInPort("I1"));
-		connections[getOutPort("T")].push_back(getInPort("I2"));
+//		connectedTo[getOutPort("T")].push_back(getInPort("P"));
+//		connectedTo[getOutPort("T")].push_back(getInPort("I1"));
+//		connectedTo[getOutPort("T")].push_back(getInPort("I2"));
+		insertConnection(getOutPort("T"),getInPort("P"));
+		insertConnection(getOutPort("T"),getInPort("I1"));
+		insertConnection(getOutPort("T"),getInPort("I2"));
+
 
 		mappedNode=NULL;
 		outputDP=NULL;
