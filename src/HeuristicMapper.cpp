@@ -74,8 +74,8 @@ bool CGRAXMLCompile::HeuristicMapper::Map(CGRA* cgra, DFG* dfg) {
 //	SortSCCDFG();
 	SortTopoGraphicalDFG();
 
-	std::string mappingLogFileName = fNameLog1 + cgra->peType + "_II=" + std::to_string(cgra->get_t_max()) + ".mapping.csv";
-	std::string mappingLog2FileName = fNameLog1 + cgra->peType + "_II=" + std::to_string(cgra->get_t_max()) + ".routeInfo.log";
+	std::string mappingLogFileName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs) + "_II=" + std::to_string(cgra->get_t_max()) + ".mapping.csv";
+	std::string mappingLog2FileName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs) + "_II=" + std::to_string(cgra->get_t_max()) + ".routeInfo.log";
 	mappingLog.open(mappingLogFileName.c_str());
 	mappingLog2.open(mappingLog2FileName.c_str());
 

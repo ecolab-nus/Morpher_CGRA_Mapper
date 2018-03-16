@@ -71,8 +71,18 @@ public:
 	void createN2NPE(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=2, int nRDP=2);
 	void createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=2, int nRDP=2);
 	void createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs=1);
+
+	void createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
+			int numberofDPs, int regs, int nWRP, int nRDP);
+	void createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs);
+
+
 	void getNonMEMIns(std::map<std::string,int>& supportedOPs);
 	void getMEMIns(std::map<std::string,int>& supportedOPs);
+
+	void getLogicalIns(std::map<std::string,int>& supportedOPs);
+	void getArithmeticIns(std::map<std::string,int>& supportedOPs);
+	void getMemOnlyIns(std::map<std::string,int>& supportedOPs);
 
 private:
 	bool alreadyInit=false;

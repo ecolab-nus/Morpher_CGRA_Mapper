@@ -147,32 +147,7 @@ void CGRAXMLCompile::PE::createGenericPE(bool isMEMpe, int numberofDPs, int regs
 
 }
 
-void CGRAXMLCompile::PE::getNonMEMIns(
-		std::map<std::string, int>& supportedOPs) {
 
-	supportedOPs["NOP"]=1;
-	supportedOPs["ADD"]=1;
-	supportedOPs["SUB"]=1;
-	supportedOPs["MUL"]=1;
-	supportedOPs["SEXT"]=1;
-	supportedOPs["DIV"]=1;
-	supportedOPs["LS"]=1;
-	supportedOPs["RS"]=1;
-	supportedOPs["ARS"]=1;
-	supportedOPs["AND"]=1;
-	supportedOPs["OR"]=1;
-	supportedOPs["XOR"]=1;
-	supportedOPs["SELECT"]=1;
-	supportedOPs["CMERGE"]=1;
-	supportedOPs["CMP"]=1;
-	supportedOPs["CLT"]=1;
-	supportedOPs["BR"]=1;
-	supportedOPs["CGT"]=1;
-	supportedOPs["MOVCL"]=1;
-	supportedOPs["JUMPL"]=1;
-	supportedOPs["MOVC"]=1;
-
-}
 
 void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 
@@ -251,10 +226,10 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 	connections[SOUTH_I].push_back(RF3->getInPort("WRP0"));
 
 	//connect main directional inputs to xbar input ports
-//	connections[NORTH_I].push_back(NORTH_XBARI);
-//	connections[EAST_I].push_back(EAST_XBARI);
-//	connections[WEST_I].push_back(WEST_XBARI);
-//	connections[SOUTH_I].push_back(SOUTH_XBARI);
+	connections[NORTH_I].push_back(NORTH_XBARI);
+	connections[EAST_I].push_back(EAST_XBARI);
+	connections[WEST_I].push_back(WEST_XBARI);
+	connections[SOUTH_I].push_back(SOUTH_XBARI);
 
 	//connect the readports of the register file to xbar inputs
 	connections[RF0->getOutPort("RDP0")].push_back(NORTH_XBARI);
@@ -279,30 +254,25 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 		connections[EAST_XBARI].push_back(&p);
 		connections[WEST_XBARI].push_back(&p);
 		connections[SOUTH_XBARI].push_back(&p);
-
-		connections[NORTH_I].push_back(&p);
-		connections[EAST_I].push_back(&p);
-		connections[WEST_I].push_back(&p);
-		connections[SOUTH_I].push_back(&p);
 	}
 
-	//connecting xbar inputs to outputs :: HyCUBE Property
-	connections[NORTH_XBARI].push_back(NORTH_O);
-	connections[NORTH_XBARI].push_back(EAST_O);
-	connections[NORTH_XBARI].push_back(WEST_O);
-	connections[NORTH_XBARI].push_back(SOUTH_O);
-	connections[EAST_XBARI].push_back(NORTH_O);
-	connections[EAST_XBARI].push_back(EAST_O);
-	connections[EAST_XBARI].push_back(WEST_O);
-	connections[EAST_XBARI].push_back(SOUTH_O);
-	connections[WEST_XBARI].push_back(NORTH_O);
-	connections[WEST_XBARI].push_back(EAST_O);
-	connections[WEST_XBARI].push_back(WEST_O);
-	connections[WEST_XBARI].push_back(SOUTH_O);
-	connections[SOUTH_XBARI].push_back(NORTH_O);
-	connections[SOUTH_XBARI].push_back(EAST_O);
-	connections[SOUTH_XBARI].push_back(WEST_O);
-	connections[SOUTH_XBARI].push_back(SOUTH_O);
+	//connecting input registers to outputs :: STDNOC Property
+	connections[RF0->getOutPort("RDP0")].push_back(NORTH_O);
+	connections[RF1->getOutPort("RDP0")].push_back(EAST_O);
+	connections[RF2->getOutPort("RDP0")].push_back(WEST_O);
+	connections[RF3->getOutPort("RDP0")].push_back(SOUTH_O);
+	connections[RF0->getOutPort("RDP0")].push_back(NORTH_O);
+	connections[RF1->getOutPort("RDP0")].push_back(EAST_O);
+	connections[RF2->getOutPort("RDP0")].push_back(WEST_O);
+	connections[RF3->getOutPort("RDP0")].push_back(SOUTH_O);
+	connections[RF0->getOutPort("RDP0")].push_back(NORTH_O);
+	connections[RF1->getOutPort("RDP0")].push_back(EAST_O);
+	connections[RF2->getOutPort("RDP0")].push_back(WEST_O);
+	connections[RF3->getOutPort("RDP0")].push_back(SOUTH_O);
+	connections[RF0->getOutPort("RDP0")].push_back(NORTH_O);
+	connections[RF1->getOutPort("RDP0")].push_back(EAST_O);
+	connections[RF2->getOutPort("RDP0")].push_back(WEST_O);
+	connections[RF3->getOutPort("RDP0")].push_back(SOUTH_O);
 
 	//connect RFT readports to FU
 	{
@@ -489,39 +459,6 @@ void CGRAXMLCompile::PE::createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs,
 
 }
 
-void CGRAXMLCompile::PE::getMEMIns(std::map<std::string, int>& supportedOPs) {
-
-	supportedOPs["NOP"]=2;
-	supportedOPs["ADD"]=2;
-	supportedOPs["SUB"]=2;
-	supportedOPs["MUL"]=2;
-	supportedOPs["SEXT"]=2;
-	supportedOPs["DIV"]=2;
-	supportedOPs["LS"]=2;
-	supportedOPs["RS"]=2;
-	supportedOPs["ARS"]=2;
-	supportedOPs["AND"]=2;
-	supportedOPs["OR"]=2;
-	supportedOPs["XOR"]=2;
-	supportedOPs["SELECT"]=2;
-	supportedOPs["CMERGE"]=2;
-	supportedOPs["CMP"]=2;
-	supportedOPs["CLT"]=2;
-	supportedOPs["BR"]=2;
-	supportedOPs["CGT"]=2;
-	supportedOPs["MOVCL"]=2;
-
-	supportedOPs["LOADCL"]=2;
-	supportedOPs["LOAD"]=2;
-	supportedOPs["LOADH"]=2;
-	supportedOPs["LOADB"]=2;
-	supportedOPs["STORE"]=2;
-	supportedOPs["STOREH"]=2;
-	supportedOPs["STOREB"]=2;
-
-	supportedOPs["JUMPL"]=2;
-	supportedOPs["MOVC"]=2;
-}
 
 void CGRAXMLCompile::PE::createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs, int regs, int nWRP, int nRDP) {
 
@@ -972,5 +909,116 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 			}
 		}
 	}
+
+}
+
+void CGRAXMLCompile::PE::getMEMIns(std::map<std::string, int>& supportedOPs) {
+
+	supportedOPs["NOP"]=2;
+	supportedOPs["ADD"]=2;
+	supportedOPs["SUB"]=2;
+	supportedOPs["MUL"]=2;
+	supportedOPs["SEXT"]=2;
+	supportedOPs["DIV"]=2;
+	supportedOPs["LS"]=2;
+	supportedOPs["RS"]=2;
+	supportedOPs["ARS"]=2;
+	supportedOPs["AND"]=2;
+	supportedOPs["OR"]=2;
+	supportedOPs["XOR"]=2;
+	supportedOPs["SELECT"]=2;
+	supportedOPs["CMERGE"]=2;
+	supportedOPs["CMP"]=2;
+	supportedOPs["CLT"]=2;
+	supportedOPs["BR"]=2;
+	supportedOPs["CGT"]=2;
+	supportedOPs["MOVCL"]=2;
+
+	supportedOPs["LOADCL"]=2;
+	supportedOPs["LOAD"]=2;
+	supportedOPs["LOADH"]=2;
+	supportedOPs["LOADB"]=2;
+	supportedOPs["STORE"]=2;
+	supportedOPs["STOREH"]=2;
+	supportedOPs["STOREB"]=2;
+
+	supportedOPs["JUMPL"]=2;
+	supportedOPs["MOVC"]=2;
+
+}
+
+void CGRAXMLCompile::PE::getNonMEMIns(
+		std::map<std::string, int>& supportedOPs) {
+
+	supportedOPs["NOP"]=1;
+	supportedOPs["ADD"]=1;
+	supportedOPs["SUB"]=1;
+	supportedOPs["MUL"]=1;
+	supportedOPs["SEXT"]=1;
+	supportedOPs["DIV"]=1;
+	supportedOPs["LS"]=1;
+	supportedOPs["RS"]=1;
+	supportedOPs["ARS"]=1;
+	supportedOPs["AND"]=1;
+	supportedOPs["OR"]=1;
+	supportedOPs["XOR"]=1;
+	supportedOPs["SELECT"]=1;
+	supportedOPs["CMERGE"]=1;
+	supportedOPs["CMP"]=1;
+	supportedOPs["CLT"]=1;
+	supportedOPs["BR"]=1;
+	supportedOPs["CGT"]=1;
+	supportedOPs["MOVCL"]=1;
+	supportedOPs["JUMPL"]=1;
+	supportedOPs["MOVC"]=1;
+
+}
+
+void CGRAXMLCompile::PE::getLogicalIns(
+		std::map<std::string, int>& supportedOPs) {
+
+	supportedOPs["NOP"]=1;
+	supportedOPs["SEXT"]=1;
+	supportedOPs["AND"]=1;
+	supportedOPs["OR"]=1;
+	supportedOPs["XOR"]=1;
+	supportedOPs["SELECT"]=1;
+	supportedOPs["CMERGE"]=1;
+	supportedOPs["BR"]=1;
+	supportedOPs["MOVCL"]=1;
+	supportedOPs["JUMPL"]=1;
+	supportedOPs["MOVC"]=1;
+
+}
+
+void CGRAXMLCompile::PE::getArithmeticIns(
+		std::map<std::string, int>& supportedOPs) {
+
+	supportedOPs["ADD"]=1;
+	supportedOPs["SUB"]=1;
+	supportedOPs["MUL"]=1;
+	supportedOPs["DIV"]=1;
+	supportedOPs["LS"]=1;
+	supportedOPs["RS"]=1;
+	supportedOPs["ARS"]=1;
+
+}
+
+void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
+		int numberofDPs, int regs, int nWRP, int nRDP) {
+}
+
+void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs) {
+}
+
+void CGRAXMLCompile::PE::getMemOnlyIns(std::map<std::string, int>& supportedOPs) {
+
+	supportedOPs["LOADCL"]=2;
+	supportedOPs["LOAD"]=2;
+	supportedOPs["LOADH"]=2;
+	supportedOPs["LOADB"]=2;
+	supportedOPs["STORE"]=2;
+	supportedOPs["STOREH"]=2;
+	supportedOPs["STOREB"]=2;
 
 }
