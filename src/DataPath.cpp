@@ -98,6 +98,8 @@ void CGRAXMLCompile::DataPath::assignNode(DFGNode* node, DFG* dfg) {
 	DataPath* nextDP = static_cast<DataPath*>(nextFU->getSubMod(this->getName()));
 
 	this->outputDP = nextDP;
+	nextDP->getOutPort("T")->setNode(node);
+	node->routingPorts.push_back(std::make_pair(nextDP->getOutPort("T"),node->idx));
 
 	if(fu->supportedOPs.find("LOAD")!=fu->supportedOPs.end()){
 		cgra->freeMemNodes--;
@@ -111,8 +113,10 @@ void CGRAXMLCompile::DataPath::assignNode(DFGNode* node, DFG* dfg) {
 
 void CGRAXMLCompile::DataPath::clear() {
 
+	this->outputDP->getOutPort("T")->clear();
 	mappedNode=NULL;
 	outputDP=NULL;
+
 	FU* fu = getFU();
 
 	std::cout << "PE=" << fu->getPE()->getName() << "is cleared!\n";

@@ -199,10 +199,12 @@ public:
 	bool LeastCostPathDjk(Port* start, Port* end, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths);
 	int calculateCost(Port* src, Port* next_to_src, Port* dest);
 
-	bool estimateRouting(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes);
-	bool Route(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes);
+	bool estimateRouting(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes, DFGNode** failedNode);
+	bool Route(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes, DFGNode** failedNode);
 	void assignPath(DFGNode* src, DFGNode* dest, std::vector<Port*> path);
 	bool dataPathCheck(DataPath* dp, DFGNode* node);
+
+	bool sanityCheck();
 
 	bool enableBackTracking=false;
 	bool enableMutexPaths=false;
@@ -216,7 +218,7 @@ private:
 	int PETransitionCostFactor=100;
 	int PortTransitionCost=1;
 	int UOPCostFactor=UOP;
-	int MEMResourceCost = MRC;
+	int MEMResourceCost= MRC;
 
 	std::string fNameLog1;
 	std::string fNameLog2;
@@ -224,6 +226,8 @@ private:
 	std::ofstream mappingLog;
 	std::ofstream mappingLog2;
 	std::vector<DFGNode*> sortedNodeList;
+
+	void removeFailedNode(std::stack<DFGNode*>& mappedNodes, std::stack<DFGNode*>& unmappedNodes, DFGNode* failedNode);
 
 
 };

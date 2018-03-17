@@ -327,6 +327,16 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 //	connectedTo[RF3->getOutPort("RDP0")].push_back(WEST_O);
 //	connectedTo[RF3->getOutPort("RDP0")].push_back(SOUTH_O);
 
+	conflictPorts[RF0->getOutPort("RDP0")].push_back(NORTH_I);
+	conflictPorts[RF1->getOutPort("RDP0")].push_back(EAST_I);
+	conflictPorts[RF2->getOutPort("RDP0")].push_back(WEST_I);
+	conflictPorts[RF3->getOutPort("RDP0")].push_back(SOUTH_I);
+
+	conflictPorts[NORTH_I].push_back(RF0->getOutPort("RDP0"));
+	conflictPorts[EAST_I].push_back(RF1->getOutPort("RDP0"));
+	conflictPorts[WEST_I].push_back(RF2->getOutPort("RDP0"));
+	conflictPorts[SOUTH_I].push_back(RF3->getOutPort("RDP0"));
+
 	insertConnection(RF0->getOutPort("RDP0"),NORTH_O);
 	insertConnection(RF0->getOutPort("RDP0"),EAST_O);
 	insertConnection(RF0->getOutPort("RDP0"),WEST_O);
@@ -1264,27 +1274,24 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs) {
 	if(isMEMpe){
 		supportedOPs.clear();
 		getMEMIns(supportedOPs);
-		memFU=new FU(this,"memFU",numberofDPs,supportedOPs);
+		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
 		subModules.push_back(memFU);
-
-		supportedOPs.clear();
-		getMEMIns(supportedOPs);
-		arithFU=new FU(this,"arithFU",numberofDPs,supportedOPs);
-		subModules.push_back(arithFU);
-
-		supportedOPs.clear();
-		getMEMIns(supportedOPs);
-		logicFU=new FU(this,"logicFU",numberofDPs,supportedOPs);
-		subModules.push_back(logicFU);
-	}
-	else{
-		getNonMEMIns(supportedOPs);
 	}
 
+	supportedOPs.clear();
+	getMEMIns(supportedOPs);
+	arithFU=new FU(this,"arithFU0",numberofDPs,supportedOPs);
+	subModules.push_back(arithFU);
 
-	//create FU
+	supportedOPs.clear();
+	getMEMIns(supportedOPs);
+	logicFU=new FU(this,"logicFU0",numberofDPs,supportedOPs);
+	subModules.push_back(logicFU);
+
+
+//	//create FU
 	FU* nonMemFU0 = new FU(this,"NMEM_FU0",numberofDPs,supportedOPs);
-	subModules.push_back(nonMemFU0);
+//	subModules.push_back(nonMemFU0);
 
 	//create R0
 	RegFile* RF0 = new RegFile(this,"RF0",1,1,1); subModules.push_back(RF0); allRegs.push_back(RF0);

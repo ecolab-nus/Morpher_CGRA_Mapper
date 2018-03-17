@@ -77,6 +77,9 @@ int main(int argn, char* argc[]) {
 
 			std::cout << "Increasing II to " << II << "\n";
 		}
+		else{
+			hm.sanityCheck();
+		}
 	}
 	return 0;
 }

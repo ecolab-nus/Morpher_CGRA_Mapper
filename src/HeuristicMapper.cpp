@@ -113,13 +113,14 @@ bool CGRAXMLCompile::HeuristicMapper::Map(CGRA* cgra, DFG* dfg) {
 		if(estimatedRouteInfo.find(node)==estimatedRouteInfo.end()){
 			//the routes are not estimated.
 			std::priority_queue<dest_with_cost> estimatedRoutes;
-			isEstRouteSucc = estimateRouting(node,estimatedRoutes);
+			DFGNode* failedNode;
+			isEstRouteSucc = estimateRouting(node,estimatedRoutes,&failedNode);
 
 			if(!isEstRouteSucc){
 				printMappingLog();
 				printMappingLog2();
 				if(enableBackTracking){
-					if(backTrackCredits==0){
+					if(backTrackCredits==0 || failedNode==NULL){
 						std::cout << "route estimation failed...\n";
 						std::cout << "Map Failed!.\n";
 						mappingLog << "route estimation failed...\n";
@@ -131,14 +132,35 @@ bool CGRAXMLCompile::HeuristicMapper::Map(CGRA* cgra, DFG* dfg) {
 					}
 					backTrackCredits--;
 
-					DFGNode* prevNode = mappedNodes.top();
-					mappedNodes.pop();
-					unmappedNodes.push(node);
-					unmappedNodes.push(prevNode);
-					prevNode->clear(this->dfg);
-					std::cout << "route estimation failed...\n";
-					mappingLog << "route estimation failed...\n";
-					continue;
+//					DFGNode* prevNode = mappedNodes.top();
+//					mappedNodes.pop();
+//					unmappedNodes.push(node);
+//					unmappedNodes.push(prevNode);
+//					prevNode->clear(this->dfg);
+//					std::cout << "route estimation failed...\n";
+//					mappingLog << "route estimation failed...\n";
+//					continue;
+
+					//				DFGNode* prevNode = mappedNodes.top();
+					//				mappedNodes.pop();
+					//				unmappedNodes.push(node);
+					//				unmappedNodes.push(prevNode);
+					//
+					//				prevNode->clear(this->dfg);
+					//				estimatedRouteInfo.erase(node);
+
+
+									assert(failedNode!=NULL);
+									unmappedNodes.push(node);
+									removeFailedNode(mappedNodes,unmappedNodes,failedNode);
+									failedNode->blacklistDest.insert(failedNode->rootDP);
+									(failedNode)->clear(this->dfg);
+									estimatedRouteInfo.erase(node);
+									estimatedRouteInfo.erase(failedNode);
+
+									continue;
+
+
 				}
 				else{
 					while(!mappedNodes.empty()){
@@ -157,11 +179,13 @@ bool CGRAXMLCompile::HeuristicMapper::Map(CGRA* cgra, DFG* dfg) {
 		}
 
 		bool isRouteSucc=false;
+		DFGNode* failedNode=NULL;
 
 		std::cout << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
 		mappingLog << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
 		if(!estimatedRouteInfo[node].empty()){
-			isRouteSucc=Route(node,estimatedRouteInfo[node]);
+			isRouteSucc=Route(node,estimatedRouteInfo[node],&failedNode);
+			if(!isRouteSucc) std::cout << "BLAAAAAAAAAAA!\n";
 		}
 		else{
 			if(mappedNodes.empty()){
@@ -193,15 +217,23 @@ bool CGRAXMLCompile::HeuristicMapper::Map(CGRA* cgra, DFG* dfg) {
 					mappingLog2.close();
 					return false;
 				}
+				assert(failedNode!=NULL);
 				backTrackCredits--;
 
-				DFGNode* prevNode = mappedNodes.top();
-				mappedNodes.pop();
-				unmappedNodes.push(node);
-				unmappedNodes.push(prevNode);
+//				DFGNode* prevNode = mappedNodes.top();
+//				mappedNodes.pop();
+//				unmappedNodes.push(node);
+//				unmappedNodes.push(prevNode);
+//
+//				prevNode->clear(this->dfg);
+//				estimatedRouteInfo.erase(node);
 
-				prevNode->clear(this->dfg);
+				unmappedNodes.push(node);
+				removeFailedNode(mappedNodes,unmappedNodes,failedNode);
+				failedNode->blacklistDest.insert(failedNode->rootDP);
+				(failedNode)->clear(this->dfg);
 				estimatedRouteInfo.erase(node);
+				estimatedRouteInfo.erase(failedNode);
 				continue;
 			}
 			else{
@@ -236,13 +268,13 @@ bool CGRAXMLCompile::HeuristicMapper::Map(CGRA* cgra, DFG* dfg) {
 }
 
 bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode* node,
-		std::priority_queue<dest_with_cost>& estimatedRoutes) {
+		std::priority_queue<dest_with_cost>& estimatedRoutes,  DFGNode** failedNode) {
 
 	std::map<DFGNode*,std::vector<Port*>> possibleStarts;
 	std::map<DFGNode*,Port*> alreadyMappedChildPorts;
 
 	bool detailedDebug=false;
-//	if(node->idx==48)detailedDebug=true;
+	if(node->idx==17)detailedDebug=true;
 
 //	std::cout << "EstimateEouting begin...\n";
 
@@ -250,7 +282,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode* node,
 //		std::cout << "parent = " << parent->idx << "\n";
 		if(parent->rootDP!=NULL){ //already mapped
 			assert(parent->rootDP->getOutputDP()->getOutPort("T"));
-			possibleStarts[parent].push_back(parent->rootDP->getOutputDP()->getOutPort("T"));
+//			possibleStarts[parent].push_back(parent->rootDP->getOutputDP()->getOutPort("T"));
 
 			for(std::pair<Port*,int> pair : parent->routingPorts){
 				Port* p = pair.first;
@@ -284,7 +316,10 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode* node,
 								if(DataPath* dp = dynamic_cast<DataPath*>(submodFU)){
 									if(dp->getMappedNode()==NULL){
 //									if(dataPathCheck(dp,&node)){
-										candidateDests.push_back(dp);
+
+										if(node->blacklistDest.find(dp)==node->blacklistDest.end()){
+											candidateDests.push_back(dp);
+										}
 									}
 								}
 							}
@@ -294,7 +329,10 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode* node,
 								if(DataPath* dp = dynamic_cast<DataPath*>(submodFU)){
 									if(dp->getMappedNode()==NULL){
 //									if(dataPathCheck(dp,&node)){
-										candidateDests.push_back(dp);
+
+										if(node->blacklistDest.find(dp)==node->blacklistDest.end()){
+											candidateDests.push_back(dp);
+										}
 									}
 								}
 							}
@@ -306,7 +344,10 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode* node,
 		}
 	}
 
-//	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
+	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
+	if(candidateDests.empty()) return false;
+//	assert(candidateDests.size()!=0);
+//	node->blacklistDest.clear();
 
 	//Route Estimation
 	for(DataPath* dest : candidateDests){
@@ -339,6 +380,7 @@ if(detailedDebug)			    std::cout << "Estimate Path Failed :: " << startCand->ge
 			}
 			if(res.empty()){
 				pathFromParentExist=false;
+				*failedNode=parent;
 				break;
 			}
 			parent_cand_src_with_cost pcswc(parent,res);
@@ -375,6 +417,11 @@ if(detailedDebug)			    std::cout << "Estimate Path Failed :: " << startCand->ge
 if(detailedDebug)				std::cout << "Estimating Path" << destPort->getFullName() << "--->" << childDestPort->getFullName() << "\n";
 		    pathExistMappedChild = pathExistMappedChild & LeastCostPathAstar(destPort,childDestPort,path,cost,node,mutexPaths,node);
 
+		    if(!pathExistMappedChild){
+		    	*failedNode=child;
+		    	break;
+		    }
+
 		    dest_child_with_cost dcwc(child,childDestPort,destPort,cost);
 		    alreadyMappedChilds.push(dcwc);
 		}
@@ -389,12 +436,13 @@ if(detailedDebug)				std::cout << "Estimating Path" << destPort->getFullName() <
 		estimatedRoutes.push(dest_with_cost_ins);
 	}
 //	std::cout << "EstimateEouting end!\n";
+	if(estimatedRoutes.empty()) assert(*failedNode!=NULL);
 	return !estimatedRoutes.empty();
 }
 
 
 bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
-		std::priority_queue<dest_with_cost>& estimatedRoutes) {
+		std::priority_queue<dest_with_cost>& estimatedRoutes, DFGNode** failedNode) {
 
 	std::cout << "Route begin...\n";
 
@@ -407,10 +455,10 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 			thisParentNodeCount = parent->routingPorts.size();
 		}
 
-		if(thisParentNodeCount>0){
-			routedParents++;
-			thisParentNodeCount--; //remove the T port in the cout
-		}
+//		if(thisParentNodeCount>0){
+//			routedParents++;
+//			thisParentNodeCount--; //remove the T port in the cout
+//		}
 		parentRoutingPortCount+=thisParentNodeCount;
 	}
 //	if(parentRoutingPortCount>0){
@@ -424,6 +472,9 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 	while(!estimatedRoutes.empty()){
 		currDest = estimatedRoutes.top();
 		estimatedRoutes.pop();
+
+		assert(currDest.dest->getMappedNode()==NULL);
+
 
 		std::cout << "alreadyMappedChilds = " << currDest.alreadyMappedChilds.size() << "\n";
 
@@ -482,6 +533,7 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 				}
 			}
 			if(!alreadMappedChildRouteSucc){
+				*failedNode = dest_child_with_cost_ins.child;
 				break;
 			}
 		}
@@ -540,16 +592,16 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 				int cost;
 				succ = LeastCostPathAstar(src,dest,path,cost,parent,mutexPath,node);
 				if(succ){
-					bool routedParent=true;
-					if(parent->routingPorts.size()==0){ //unrouted parent
-						routedParent=false;
-					}
+//					bool routedParent=true;
+//					if(parent->routingPorts.size()==0){ //unrouted parent
+//						routedParent=false;
+//					}
 					assignPath(parent,node,path);
 					mappedParentMutexPaths[parent]=mutexPath;
 					addedRoutingParentPorts += path.size();
-					if(routedParent){
+//					if(routedParent){
 						addedRoutingParentPorts-=1;
-					}
+//					}
 //					for(Port* p : path){
 //						std::cout << p->getFullName() << ",\n";
 //					}
@@ -563,6 +615,7 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 				}
 			}
 			if(!succ){
+				*failedNode = parent;
 				node->clear(this->dfg);
 				addedRoutingParentPorts=0;
 				parentRoutSucc=false; // at least one parent failed to route, try a new dest
@@ -643,6 +696,7 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 			std::cout << "parentRoutingPortCount=" << parentRoutingPortCount << "\n";
 		}
 		assert(parentRoutingPortCountEnd==parentRoutingPortCount);
+		assert(*failedNode!=NULL);
 		return false;
 	}
 }
@@ -772,13 +826,26 @@ void CGRAXMLCompile::HeuristicMapper::assignPath(DFGNode* src, DFGNode* dest,
 
 	int srcPortCount=0;
 	for(Port* p : path){
+
+//		if(p->getName().compare("T")==0){
+//			assert(p->getNode()==src);
+//		}
+
 		if(p->getNode() == src) {
 			srcPortCount++;
 			continue;
 		}
+
 		p->setNode(src);
+
 		if(std::find(src->routingPorts.begin(),src->routingPorts.end(),std::make_pair(p,dest->idx))==src->routingPorts.end()){
-			src->routingPorts.push_back(std::make_pair(p,dest->idx));
+			if(std::find(src->routingPorts.begin(),src->routingPorts.end(),std::make_pair(p,src->idx))==src->routingPorts.end()){
+				src->routingPorts.push_back(std::make_pair(p,dest->idx));
+			}
+			else{
+				std::cout << p->getFullName() << "\n";
+				assert(p->getName().compare("T")==0);
+			}
 		}
 //		src->routingPortDestMap[p]=dest->idx;
 	}
@@ -798,7 +865,7 @@ bool CGRAXMLCompile::HeuristicMapper::LeastCostPathAstar(Port* start, Port* end,
 	mutexPaths.clear();
 
 	bool detailedDebug=false;
-//	if(currNode->idx==48)detailedDebug=true;
+//	if(currNode->idx==85)detailedDebug=true;
 
 	struct port_heuristic{
 		Port* p;
@@ -1031,6 +1098,9 @@ int CGRAXMLCompile::HeuristicMapper::calculateCost(Port* src,
 			double memrescost_dbl = (double)this->dfg->unmappedMemOps/(double)cgra->freeMemNodes;
 			memrescost_dbl = memrescost_dbl*(double)MEMResourceCost;
 			distance = distance + (int)memrescost_dbl;
+			if(this->dfg->unmappedMemOps == cgra->freeMemNodes){
+				distance = distance + MRC*10;
+			}
 		}
 	}
 
@@ -1402,6 +1472,8 @@ bool CGRAXMLCompile::HeuristicMapper::dataPathCheck(DataPath* dp,
 	return false;
 }
 
+
+
 void CGRAXMLCompile::HeuristicMapper::printMappingLog2() {
 	mappingLog2 << "--------------------------------------------------------\n";
 	for(DFGNode& node : dfg->nodeList){
@@ -1421,4 +1493,56 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog2() {
 		}
 	}
 	mappingLog2 << "--------------------------------------------------------\n";
+}
+
+bool CGRAXMLCompile::HeuristicMapper::sanityCheck() {
+	std::map<Port*,std::set<DFGNode*>> mapInfo;
+
+	for(DFGNode* node : this->sortedNodeList){
+		assert(node->rootDP!=NULL);
+		assert(!node->routingPorts.empty());
+		for(std::pair<Port*,int> pair : node->routingPorts){
+			mapInfo[pair.first].insert(node);
+		}
+	}
+
+	for(std::pair<Port*,std::set<DFGNode*>> pair : mapInfo){
+		Port* p = pair.first;
+
+		if(pair.second.size()>1){
+			std::cout << p->getFullName() << ":";
+			for(DFGNode* node2 : pair.second){
+				std::cout << node2->idx << "(" << node2->BB << "),";
+			}
+			std::cout << "\n";
+		}
+	}
+	return true;
+}
+
+void CGRAXMLCompile::HeuristicMapper::removeFailedNode(std::stack<DFGNode*>& mappedNodes,
+		std::stack<DFGNode*>& unmappedNodes, DFGNode* failedNode) {
+
+	DFGNode* fNode = failedNode;
+
+	std::stack<DFGNode*> temp;
+	DFGNode* curr=NULL;
+
+	while(curr!=fNode){
+		assert(!mappedNodes.empty());
+		curr = mappedNodes.top();
+		mappedNodes.pop();
+
+		if(curr!=fNode){
+			temp.push(curr);
+		}
+	}
+	assert(curr==fNode);
+
+	unmappedNodes.push(curr);
+	while(!temp.empty()){
+		curr=temp.top();
+		temp.pop();
+		mappedNodes.push(curr);
+	}
 }

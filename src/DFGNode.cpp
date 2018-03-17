@@ -26,6 +26,8 @@ DFGNode::DFGNode() {
 
 void CGRAXMLCompile::DFGNode::clear(DFG* dfg) {
 	if(rootDP!=NULL){
+		rootDP->getOutPort("T")->clear();
+
 		rootDP->clear();
 
 		CGRA* cgra = rootDP->getCGRA();

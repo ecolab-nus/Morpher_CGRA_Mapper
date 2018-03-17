@@ -48,6 +48,10 @@ public:
 	bool operator==(const DFGNode& rhs){
 		return this->idx == rhs.idx;
 	}
+	std::set<DataPath*> blacklistDest;
+
+private:
+
 
 };
 
