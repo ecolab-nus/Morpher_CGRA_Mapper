@@ -22,11 +22,11 @@ using namespace CGRAXMLCompile;
 int main(int argn, char* argc[]) {
 	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 
-	if(argn != 6){
-		std::cout << "arguments : <DFG.xml> <peType::\nGENERIC_8REGF,\nHyCUBE_8REGF,\nHyCUBE_4REG,\nN2N_4REGF,\nN2N_8REGF,\nSTDNOC_8REGF,\nSTDNOC_4REGF,\nSTDNOC_4REG,\nMFU_HyCUBE_4REG\nMFU_HyCUBE_4REGF\nMFU_STDNOC_4REG\nMFU_STDNOC_4REGF> <numberofDPS> <backtracklimit> <initII>\n";
+	if(argn < 6){
+		std::cout << "arguments : <DFG.xml> <peType::\nGENERIC_8REGF,\nHyCUBE_8REGF,\nHyCUBE_4REG,\nN2N_4REGF,\nN2N_8REGF,\nSTDNOC_8REGF,\nSTDNOC_4REGF,\nSTDNOC_4REG,\nMFU_HyCUBE_4REG\nMFU_HyCUBE_4REGF\nMFU_STDNOC_4REG\nMFU_STDNOC_4REGF> <numberofDPS> <backtracklimit> <initII> <-noMTpath>\n";
 	}
 
-	assert(argn == 6);
+	assert(argn >= 6);
 	std::string inputDFG_filename (argc[1]);
 
 	int xdim=4;
@@ -49,8 +49,14 @@ int main(int argn, char* argc[]) {
 	int initUserII = atoi(argc[5]);
 	II = std::max(initUserII,II);
 
-	hm.enableBackTracking=true;
 	hm.enableMutexPaths=true;
+	if(argn == 7){
+		std::string noMutexPathStr(argc[6]);
+		if(noMutexPathStr == "-noMTpath"){
+			hm.enableMutexPaths=false;
+		}
+	}
+	hm.enableBackTracking=true;
 	hm.backTrackLimit=atoi(argc[4]);
 
 
