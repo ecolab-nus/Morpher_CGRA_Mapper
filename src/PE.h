@@ -52,6 +52,18 @@ public:
 		else if(peType == "STDNOC_4REG"){
 			createStdNoCPE(isMEMpe,numDPs);
 		}
+		else if(peType == "MFU_HyCUBE_4REG"){
+			createMultiFU_HyCUBEPE(isMEMpe,numDPs);
+		}
+		else if(peType == "MFU_HyCUBE_4REGF"){
+			createMultiFU_HyCUBEPE_RegFile(isMEMpe,numDPs,4,4,4);
+		}
+		else if(peType == "MFU_STDNOC_4REG"){
+			createMultiFU_StdNoCPE(isMEMpe,numDPs);
+		}
+		else if(peType == "MFU_STDNOC_4REGF"){
+			createMultiFU_StdNoCPE_RegFile(isMEMpe,numDPs,4,4,4);
+		}
 		else{
 			assert(false);
 		}
@@ -76,6 +88,9 @@ public:
 	void createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 			int numberofDPs, int regs, int nWRP, int nRDP);
 	void createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs);
+	void createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
+			int numberofDPs, int regs, int nWRP, int nRDP);
+	void createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs);
 
 
 	void getNonMEMIns(std::map<std::string,int>& supportedOPs);

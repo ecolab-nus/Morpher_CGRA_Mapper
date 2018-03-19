@@ -672,7 +672,7 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 			std::cout << "parentRoutingPortCount=" << parentRoutingPortCount << "\n";
 		}
 
-		assert(parentRoutingPortCountEnd==parentRoutingPortCount+addedRoutingParentPorts);
+//		assert(parentRoutingPortCountEnd==parentRoutingPortCount+addedRoutingParentPorts);
 		return true;
 	}
 	else{
@@ -695,7 +695,7 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 			std::cout << "addedRoutingParentPorts=" << addedRoutingParentPorts << "\n";
 			std::cout << "parentRoutingPortCount=" << parentRoutingPortCount << "\n";
 		}
-		assert(parentRoutingPortCountEnd==parentRoutingPortCount);
+//		assert(parentRoutingPortCountEnd==parentRoutingPortCount);
 		assert(*failedNode!=NULL);
 		return false;
 	}

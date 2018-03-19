@@ -23,7 +23,7 @@ int main(int argn, char* argc[]) {
 	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 
 	if(argn != 6){
-		std::cout << "arguments : <DFG.xml> <peType:GENERIC_8REGF,HyCUBE_8REGF,HyCUBE_4REG,N2N_4REGF,N2N_8REGF,STDNOC_8REGF,STDNOC_4REGF,STDNOC_4REG> <numberofDPS> <backtracklimit> <initII>\n";
+		std::cout << "arguments : <DFG.xml> <peType::\nGENERIC_8REGF,\nHyCUBE_8REGF,\nHyCUBE_4REG,\nN2N_4REGF,\nN2N_8REGF,\nSTDNOC_8REGF,\nSTDNOC_4REGF,\nSTDNOC_4REG,\nMFU_HyCUBE_4REG\nMFU_HyCUBE_4REGF\nMFU_STDNOC_4REG\nMFU_STDNOC_4REGF> <numberofDPS> <backtracklimit> <initII>\n";
 	}
 
 	assert(argn == 6);
