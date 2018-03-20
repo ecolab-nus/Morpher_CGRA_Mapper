@@ -1162,25 +1162,25 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 
 void CGRAXMLCompile::PE::getMEMIns(std::map<std::string, int>& supportedOPs) {
 
-	supportedOPs["NOP"]=2;
-	supportedOPs["ADD"]=2;
-	supportedOPs["SUB"]=2;
-	supportedOPs["MUL"]=2;
-	supportedOPs["SEXT"]=2;
-	supportedOPs["DIV"]=2;
-	supportedOPs["LS"]=2;
-	supportedOPs["RS"]=2;
-	supportedOPs["ARS"]=2;
-	supportedOPs["AND"]=2;
-	supportedOPs["OR"]=2;
-	supportedOPs["XOR"]=2;
-	supportedOPs["SELECT"]=2;
-	supportedOPs["CMERGE"]=2;
-	supportedOPs["CMP"]=2;
-	supportedOPs["CLT"]=2;
-	supportedOPs["BR"]=2;
-	supportedOPs["CGT"]=2;
-	supportedOPs["MOVCL"]=2;
+	supportedOPs["NOP"]=2; //1
+	supportedOPs["ADD"]=2; //2
+	supportedOPs["SUB"]=2; //3
+	supportedOPs["MUL"]=2; //4
+	supportedOPs["SEXT"]=2; //5
+	supportedOPs["DIV"]=2; //6
+	supportedOPs["LS"]=2; //7
+	supportedOPs["RS"]=2; //8
+	supportedOPs["ARS"]=2; //9
+	supportedOPs["AND"]=2; //10
+	supportedOPs["OR"]=2;  //11
+	supportedOPs["XOR"]=2; //12
+	supportedOPs["SELECT"]=2; //13
+	supportedOPs["CMERGE"]=2; //14
+	supportedOPs["CMP"]=2; //15
+	supportedOPs["CLT"]=2; //16
+	supportedOPs["BR"]=2;  //17
+	supportedOPs["CGT"]=2; //18
+	supportedOPs["MOVCL"]=2; //19
 
 	supportedOPs["LOADCL"]=2;
 	supportedOPs["LOAD"]=2;
@@ -1190,8 +1190,8 @@ void CGRAXMLCompile::PE::getMEMIns(std::map<std::string, int>& supportedOPs) {
 	supportedOPs["STOREH"]=2;
 	supportedOPs["STOREB"]=2;
 
-	supportedOPs["JUMPL"]=2;
-	supportedOPs["MOVC"]=2;
+	supportedOPs["JUMPL"]=2; //20
+	supportedOPs["MOVC"]=2; //21
 
 }
 
@@ -1225,30 +1225,45 @@ void CGRAXMLCompile::PE::getNonMEMIns(
 void CGRAXMLCompile::PE::getLogicalIns(
 		std::map<std::string, int>& supportedOPs) {
 
-	supportedOPs["NOP"]=1;
-	supportedOPs["SEXT"]=1;
-	supportedOPs["AND"]=1;
-	supportedOPs["OR"]=1;
-	supportedOPs["XOR"]=1;
-	supportedOPs["SELECT"]=1;
-	supportedOPs["CMERGE"]=1;
-	supportedOPs["BR"]=1;
-	supportedOPs["MOVCL"]=1;
-	supportedOPs["JUMPL"]=1;
-	supportedOPs["MOVC"]=1;
+	supportedOPs["NOP"]=1; //1
+	supportedOPs["SEXT"]=1; //2
+	supportedOPs["AND"]=1; //3
+	supportedOPs["OR"]=1; //4
+	supportedOPs["XOR"]=1; //5
+	supportedOPs["SELECT"]=1; //6
+	supportedOPs["CMERGE"]=1; //7
+	supportedOPs["BR"]=1; //8
+	supportedOPs["MOVCL"]=1; //9
+	supportedOPs["JUMPL"]=1; //10
+	supportedOPs["MOVC"]=1; //11
 
 }
 
 void CGRAXMLCompile::PE::getArithmeticIns(
 		std::map<std::string, int>& supportedOPs) {
 
-	supportedOPs["ADD"]=1;
-	supportedOPs["SUB"]=1;
-	supportedOPs["MUL"]=1;
-	supportedOPs["DIV"]=1;
-	supportedOPs["LS"]=1;
-	supportedOPs["RS"]=1;
-	supportedOPs["ARS"]=1;
+	supportedOPs["ADD"]=1; //12
+	supportedOPs["SUB"]=1; //13
+	supportedOPs["MUL"]=1; //14
+	supportedOPs["DIV"]=1; //15
+	supportedOPs["LS"]=1; //16
+	supportedOPs["RS"]=1; //17
+	supportedOPs["ARS"]=1; //18
+	supportedOPs["CMP"]=1; //19
+	supportedOPs["CLT"]=1; //20
+	supportedOPs["CGT"]=1; //21
+
+}
+
+void CGRAXMLCompile::PE::getMemOnlyIns(std::map<std::string, int>& supportedOPs) {
+
+	supportedOPs["LOADCL"]=2;
+	supportedOPs["LOAD"]=2;
+	supportedOPs["LOADH"]=2;
+	supportedOPs["LOADB"]=2;
+	supportedOPs["STORE"]=2;
+	supportedOPs["STOREH"]=2;
+	supportedOPs["STOREB"]=2;
 
 }
 
@@ -1269,20 +1284,20 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 
 	if(isMEMpe){
 		supportedOPs.clear();
-		getMEMIns(supportedOPs);
+		getMemOnlyIns(supportedOPs);
 		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
 
 	supportedOPs.clear();
-	getMEMIns(supportedOPs);
+	getArithmeticIns(supportedOPs);
 	arithFU=new FU(this,"arithFU0",numberofDPs,supportedOPs);
 	subModules.push_back(arithFU);
 	allFUs.push_back(arithFU);
 
 	supportedOPs.clear();
-	getMEMIns(supportedOPs);
+	getLogicalIns(supportedOPs);
 	logicFU=new FU(this,"logicFU0",numberofDPs,supportedOPs);
 	subModules.push_back(logicFU);
 	allFUs.push_back(logicFU);
@@ -1481,20 +1496,20 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs) {
 
 	if(isMEMpe){
 		supportedOPs.clear();
-		getMEMIns(supportedOPs);
+		getMemOnlyIns(supportedOPs);
 		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
 
 	supportedOPs.clear();
-	getMEMIns(supportedOPs);
+	getArithmeticIns(supportedOPs);
 	arithFU=new FU(this,"arithFU0",numberofDPs,supportedOPs);
 	subModules.push_back(arithFU);
 	allFUs.push_back(arithFU);
 
 	supportedOPs.clear();
-	getMEMIns(supportedOPs);
+	getLogicalIns(supportedOPs);
 	logicFU=new FU(this,"logicFU0",numberofDPs,supportedOPs);
 	subModules.push_back(logicFU);
 	allFUs.push_back(logicFU);
@@ -1731,20 +1746,20 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
 
 	if(isMEMpe){
 		supportedOPs.clear();
-		getMEMIns(supportedOPs);
+		getMemOnlyIns(supportedOPs);
 		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
 
 	supportedOPs.clear();
-	getMEMIns(supportedOPs);
+	getArithmeticIns(supportedOPs);
 	arithFU=new FU(this,"arithFU0",numberofDPs,supportedOPs);
 	subModules.push_back(arithFU);
 	allFUs.push_back(arithFU);
 
 	supportedOPs.clear();
-	getMEMIns(supportedOPs);
+	getLogicalIns(supportedOPs);
 	logicFU=new FU(this,"logicFU0",numberofDPs,supportedOPs);
 	subModules.push_back(logicFU);
 	allFUs.push_back(logicFU);
@@ -1925,20 +1940,20 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs) {
 
 	if(isMEMpe){
 		supportedOPs.clear();
-		getMEMIns(supportedOPs);
+		getMemOnlyIns(supportedOPs);
 		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
 
 	supportedOPs.clear();
-	getMEMIns(supportedOPs);
+	getArithmeticIns(supportedOPs);
 	arithFU=new FU(this,"arithFU0",numberofDPs,supportedOPs);
 	subModules.push_back(arithFU);
 	allFUs.push_back(arithFU);
 
 	supportedOPs.clear();
-	getMEMIns(supportedOPs);
+	getLogicalIns(supportedOPs);
 	logicFU=new FU(this,"logicFU0",numberofDPs,supportedOPs);
 	subModules.push_back(logicFU);
 	allFUs.push_back(logicFU);
@@ -2161,17 +2176,5 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs) {
 		}
 	}
 
-
-}
-
-void CGRAXMLCompile::PE::getMemOnlyIns(std::map<std::string, int>& supportedOPs) {
-
-	supportedOPs["LOADCL"]=2;
-	supportedOPs["LOAD"]=2;
-	supportedOPs["LOADH"]=2;
-	supportedOPs["LOADB"]=2;
-	supportedOPs["STORE"]=2;
-	supportedOPs["STOREH"]=2;
-	supportedOPs["STOREB"]=2;
 
 }

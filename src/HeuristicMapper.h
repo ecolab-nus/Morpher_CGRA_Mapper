@@ -17,7 +17,7 @@
 #include <fstream>
 #include <math.h>
 
-#define MRC 8000
+#define MRC 0
 #define UOP 1000
 
 
