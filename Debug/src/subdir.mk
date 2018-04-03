@@ -14,6 +14,7 @@ CPP_SRCS += \
 ../src/HeuristicMapper.cpp \
 ../src/Module.cpp \
 ../src/PE.cpp \
+../src/PathFinderMapper.cpp \
 ../src/Port.cpp \
 ../src/RegFile.cpp \
 ../src/tinyxml2.cpp 
@@ -29,6 +30,7 @@ OBJS += \
 ./src/HeuristicMapper.o \
 ./src/Module.o \
 ./src/PE.o \
+./src/PathFinderMapper.o \
 ./src/Port.o \
 ./src/RegFile.o \
 ./src/tinyxml2.o 
@@ -44,6 +46,7 @@ CPP_DEPS += \
 ./src/HeuristicMapper.d \
 ./src/Module.d \
 ./src/PE.d \
+./src/PathFinderMapper.d \
 ./src/Port.d \
 ./src/RegFile.d \
 ./src/tinyxml2.d 
