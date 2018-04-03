@@ -17,7 +17,7 @@
 #include <fstream>
 #include <math.h>
 
-#define MRC 0
+#define MRC 11000
 #define UOP 1000
 
 
@@ -201,6 +201,8 @@ public:
 
 	bool estimateRouting(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes, DFGNode** failedNode);
 	bool Route(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes, DFGNode** failedNode);
+
+
 	void assignPath(DFGNode* src, DFGNode* dest, std::vector<Port*> path);
 	bool dataPathCheck(DataPath* dp, DFGNode* node);
 
@@ -213,7 +215,7 @@ public:
 	void printMappingLog();
 	void printMappingLog2();
 
-private:
+protected:
 	int regDiscourageFactor=10;
 	int PETransitionCostFactor=100;
 	int PortTransitionCost=1;

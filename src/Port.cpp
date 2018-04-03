@@ -8,6 +8,7 @@
 #include "Port.h"
 #include "PE.h"
 #include "Module.h"
+#include "CGRA.h"
 #include <stack>
 
 namespace CGRAXMLCompile {
@@ -50,4 +51,27 @@ std::string CGRAXMLCompile::Port::getFullName() {
 	}
 	fullName = fullName + name;
 	return fullName;
+}
+
+void CGRAXMLCompile::Port::increastCongCost() {
+	if(history_cost == 0){
+		history_cost = INIT_CONG_COST/10;
+	}
+	else{
+		history_cost = history_cost + history_cost/10;
+	}
+}
+
+int CGRAXMLCompile::Port::getCongCost() {
+	int cost = base_cost*number_signals + history_cost*(number_signals+1);
+	return cost;
+}
+
+
+void CGRAXMLCompile::Port::clear() {
+	node=NULL;
+	if(node!=NULL){
+		(*this->mod->getCGRA()->getCongestedPortPtr())[this].erase(node);
+	}
+	number_signals=0;
 }

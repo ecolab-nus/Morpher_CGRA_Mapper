@@ -13,6 +13,7 @@
 #include "DFG.h"
 #include "CGRA.h"
 #include "HeuristicMapper.h"
+#include "PathFinderMapper.h"
 #include <math.h>
 
 using namespace std;
@@ -42,7 +43,9 @@ int main(int argn, char* argc[]) {
 
 	CGRA testCGRA(NULL,"testCGRA",1,ydim,xdim,PEType,numberOfDPs);
 
-	HeuristicMapper hm(inputDFG_filename);
+//	HeuristicMapper hm(inputDFG_filename);
+	PathFinderMapper hm(inputDFG_filename);
+
 	int II = hm.getMinimumII(&testCGRA,&currDFG);
 	std::cout << "Minimum II = " << II << "\n";
 
@@ -65,7 +68,8 @@ int main(int argn, char* argc[]) {
 		DFG tempDFG;
 		tempDFG.parseXML(inputDFG_filename);
 		tempDFG.printDFG();
-		CGRA* tempCGRA = new CGRA(NULL,"coreCGRA",II,ydim,xdim,PEType,numberOfDPs);
+		CGRA* tempCGRA = new CGRA(NULL,"coreCGRA",II,ydim,xdim,PEType,numberOfDPs,hm.getcongestedPortsPtr());
+		hm.getcongestedPortsPtr()->clear();
 		mappingSuccess = hm.Map(tempCGRA,&tempDFG);
 		if(!mappingSuccess){
 

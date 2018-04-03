@@ -18,10 +18,11 @@ namespace CGRAXMLCompile {
 
 class CGRA : public Module {
 public:
-	CGRA(const Module* Parent, std::string name, int t, int y, int x, std::string peType = "GENERIC_8REGF", int numberofDPs = 1) : Module(Parent,name){
+	CGRA(const Module* Parent, std::string name, int t, int y, int x, std::string peType = "GENERIC_8REGF", int numberofDPs = 1, std::map<Port*,std::set<DFGNode*>>* _congestedPortPtr = NULL) : Module(Parent,name){
 		createGenericCGRA(x,y,t,peType,numberofDPs);
 		this->peType=peType;
 		this->numberofDPs=numberofDPs;
+		this->congestedPortPtr = _congestedPortPtr;
 
 		for (int t = 0; t < this->get_t_max(); ++t) {
 			for (int y = 0; y < this->get_y_max(); ++y) {
@@ -54,6 +55,9 @@ public:
 	int get_y_max(){return y_max;}
 	int get_x_max(){return x_max;}
 
+	std::map<Port*,std::set<DFGNode*>>* getCongestedPortPtr() {return congestedPortPtr;}
+	void setCongestedPortPtr(std::map<Port*,std::set<DFGNode*>>* congestedPortPtr){this->congestedPortPtr = congestedPortPtr;}
+
 //	bool isGenericPE=false;
 	std::string peType;
 	int  numberofDPs=1;
@@ -63,6 +67,8 @@ private:
 	int x_max;
 	int y_max;
 	int t_max;
+
+	std::map<Port*,std::set<DFGNode*>>* congestedPortPtr;
 
 };
 

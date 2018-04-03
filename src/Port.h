@@ -14,6 +14,7 @@
 #include <vector>
 #include <map>
 
+#define INIT_CONG_COST 100000
 
 
 namespace CGRAXMLCompile {
@@ -29,14 +30,21 @@ public:
 	std::string getName(){return name;}
 	std::string getFullName();
 
-	void clear(){node=NULL;}
+	void clear();
 	PE* findParentPE();
 	Module* getMod(){return mod;}
 	PortType getType(){return pType;}
 
-	void setNode(DFGNode* node){this->node=node;}
+	void setNode(DFGNode* node){
+		this->node=node;
+	}
+
 	DFGNode* getNode(){return this->node;}
 
+	int  getCongCost();
+	void increastCongCost();
+	void increaseUse(){number_signals++;}
+	int getHistoryCost(){return history_cost;}
 
 private:
 
@@ -44,6 +52,10 @@ private:
 	Module* mod;
 	PortType pType;
 	DFGNode* node=NULL;
+
+	int base_cost = INIT_CONG_COST;
+	int history_cost = 0;
+	int number_signals = 0;
 
 	bool operator==(const Port &other){
 		return (this->name.compare(other.name)==0);
