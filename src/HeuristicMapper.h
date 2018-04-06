@@ -188,6 +188,7 @@ public:
 //		mappingLog.open(fName.c_str());
 //		mappingLog2.open(fName2.c_str());
 	}
+	virtual ~HeuristicMapper(){};
 	CGRA* cgra;
 	DFG* dfg;
 

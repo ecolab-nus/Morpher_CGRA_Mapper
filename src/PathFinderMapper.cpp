@@ -991,9 +991,9 @@ void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode* src, DFGNode* dest,
 			continue;
 		}
 
-		p->setNode(src);
+		p->setNode(src,this);
 		congestedPorts[p].insert(src);
-		p->increaseUse();
+		p->increaseConflictedUse();
 
 		if(std::find(src->routingPorts.begin(),src->routingPorts.end(),std::make_pair(p,dest->idx))==src->routingPorts.end()){
 			if(std::find(src->routingPorts.begin(),src->routingPorts.end(),std::make_pair(p,src->idx))==src->routingPorts.end()){

@@ -8,6 +8,7 @@
 #include "Module.h"
 #include "CGRA.h"
 #include "FU.h"
+#include "PathFinderMapper.h"
 #include <assert.h>
 
 namespace CGRAXMLCompile {
@@ -40,10 +41,13 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 
 	for(Port* p : connectedTo[currPort]){
 		bool conflicted=false;
-		for(Port* conflict_port : conflictPorts[p]){
-			if(conflict_port->getNode()!=NULL){
-				conflicted=true;
-				break;
+
+		if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
+			for(Port* conflict_port : conflictPorts[p]){
+				if(conflict_port->getNode()!=NULL){
+					conflicted=true;
+					break;
+				}
 			}
 		}
 		if(!conflicted){
@@ -58,10 +62,12 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 //				nextPorts.push_back(p);
 
 				bool conflicted=false;
-				for(Port* conflict_port : getParent()->getConflictPorts(currPort)){
-					if(conflict_port->getNode()!=NULL){
-						conflicted=true;
-						break;
+				if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
+					for(Port* conflict_port : getParent()->getConflictPorts(currPort)){
+						if(conflict_port->getNode()!=NULL){
+							conflicted=true;
+							break;
+						}
 					}
 				}
 				if(!conflicted){

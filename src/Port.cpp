@@ -9,6 +9,7 @@
 #include "PE.h"
 #include "Module.h"
 #include "CGRA.h"
+#include "PathFinderMapper.h"
 #include <stack>
 
 namespace CGRAXMLCompile {
@@ -18,6 +19,39 @@ Port::Port(std::string name, PortType pType, Module* mod) {
 	this->name = name;
 	this->pType = pType;
 	this->mod = mod;
+}
+
+void Port::increaseUse() {
+	number_signals++;
+}
+
+void Port::decreaseUse() {
+	number_signals--;
+}
+
+void Port::setNode(DFGNode* node, HeuristicMapper* hm){
+	this->node=node;
+
+	if(hm == NULL) return;
+
+	if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
+		for(Port* p : getMod()->getConflictPorts(this)){
+			(*pfm->getcongestedPortsPtr())[p].insert(node);
+		}
+	}
+}
+
+void Port::increaseConflictedUse() {
+	increaseUse();
+	for(Port* p : getMod()->getConflictPorts(this)){
+		p->increaseUse();
+	}
+
+	if(this->getType()==OUT){
+		for(Port* p : getMod()->getParent()->getConflictPorts(this)){
+			p->increaseUse();
+		}
+	}
 }
 
 } /* namespace CGRAXMLCompile */
@@ -69,9 +103,22 @@ int CGRAXMLCompile::Port::getCongCost() {
 
 
 void CGRAXMLCompile::Port::clear() {
-	node=NULL;
 	if(node!=NULL){
 		(*this->mod->getCGRA()->getCongestedPortPtr())[this].erase(node);
 	}
+	node=NULL;
+
+	for(Port* p : getMod()->getConflictPorts(this)){
+		p->decreaseUse();
+		(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(node);
+	}
+
+	if(this->getType()==OUT){
+		for(Port* p : getMod()->getParent()->getConflictPorts(this)){
+			p->decreaseUse();
+			(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(node);
+		}
+	}
+
 	number_signals=0;
 }

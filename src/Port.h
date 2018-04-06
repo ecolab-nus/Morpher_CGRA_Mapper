@@ -21,6 +21,7 @@ namespace CGRAXMLCompile {
 
 class PE;
 class Module;
+class HeuristicMapper;
 
 enum PortType{IN,OUT,INT};
 
@@ -35,15 +36,15 @@ public:
 	Module* getMod(){return mod;}
 	PortType getType(){return pType;}
 
-	void setNode(DFGNode* node){
-		this->node=node;
-	}
+	void setNode(DFGNode* node, HeuristicMapper* hm = NULL);
 
 	DFGNode* getNode(){return this->node;}
 
 	int  getCongCost();
 	void increastCongCost();
-	void increaseUse(){number_signals++;}
+	void increaseUse();
+	void decreaseUse();
+	void increaseConflictedUse();
 	int getHistoryCost(){return history_cost;}
 
 private:
