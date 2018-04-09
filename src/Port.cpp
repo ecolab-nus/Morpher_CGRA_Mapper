@@ -26,7 +26,9 @@ void Port::increaseUse() {
 }
 
 void Port::decreaseUse() {
-	number_signals--;
+	if(number_signals>0){
+		number_signals--;
+	}
 }
 
 void Port::setNode(DFGNode* node, HeuristicMapper* hm){

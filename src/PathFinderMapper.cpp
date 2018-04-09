@@ -148,6 +148,12 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(Port* start,
 						nextPortCost = cost_to_port[currPort];
 					}
 
+					if(nextPortCost <= cost_to_port[currPort]){
+						std::cout << "nextPortCost = " << nextPortCost << "\n";
+						std::cout << "cost_to_port[currPort] = " << cost_to_port[currPort] << "\n";
+					}
+					assert(nextPortCost > cost_to_port[currPort]);
+
 					if(cost_to_port.find(nextPort)!=cost_to_port.end()){
 						if(cost_to_port[nextPort] > nextPortCost){
 							cost_to_port[nextPort]=nextPortCost;
@@ -199,6 +205,7 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(Port* start,
 		while(currPort!=start){
 			path.push_back(currPort);
 			assert(cameFrom.find(currPort)!=cameFrom.end());
+			assert(currPort != cameFrom[currPort]);
 			currPort = cameFrom[currPort];
 		}
 		path.push_back(start);
@@ -324,6 +331,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 				std::map<Port*,std::set<DFGNode*>> mutexPaths;
 if(detailedDebug)				std::cout << "Estimating Path" << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
 				bool pathExist = LeastCostPathAstar(startCand,destPort,path,cost,parent,mutexPaths,node);
+				path.clear();
 				if(!pathExist){
 if(detailedDebug)			    std::cout << "Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
 					continue;
@@ -454,6 +462,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode* node,
 			for(Port* p : possibleStarts){
 				int cost;
 				if(LeastCostPathAstar(p,dest_child_with_cost_ins.childDest,pathTmp,cost,node,mutexPathsTmp,node)){
+					pathTmp.clear();
 					q.push(cand_src_with_cost(p,dest_child_with_cost_ins.childDest,cost));
 				}
 			}
@@ -488,6 +497,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode* node,
 						std::cout << p->getFullName() << "\n";
 					}
 				}
+				path.clear();
 			}
 			if(!alreadMappedChildRouteSucc){
 				*failedNode = dest_child_with_cost_ins.child;
@@ -570,6 +580,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode* node,
 					node->clear(this->dfg);
 					std::cout << "Route Failed :: from=" << src->getFullName() << "--> to=" << dest->getFullName() << "\n";
 				}
+				path.clear();
 			}
 			if(!succ){
 				*failedNode = parent;
@@ -670,7 +681,9 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(Port* src,
 	int distance = abs(nextPE->Y-srcPE->Y) + abs(nextPE->X-srcPE->X)
 			       + regDiscourageFactor*((nextPE->T - srcPE->T + cgra->get_t_max())%cgra->get_t_max());
 
-	distance = distance*PETransitionCostFactor + next_to_src->getCongCost();
+	distance = distance*PETransitionCostFactor + next_to_src->getCongCost() + PortTransitionCost;
+	assert(distance>0);
+
 
 	if(srcPE!=nextPE){
 		int freePorts=0;
@@ -696,6 +709,11 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(Port* src,
 //		distance = distance + (1 + nextPE->outputPorts.size() - freePorts)*UOPCostFactor;
 		distance = distance + (nextPE->outputPorts.size()*2-(freePorts))*UOPCostFactor;
 
+		if(nextPE->outputPorts.size()*2 < freePorts){
+			std::cout << "outportsize = " << nextPE->outputPorts.size() << "\n";
+			std::cout << "freePorts = " << freePorts << "\n";
+		}
+
 	}
 
 //	int unmappedMemNodeCount=0;
@@ -707,6 +725,7 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(Port* src,
 //		}
 //	}
 //	dfg->unmappedMemOps = unmappedMemNodeCount;
+	assert(distance>0);
 
 	if((next_to_src->getName().compare("P")==0)
 	   || (next_to_src->getName().compare("I1")==0)
@@ -723,7 +742,7 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(Port* src,
 		}
 	}
 
-
+	assert(distance>0);
 	return distance;
 
 }
