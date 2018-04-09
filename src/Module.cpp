@@ -43,6 +43,9 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 		bool conflicted=false;
 
 		if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
+
+		}
+		else{
 			for(Port* conflict_port : conflictPorts[p]){
 				if(conflict_port->getNode()!=NULL){
 					conflicted=true;
@@ -50,6 +53,7 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 				}
 			}
 		}
+
 		if(!conflicted){
 			nextPorts.push_back(p);
 		}
@@ -63,6 +67,9 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 
 				bool conflicted=false;
 				if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
+
+				}
+				else{
 					for(Port* conflict_port : getParent()->getConflictPorts(currPort)){
 						if(conflict_port->getNode()!=NULL){
 							conflicted=true;
@@ -70,6 +77,8 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 						}
 					}
 				}
+
+
 				if(!conflicted){
 					nextPorts.push_back(p);
 				}
