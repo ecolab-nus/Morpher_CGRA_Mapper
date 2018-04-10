@@ -48,10 +48,12 @@ public:
 	std::vector<Port*> getFromPorts(Port* currPort, HeuristicMapper* hm);
 
 	std::vector<Port*> getConflictPorts(Port* currPort);
+	bool isConflictPortsEmpty(Port* p);
+
 	void insertConnection(Port* src, Port* dest);
 
 protected:
-	std::map<Port*,std::vector<Port*>> conflictPorts;
+
 
 private:
 	std::map<Port*,std::vector<Port*>> connectedTo;

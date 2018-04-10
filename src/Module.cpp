@@ -46,7 +46,7 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 
 		}
 		else{
-			for(Port* conflict_port : conflictPorts[p]){
+			for(Port* conflict_port : getConflictPorts(p)){
 				if(conflict_port->getNode()!=NULL){
 					conflicted=true;
 					break;
@@ -90,7 +90,9 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 }
 
 std::vector<Port*> Module::getConflictPorts(Port* currPort) {
-	return conflictPorts[currPort];
+	assert(this->getCGRA());
+	std::vector<Port*> vec = this->getCGRA()->getConflictPorts(currPort);
+	return vec;
 }
 
 std::vector<Port*> Module::getFromPorts(Port* currPort, HeuristicMapper* hm) {
@@ -98,7 +100,7 @@ std::vector<Port*> Module::getFromPorts(Port* currPort, HeuristicMapper* hm) {
 
 	for(Port* p : connectedFrom[currPort]){
 		bool conflicted=false;
-		for(Port* conflict_port : conflictPorts[p]){
+		for(Port* conflict_port : getConflictPorts(p)){
 			if(conflict_port->getNode()!=NULL){
 				conflicted=true;
 				break;
@@ -131,6 +133,10 @@ std::vector<Port*> Module::getFromPorts(Port* currPort, HeuristicMapper* hm) {
 	}
 
 	return fromPorts;
+}
+
+bool Module::isConflictPortsEmpty(Port* p) {
+	return getCGRA()->isConflictPortsEmpty(p);
 }
 
 void Module::insertConnection(Port* src, Port* dest) {
@@ -173,7 +179,7 @@ CGRAXMLCompile::Module* CGRAXMLCompile::Module::getSubMod(std::string Mname) {
 }
 
 CGRAXMLCompile::CGRA* CGRAXMLCompile::Module::getCGRA() {
-	Module* mod = this->getParent();
+	Module* mod = this;
 	while(true){
 		if(CGRA* cgra = dynamic_cast<CGRA*>(mod)){
 			return cgra;

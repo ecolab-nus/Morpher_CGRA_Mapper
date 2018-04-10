@@ -28,6 +28,8 @@ public:
 	bool clearCurrMapping();
 	std::map<Port*,std::set<DFGNode*>>* getcongestedPortsPtr(){return &congestedPorts;}
 
+	bool checkConflictedPortCompatibility();
+
 private:
 	std::map<Port*,std::set<DFGNode*>> congestedPorts;
 	int maxIter = 15;

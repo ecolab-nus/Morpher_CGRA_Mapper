@@ -7,6 +7,8 @@
 
 #include "CGRA.h"
 #include "PE.h"
+#include "Port.h"
+#include <iostream>
 
 namespace CGRAXMLCompile {
 
@@ -101,4 +103,26 @@ void CGRAXMLCompile::CGRA::createGenericCGRA(int x_max, int y_max, int t_max, st
 	}
 }
 
+std::vector<CGRAXMLCompile::Port*> CGRAXMLCompile::CGRA::getConflictPorts(Port* p) {
+	if(conflictPorts.find(p)==conflictPorts.end()){
+		std::vector<Port*> emptyVec;
+		conflictPorts[p]=emptyVec;
+	}
+//	std::cout << "size = " << conflictPorts[p].size() << "\n";
 
+	for(Port* tp : conflictPorts[p]){
+		assert(tp!=NULL);
+//		std::cout << tp->getName() << "\n";
+//		std::cout << tp->getFullName() << "\n";
+	}
+
+	return conflictPorts[p];
+}
+
+void CGRAXMLCompile::CGRA::insertConflictPort(Port* a, Port* b) {
+	assert(a!=NULL);
+	assert(b!=NULL);
+	std::cout << "insertConflict Port b : " << b->getFullName() ;
+	std::cout << ", a : " << a->getFullName() << "\n";
+	conflictPorts[a].push_back(b);
+}

@@ -11,6 +11,7 @@
 #include "CGRA.h"
 #include "PathFinderMapper.h"
 #include <stack>
+#include <iostream>
 
 namespace CGRAXMLCompile {
 
@@ -45,15 +46,19 @@ void Port::setNode(DFGNode* node, HeuristicMapper* hm){
 
 void Port::increaseConflictedUse() {
 	increaseUse();
-	for(Port* p : getMod()->getConflictPorts(this)){
-		p->increaseUse();
-	}
 
-	if(this->getType()==OUT){
-		for(Port* p : getMod()->getParent()->getConflictPorts(this)){
+	if(!getMod()->isConflictPortsEmpty(this)){
+		for(Port* p : getMod()->getConflictPorts(this)){
+			assert(p!=NULL);
 			p->increaseUse();
 		}
 	}
+
+//	if(this->getType()==OUT){
+//		for(Port* p : getMod()->getParent()->getConflictPorts(this)){
+//			p->increaseUse();
+//		}
+//	}
 }
 
 } /* namespace CGRAXMLCompile */

@@ -975,6 +975,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 		std::cout << "Map Success!.\n";
 		mappingLog.close();
 		mappingLog2.close();
+
+		std::cout << "Checking conflict compatibility!\n";
+		checkConflictedPortCompatibility();
 		return true;
 	}
 	else{
@@ -1083,3 +1086,53 @@ bool CGRAXMLCompile::PathFinderMapper::clearCurrMapping(){
 	return true;
 }
 
+bool CGRAXMLCompile::PathFinderMapper::checkConflictedPortCompatibility() {
+
+	std::stack<Module*> searchStack;
+	searchStack.push(this->cgra);
+
+	while(!searchStack.empty()){
+		Module* top = searchStack.top();
+		searchStack.pop();
+		for(Port& p : top->inputPorts){
+			if(p.getNode()!=NULL){
+				for(Port* cp : top->getConflictPorts(&p)){
+					std::cout << "p : " << p.getFullName() << ", cp : " << cp->getFullName() << "\n";
+					if(cp!=NULL){
+						std::cout << "Conflict ERR!\n";
+						std::cout << p.getFullName() << ":" << p.getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
+					}
+					assert(cp==NULL);
+				}
+			}
+		}
+		for(Port& p : top->internalPorts){
+			if(p.getNode()!=NULL){
+				for(Port* cp : top->getConflictPorts(&p)){
+					std::cout << "p : " << p.getFullName() << ", cp : " << cp->getFullName() << "\n";
+					if(cp!=NULL){
+						std::cout << "Conflict ERR!\n";
+						std::cout << p.getFullName() << ":" << p.getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
+					}
+					assert(cp==NULL);
+				}
+			}
+		}
+		for(Port& p : top->outputPorts){
+			if(p.getNode()!=NULL){
+				for(Port* cp : top->getConflictPorts(&p)){
+					std::cout << "p : " << p.getFullName() << ", cp : " << cp->getFullName() << "\n";
+					if(cp!=NULL){
+						std::cout << "Conflict ERR!\n";
+						std::cout << p.getFullName() << ":" << p.getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
+					}
+					assert(cp==NULL);
+				}
+			}
+		}
+		for(Module* submod : top->subModules){
+			searchStack.push(submod);
+		}
+	}
+
+}
