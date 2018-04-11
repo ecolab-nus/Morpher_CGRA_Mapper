@@ -38,6 +38,7 @@ public:
 	Module* getSubMod(std::string Mname);
 
 	std::string getName(){return name;}
+	std::string getFullName();
 	Module* getParent(){return (Module*)Parent;}
 
 	CGRA* getCGRA();

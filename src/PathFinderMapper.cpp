@@ -978,6 +978,10 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 
 		std::cout << "Checking conflict compatibility!\n";
 		checkConflictedPortCompatibility();
+
+		if(this->cgra->peType == "STDNOC_4REGF_1P"){
+			checkRegALUConflicts();
+		}
 		return true;
 	}
 	else{
@@ -1135,4 +1139,60 @@ bool CGRAXMLCompile::PathFinderMapper::checkConflictedPortCompatibility() {
 		}
 	}
 
+}
+
+bool CGRAXMLCompile::PathFinderMapper::checkRegALUConflicts() {
+	for (int t = 0; t < this->cgra->get_t_max(); ++t) {
+		int timeslice_count = 0;
+		for (int y = 0; y < this->cgra->get_y_max(); ++y) {
+			for (int x = 0; x < this->cgra->get_x_max(); ++x) {
+
+				PE* currPE = this->cgra->PEArr[t][y][x];
+				int usage=0;
+
+				for(Module* submod_fu : currPE->subModules){
+					if(FU* fu = dynamic_cast<FU*>(submod_fu)){
+						for(Module* submod_dp : fu->subModules){
+							if(DataPath* dp = dynamic_cast<DataPath*>(submod_dp)){
+								if(dp->getMappedNode()!=NULL){
+									std::cout << dp->getFullName() << ":" << dp->getMappedNode()->idx << ",";
+									usage++;
+									break;
+								}
+							}
+						}
+					}
+				}
+
+				for(RegFile* RF : currPE->allRegs){
+					for (int i = 0; i < RF->get_nWRPs(); ++i) {
+						std::string wrpName = "WRP" + std::to_string(i);
+						Port* wrp = RF->getInPort(wrpName);
+						if(wrp->getNode()!=NULL){
+							std::cout << wrp->getFullName() << ":" << wrp->getNode()->idx << ",";
+							usage++;
+						}
+					}
+
+					for (int i = 0; i < RF->get_nRDPs(); ++i) {
+						std::string rdpName = "RDP" + std::to_string(i);
+						Port* rdp = RF->getOutPort(rdpName);
+						if(rdp->getNode()!=NULL){
+							std::cout << rdp->getFullName() << ":" << rdp->getNode()->idx << ",";
+							usage++;
+						}
+					}
+				}
+
+				if(timeslice_count <= usage - 1){
+					timeslice_count = usage - 1;
+				}
+
+				std::cout << "\n";
+
+			}
+		}
+
+		std::cout << "t=" << t << "," << "timeslice=" << timeslice_count << "\n";
+	}
 }

@@ -52,6 +52,9 @@ public:
 		else if(peType == "STDNOC_4REG"){
 			createStdNoCPE(isMEMpe,numDPs);
 		}
+		else if(peType == "STDNOC_4REGF_1P"){
+			createStdNoCPE_RegFile(isMEMpe,numDPs,4,1,1);
+		}
 		else if(peType == "MFU_HyCUBE_4REG"){
 			createMultiFU_HyCUBEPE(isMEMpe,numDPs);
 		}

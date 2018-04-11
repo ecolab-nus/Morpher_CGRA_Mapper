@@ -29,6 +29,8 @@ public:
 	std::map<Port*,std::set<DFGNode*>>* getcongestedPortsPtr(){return &congestedPorts;}
 
 	bool checkConflictedPortCompatibility();
+	bool checkRegALUConflicts();
+
 
 private:
 	std::map<Port*,std::set<DFGNode*>> congestedPorts;

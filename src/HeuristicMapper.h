@@ -169,8 +169,18 @@ struct dest_with_cost{
 
 			std::cout << dest->getPE()->getName() << ",cost=" << cost << "\n";
 		}
-
+		cost += getDestTportCost();
 		return cost;
+	}
+
+
+	int getDestTportCost(){
+		PE* destPE = dest->getPE();
+		FU* destFU = dest->getFU();
+
+		int latency = destFU->supportedOPs[node->op];
+		Port* outputPort = dest->getOutputPort(latency);
+		return outputPort->getCongCost();
 	}
 
 	bool operator<(const dest_with_cost& rhs) const{

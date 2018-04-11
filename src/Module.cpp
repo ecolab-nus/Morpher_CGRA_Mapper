@@ -139,6 +139,24 @@ bool Module::isConflictPortsEmpty(Port* p) {
 	return getCGRA()->isConflictPortsEmpty(p);
 }
 
+std::string Module::getFullName() {
+	Module* mod = this;
+	std::stack<std::string> fullNameSt;
+
+	while(mod){
+		fullNameSt.push(mod->getName());
+		mod = mod->getParent();
+	}
+
+	std::string fullName;
+	while(!fullNameSt.empty()){
+		fullName = fullName + fullNameSt.top() + ".";
+		fullNameSt.pop();
+	}
+	fullName = fullName + name;
+	return fullName;
+}
+
 void Module::insertConnection(Port* src, Port* dest) {
 	connectedTo[src].push_back(dest);
 	connectedFrom[dest].push_back(src);
