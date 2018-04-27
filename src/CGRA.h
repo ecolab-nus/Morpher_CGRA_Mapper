@@ -16,9 +16,11 @@
 
 namespace CGRAXMLCompile {
 
+class DFG;
+
 class CGRA : public Module {
 public:
-	CGRA(const Module* Parent, std::string name, int t, int y, int x, std::string peType = "GENERIC_8REGF", int numberofDPs = 1, std::map<Port*,std::set<DFGNode*>>* _congestedPortPtr = NULL) : Module(Parent,name){
+	CGRA(const Module* Parent, std::string name, int t, int y, int x,  DFG* dfg, std::string peType = "GENERIC_8REGF", int numberofDPs = 1, std::map<Port*,std::set<DFGNode*>>* _congestedPortPtr = NULL) : Module(Parent,name){
 		createGenericCGRA(x,y,t,peType,numberofDPs);
 		this->peType=peType;
 		this->numberofDPs=numberofDPs;
@@ -44,8 +46,7 @@ public:
 				}
 			}
 		}
-
-
+		currDFG = dfg;
 	}
 	void createGenericCGRA(int x, int y, int t, std::string peType = "GENERIC_8REGF", int numberofDPs = 1);
 
@@ -66,6 +67,7 @@ public:
 	std::vector<Port*> getConflictPorts(Port* p);
 	void insertConflictPort(Port* a, Port* b);
 	bool isConflictPortsEmpty(Port* p){return conflictPorts[p].empty();}
+	DFG* currDFG = NULL;
 
 private:
 	int x_max;

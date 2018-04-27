@@ -143,10 +143,10 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(Port* start,
 	if(detailedDebug)				std::cout << "\tnextPort=" << nextPort->getFullName() << ",";
 					int nextPortCost = cost_to_port[currPort] + calculateCost(currPort,nextPort,end);
 	if(detailedDebug)				std::cout << "cost=" << nextPortCost << "\n";
-					if(isNextPortMutex){
-						//no cost is added in using mutually exclusive routes
-						nextPortCost = cost_to_port[currPort];
-					}
+//					if(isNextPortMutex){
+//						//no cost is added in using mutually exclusive routes
+//						nextPortCost = cost_to_port[currPort];
+//					}
 
 					if(nextPortCost <= cost_to_port[currPort]){
 						std::cout << "nextPortCost = " << nextPortCost << "\n";
@@ -756,11 +756,11 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 	int backTrackCredits=this->backTrackLimit;
 
 	//Disable mutex paths to test pathfinder
-	this->enableMutexPaths=false;
+	this->enableMutexPaths=true;
 
 
 	this->cgra = cgra;
-	this->dfg =dfg;
+	this->dfg = dfg;
 //	SortSCCDFG();
 	SortTopoGraphicalDFG();
 
@@ -1042,19 +1042,28 @@ bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts() {
 	for(std::pair<Port*,std::set<DFGNode*>> pair : congestedPorts){
 		Port* p = pair.first;
 		if(pair.second.size() > 1){
-			std::cout << "CONGESTION:" << p->getFullName();
-			for(DFGNode* node : pair.second){
-				std::cout << "," << node->idx;
+			for(DFGNode* node1 : pair.second){
+				for(DFGNode* node2 : pair.second){
+					if(node1==node2){
+						continue;
+					}
+					if(this->dfg->isMutexNodes(node1,node2)) continue;
+					std::cout << "CONGESTION:" << p->getFullName();
+					for(DFGNode* node : pair.second){
+						std::cout << "," << node->idx << "|BB=" << node->BB;
+					}
+					p->increastCongCost();
+					noCongestion=false;
+					break;
+				}
+				if(!noCongestion){
+					break;
+				}
 			}
-			std::cout << "\n";
-			p->increastCongCost();
-			noCongestion=false;
 		}
-
 		if(p->getHistoryCost() > 0){
 			std::cout << "HISTORY_COST :: " << p->getFullName() << "," << p->getHistoryCost() << "\n";
 		}
-
 	}
     congestedPorts.clear();
     if(noCongestion) std::cout << "noCongestion!\n";

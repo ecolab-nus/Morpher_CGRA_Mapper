@@ -30,6 +30,8 @@ public:
 	std::vector<std::set<DFGNode*>> getSCCs();
 	int unmappedMemOps=0;
 
+	bool isMutexNodes(DFGNode* a, DFGNode* b);
+
 private:
 	void strongconnect(DFGNode* v,
 					   std::map<DFGNode*,int>& v_idx,

@@ -10,6 +10,7 @@
 #include "Module.h"
 #include "CGRA.h"
 #include "PathFinderMapper.h"
+#include "CGRA.h"
 #include <stack>
 #include <iostream>
 
@@ -22,13 +23,36 @@ Port::Port(std::string name, PortType pType, Module* mod) {
 	this->mod = mod;
 }
 
-void Port::increaseUse() {
-	number_signals++;
+void Port::increaseUse(HeuristicMapper* hm) {
+
+	if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
+		for(DFGNode* node : (*pfm->getcongestedPortsPtr())[this]){
+			if(this->node == node) continue;
+			if(pfm->dfg->isMutexNodes(this->node,node)) continue;
+			number_signals++;
+			break;
+		}
+	}
+	else{
+		number_signals++;
+	}
+
+
 }
 
-void Port::decreaseUse() {
+void Port::decreaseUse(DFGNode* extnode, HeuristicMapper* hm) {
 	if(number_signals>0){
-		number_signals--;
+		if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
+			for(DFGNode* con_node : (*pfm->getcongestedPortsPtr())[this]){
+				if(extnode == con_node) continue;
+				if(pfm->dfg->isMutexNodes(extnode,con_node)) continue;
+				number_signals--;
+				break;
+			}
+		}
+		else{
+			number_signals--;
+		}
 	}
 }
 
@@ -44,7 +68,7 @@ void Port::setNode(DFGNode* node, HeuristicMapper* hm){
 	}
 }
 
-void Port::increaseConflictedUse() {
+void Port::increaseConflictedUse(HeuristicMapper* hm) {
 	increaseUse();
 
 	if(!getMod()->isConflictPortsEmpty(this)){
@@ -113,19 +137,20 @@ void CGRAXMLCompile::Port::clear() {
 	if(node!=NULL){
 		(*this->mod->getCGRA()->getCongestedPortPtr())[this].erase(node);
 	}
-	node=NULL;
+
 
 	for(Port* p : getMod()->getConflictPorts(this)){
-		p->decreaseUse();
+		p->decreaseUse(node);
 		(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(node);
 	}
 
 	if(this->getType()==OUT){
 		for(Port* p : getMod()->getParent()->getConflictPorts(this)){
-			p->decreaseUse();
+			p->decreaseUse(node);
 			(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(node);
 		}
 	}
 
+	node=NULL;
 	number_signals=0;
 }

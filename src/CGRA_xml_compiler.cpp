@@ -41,7 +41,7 @@ int main(int argn, char* argc[]) {
 	std::string PEType(argc[2]);
 	int numberOfDPs=atoi(argc[3]);
 
-	CGRA testCGRA(NULL,"testCGRA",1,ydim,xdim,PEType,numberOfDPs);
+	CGRA testCGRA(NULL,"testCGRA",1,ydim,xdim,&currDFG, PEType, numberOfDPs);
 
 //	HeuristicMapper hm(inputDFG_filename);
 	PathFinderMapper hm(inputDFG_filename);
@@ -68,7 +68,7 @@ int main(int argn, char* argc[]) {
 		DFG tempDFG;
 		tempDFG.parseXML(inputDFG_filename);
 		tempDFG.printDFG();
-		CGRA* tempCGRA = new CGRA(NULL,"coreCGRA",II,ydim,xdim,PEType,numberOfDPs,hm.getcongestedPortsPtr());
+		CGRA* tempCGRA = new CGRA(NULL,"coreCGRA",II,ydim,xdim,&tempDFG,PEType,numberOfDPs,hm.getcongestedPortsPtr());
 		hm.getcongestedPortsPtr()->clear();
 		mappingSuccess = hm.Map(tempCGRA,&tempDFG);
 		if(!mappingSuccess){

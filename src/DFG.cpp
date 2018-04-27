@@ -202,6 +202,27 @@ std::vector<std::set<DFGNode*> > DFG::getSCCs() {
 	  return res;
 }
 
+bool DFG::isMutexNodes(DFGNode* a, DFGNode* b) {
+
+	if(mutexBBs.find(a->BB)==mutexBBs.end()){
+		return false;
+	}
+
+	if(mutexBBs.find(b->BB)==mutexBBs.end()){
+		return false;
+	}
+
+	if(mutexBBs[a->BB].find(b->BB)!=mutexBBs[a->BB].end()){
+		return true;
+	}
+
+	if(mutexBBs[b->BB].find(a->BB)!=mutexBBs[b->BB].end()){
+		return true;
+	}
+
+	return false;
+}
+
 void DFG::strongconnect(DFGNode* v,
 						std::map<DFGNode*,int>& v_idx,
 						std::map<DFGNode*,int>& v_lowlink,
