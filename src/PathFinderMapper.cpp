@@ -1052,6 +1052,7 @@ bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts() {
 					for(DFGNode* node : pair.second){
 						std::cout << "," << node->idx << "|BB=" << node->BB;
 					}
+					std::cout << "\n";
 					p->increastCongCost();
 					noCongestion=false;
 					break;
