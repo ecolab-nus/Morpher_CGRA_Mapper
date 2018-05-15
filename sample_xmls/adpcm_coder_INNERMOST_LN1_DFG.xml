@@ -131,7 +131,7 @@
 </RecParents>
 </Node>
 
-<Node idx="72"ASAP="2"BB="for.body">
+<Node idx="72"ASAP="2"BB="for.body"CONST="131076">
 <OP>SEXT</OP>
 <Inputs>
 	<Input idx="71"/>
@@ -176,7 +176,7 @@
 </RecParents>
 </Node>
 
-<Node idx="58"ASAP="4"BB="for.body">
+<Node idx="58"ASAP="4"BB="for.body"CONST="0">
 <OP>SUB</OP>
 <Inputs>
 	<Input idx="29"/>
@@ -189,7 +189,7 @@
 </RecParents>
 </Node>
 
-<Node idx="61"ASAP="4"BB="for.body">
+<Node idx="61"ASAP="4"BB="for.body"CONST="0">
 <OP>CLT</OP>
 <Inputs>
 	<Input idx="29"/>
@@ -204,7 +204,7 @@
 </RecParents>
 </Node>
 
-<Node idx="126"ASAP="5"BB="for.body">
+<Node idx="126"ASAP="5"BB="for.body"CONST="1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="61"/>
@@ -216,7 +216,7 @@
 </RecParents>
 </Node>
 
-<Node idx="64"ASAP="6"BB="for.body">
+<Node idx="64"ASAP="6"BB="for.body"CONST="1">
 <OP>ARS</OP>
 <Inputs>
 	<Input idx="62"/>
@@ -299,7 +299,7 @@
 </RecParents>
 </Node>
 
-<Node idx="134"ASAP="9"BB="for.body_50_0">
+<Node idx="134"ASAP="9"BB="for.body_50_0"CONST="0">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="49"/>
@@ -311,7 +311,7 @@
 </RecParents>
 </Node>
 
-<Node idx="135"ASAP="9"BB="for.body">
+<Node idx="135"ASAP="9"BB="for.body"CONST="1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="49"/>
@@ -349,7 +349,7 @@
 </RecParents>
 </Node>
 
-<Node idx="59"ASAP="11"BB="for.body">
+<Node idx="59"ASAP="11"BB="for.body"CONST="31">
 <OP>ARS</OP>
 <Inputs>
 	<Input idx="29"/>
@@ -374,7 +374,7 @@
 </RecParents>
 </Node>
 
-<Node idx="50"ASAP="11"BB="for.body">
+<Node idx="50"ASAP="11"BB="for.body"CONST="0">
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="134"/>
@@ -388,7 +388,7 @@
 </RecParents>
 </Node>
 
-<Node idx="60"ASAP="12"BB="for.body">
+<Node idx="60"ASAP="12"BB="for.body"CONST="8">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="59"/>
@@ -454,7 +454,7 @@
 </RecParents>
 </Node>
 
-<Node idx="48"ASAP="14"BB="for.body">
+<Node idx="48"ASAP="14"BB="for.body"CONST="0">
 <OP>OR</OP>
 <Inputs>
 	<Input idx="47"/>
@@ -473,7 +473,7 @@
 </RecParents>
 </Node>
 
-<Node idx="132"ASAP="14"BB="if.end19">
+<Node idx="132"ASAP="14"BB="if.end19"CONST="1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="61"/>
@@ -485,7 +485,7 @@
 </RecParents>
 </Node>
 
-<Node idx="78"ASAP="15"BB="if.then16">
+<Node idx="78"ASAP="15"BB="if.then16"CONST="1">
 <OP>OR</OP>
 <Inputs>
 	<Input idx="48"/>
@@ -514,7 +514,7 @@
 </RecParents>
 </Node>
 
-<Node idx="88"ASAP="16"BB="for.body">
+<Node idx="88"ASAP="16"BB="for.body"CONST="4094">
 <OP>LOADB</OP>
 <Inputs>
 </Inputs>
@@ -540,7 +540,7 @@
 </RecParents>
 </Node>
 
-<Node idx="65"ASAP="16"BB="for.body">
+<Node idx="65"ASAP="16"BB="for.body"CONST="3">
 <OP>ARS</OP>
 <Inputs>
 	<Input idx="62"/>
@@ -581,7 +581,7 @@
 </RecParents>
 </Node>
 
-<Node idx="144"ASAP="17"BB="if.end60">
+<Node idx="144"ASAP="17"BB="if.end60"CONST="4">
 <OP>MOVC</OP>
 <Inputs>
 </Inputs>
@@ -592,7 +592,7 @@
 </RecParents>
 </Node>
 
-<Node idx="141"ASAP="17"BB="for.body">
+<Node idx="141"ASAP="17"BB="for.body"CONST="-2">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="88"/>
@@ -604,7 +604,7 @@
 </RecParents>
 </Node>
 
-<Node idx="140"ASAP="17"BB="for.body">
+<Node idx="140"ASAP="17"BB="for.body"CONST="1">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="88"/>
@@ -623,7 +623,7 @@
 </RecParents>
 </Node>
 
-<Node idx="106"ASAP="17"BB="for.body">
+<Node idx="106"ASAP="17"BB="for.body"CONST="-1">
 <OP>LOAD</OP>
 <Inputs>
 	<Input idx="140"/>
@@ -635,7 +635,7 @@
 </RecParents>
 </Node>
 
-<Node idx="97"ASAP="17"BB="for.body">
+<Node idx="97"ASAP="17"BB="for.body"CONST="-1">
 <OP>LOAD</OP>
 <Inputs>
 	<Input idx="140"/>
@@ -647,7 +647,7 @@
 </RecParents>
 </Node>
 
-<Node idx="94"ASAP="17"BB="for.body">
+<Node idx="94"ASAP="17"BB="for.body"CONST="-1">
 <OP>LOAD</OP>
 <Inputs>
 	<Input idx="140"/>
@@ -659,7 +659,7 @@
 </RecParents>
 </Node>
 
-<Node idx="63"ASAP="17"BB="if.end19">
+<Node idx="63"ASAP="17"BB="if.end19"CONST="2">
 <OP>ARS</OP>
 <Inputs>
 	<Input idx="62"/>
@@ -687,7 +687,7 @@
 </RecParents>
 </Node>
 
-<Node idx="73"ASAP="17"BB="for.body">
+<Node idx="73"ASAP="17"BB="for.body"CONST="-1">
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="70"/>
@@ -714,7 +714,7 @@
 </RecParents>
 </Node>
 
-<Node idx="87"ASAP="18"BB="for.body_0_0">
+<Node idx="87"ASAP="18"BB="for.body_0_0"CONST="1">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="140"/>
@@ -726,7 +726,7 @@
 </RecParents>
 </Node>
 
-<Node idx="142"ASAP="18"BB="for.body">
+<Node idx="142"ASAP="18"BB="for.body"CONST="4094">
 <OP>STOREB</OP>
 <Inputs>
 	<Input idx="141"/>
@@ -737,7 +737,7 @@
 </RecParents>
 </Node>
 
-<Node idx="89"ASAP="18"BB="for.body_7_0">
+<Node idx="89"ASAP="18"BB="for.body_7_0"CONST="0">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="140"/>
@@ -749,7 +749,7 @@
 </RecParents>
 </Node>
 
-<Node idx="107"ASAP="18"BB="for.body_66_0">
+<Node idx="107"ASAP="18"BB="for.body_66_0"CONST="0">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="140"/>
@@ -776,7 +776,7 @@
 </RecParents>
 </Node>
 
-<Node idx="9"ASAP="18"BB="if.end60">
+<Node idx="9"ASAP="18"BB="if.end60"CONST="-1">
 <OP>STORE</OP>
 <Inputs>
 	<Input idx="8"/>
@@ -787,7 +787,7 @@
 </RecParents>
 </Node>
 
-<Node idx="110"ASAP="18"BB="for.body_74_0">
+<Node idx="110"ASAP="18"BB="for.body_74_0"CONST="0">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="140"/>
@@ -799,7 +799,7 @@
 </RecParents>
 </Node>
 
-<Node idx="109"ASAP="18"BB="for.body_70_0">
+<Node idx="109"ASAP="18"BB="for.body_70_0"CONST="0">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="140"/>
@@ -811,7 +811,7 @@
 </RecParents>
 </Node>
 
-<Node idx="76"ASAP="18"BB="if.end60">
+<Node idx="76"ASAP="18"BB="if.end60"CONST="-1">
 <OP>STORE</OP>
 <Inputs>
 	<Input idx="75"/>
@@ -822,7 +822,7 @@
 </RecParents>
 </Node>
 
-<Node idx="38"ASAP="19"BB="if.end19">
+<Node idx="38"ASAP="19"BB="if.end19"CONST="-1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="33"/>
@@ -834,7 +834,7 @@
 </RecParents>
 </Node>
 
-<Node idx="129"ASAP="19"BB="if.end19">
+<Node idx="129"ASAP="19"BB="if.end19"CONST="1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="33"/>
@@ -846,7 +846,7 @@
 </RecParents>
 </Node>
 
-<Node idx="128"ASAP="19"BB="if.end19_34_0">
+<Node idx="128"ASAP="19"BB="if.end19_34_0"CONST="0">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="33"/>
@@ -858,7 +858,7 @@
 </RecParents>
 </Node>
 
-<Node idx="39"ASAP="20"BB="if.end19">
+<Node idx="39"ASAP="20"BB="if.end19"CONST="0">
 <OP>OR</OP>
 <Inputs>
 	<Input idx="38"/>
@@ -870,7 +870,7 @@
 </RecParents>
 </Node>
 
-<Node idx="137"ASAP="20"BB="for.body_54_0">
+<Node idx="137"ASAP="20"BB="for.body_54_0"CONST="0">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="49"/>
@@ -882,7 +882,7 @@
 </RecParents>
 </Node>
 
-<Node idx="138"ASAP="20"BB="for.body">
+<Node idx="138"ASAP="20"BB="for.body"CONST="1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="49"/>
@@ -922,7 +922,7 @@
 </RecParents>
 </Node>
 
-<Node idx="139"ASAP="21"BB="for.body_54_1">
+<Node idx="139"ASAP="21"BB="for.body_54_1"CONST="4">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="138"/>
@@ -934,7 +934,7 @@
 </RecParents>
 </Node>
 
-<Node idx="34"ASAP="21"BB="if.end19">
+<Node idx="34"ASAP="21"BB="if.end19"CONST="0">
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="128"/>
@@ -947,7 +947,7 @@
 </RecParents>
 </Node>
 
-<Node idx="1"ASAP="22"BB="if.end19">
+<Node idx="1"ASAP="22"BB="if.end19"CONST="0">
 <OP>CMP</OP>
 <Inputs>
 	<Input idx="0"/>
@@ -960,7 +960,7 @@
 </RecParents>
 </Node>
 
-<Node idx="44"ASAP="22"BB="if.end19">
+<Node idx="44"ASAP="22"BB="if.end19"CONST="-1">
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="40"/>
@@ -972,7 +972,7 @@
 </RecParents>
 </Node>
 
-<Node idx="54"ASAP="22"BB="for.body">
+<Node idx="54"ASAP="22"BB="for.body"CONST="4">
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="137"/>
@@ -1039,7 +1039,7 @@
 </RecParents>
 </Node>
 
-<Node idx="2"ASAP="23"BB="if.end19">
+<Node idx="2"ASAP="23"BB="if.end19"CONST="-1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="1"/>
@@ -1053,7 +1053,7 @@
 </RecParents>
 </Node>
 
-<Node idx="37"ASAP="23"BB="if.end19">
+<Node idx="37"ASAP="23"BB="if.end19"CONST="0">
 <OP>SUB</OP>
 <Inputs>
 	<Input idx="35"/>
@@ -1080,7 +1080,7 @@
 </RecParents>
 </Node>
 
-<Node idx="3"ASAP="24"BB="if.end19">
+<Node idx="3"ASAP="24"BB="if.end19"CONST="0">
 <OP>OR</OP>
 <Inputs>
 	<Input idx="2"/>
@@ -1110,7 +1110,7 @@
 </RecParents>
 </Node>
 
-<Node idx="57"ASAP="24"BB="if.then16">
+<Node idx="57"ASAP="24"BB="if.then16"CONST="2">
 <OP>OR</OP>
 <Inputs>
 	<Input idx="54"/>
@@ -1150,7 +1150,7 @@
 </RecParents>
 </Node>
 
-<Node idx="80"ASAP="25"BB="if.else55">
+<Node idx="80"ASAP="25"BB="if.else55"CONST="1">
 <OP>OR</OP>
 <Inputs>
 	<Input idx="3"/>
@@ -1164,7 +1164,7 @@
 </RecParents>
 </Node>
 
-<Node idx="79"ASAP="25"BB="if.then54">
+<Node idx="79"ASAP="25"BB="if.then54"CONST="1">
 <OP>OR</OP>
 <Inputs>
 	<Input idx="3"/>
@@ -1230,7 +1230,7 @@
 </RecParents>
 </Node>
 
-<Node idx="21"ASAP="25"BB="if.end19">
+<Node idx="21"ASAP="25"BB="if.end19"CONST="0">
 <OP>CGT</OP>
 <Inputs>
 	<Input idx="14"/>
@@ -1283,7 +1283,7 @@
 </RecParents>
 </Node>
 
-<Node idx="114"ASAP="26"BB="if.end19">
+<Node idx="114"ASAP="26"BB="if.end19"CONST="1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="21"/>
@@ -1323,7 +1323,7 @@
 </RecParents>
 </Node>
 
-<Node idx="115"ASAP="27"BB="if.end19_15_1">
+<Node idx="115"ASAP="27"BB="if.end19_15_1"CONST="0">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="114"/>
@@ -1335,7 +1335,7 @@
 </RecParents>
 </Node>
 
-<Node idx="41"ASAP="27"BB="if.else55">
+<Node idx="41"ASAP="27"BB="if.else55"CONST="15">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="40"/>
@@ -1348,7 +1348,7 @@
 </RecParents>
 </Node>
 
-<Node idx="4"ASAP="27"BB="if.end60">
+<Node idx="4"ASAP="27"BB="if.end60"CONST="-1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="2"/>
@@ -1361,7 +1361,7 @@
 </RecParents>
 </Node>
 
-<Node idx="6"ASAP="27"BB="if.end19">
+<Node idx="6"ASAP="27"BB="if.end19"CONST="-1">
 <OP>STOREB</OP>
 <Inputs>
 	<Input idx="2"/>
@@ -1372,7 +1372,7 @@
 </RecParents>
 </Node>
 
-<Node idx="28"ASAP="27"BB="if.end19">
+<Node idx="28"ASAP="27"BB="if.end19"CONST="-32768">
 <OP>CGT</OP>
 <Inputs>
 	<Input idx="23"/>
@@ -1385,7 +1385,7 @@
 </RecParents>
 </Node>
 
-<Node idx="42"ASAP="27"BB="if.then54">
+<Node idx="42"ASAP="27"BB="if.then54"CONST="4">
 <OP>LS</OP>
 <Inputs>
 	<Input idx="40"/>
@@ -1398,7 +1398,7 @@
 </RecParents>
 </Node>
 
-<Node idx="67"ASAP="27"BB="if.end60">
+<Node idx="67"ASAP="27"BB="if.end60"CONST="1">
 <OP>CGT</OP>
 <Inputs>
 	<Input idx="66"/>
@@ -1411,7 +1411,7 @@
 </RecParents>
 </Node>
 
-<Node idx="77"ASAP="27"BB="if.else55">
+<Node idx="77"ASAP="27"BB="if.else55"CONST="-1">
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="74"/>
@@ -1437,7 +1437,7 @@
 </RecParents>
 </Node>
 
-<Node idx="15"ASAP="28"BB="if.end19">
+<Node idx="15"ASAP="28"BB="if.end19"CONST="0">
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="113"/>
@@ -1477,7 +1477,7 @@
 </RecParents>
 </Node>
 
-<Node idx="69"ASAP="28"BB="if.end60">
+<Node idx="69"ASAP="28"BB="if.end60"CONST="-1">
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="66"/>
@@ -1490,7 +1490,7 @@
 </RecParents>
 </Node>
 
-<Node idx="68"ASAP="28"BB="if.end60">
+<Node idx="68"ASAP="28"BB="if.end60"CONST="0">
 <OP>OR</OP>
 <Inputs>
 	<Input idx="67"/>
@@ -1510,7 +1510,7 @@
 </RecParents>
 </Node>
 
-<Node idx="5"ASAP="28"BB="if.end60">
+<Node idx="5"ASAP="28"BB="if.end60"CONST="0">
 <OP>OR</OP>
 <Inputs>
 	<Input idx="4"/>
@@ -1536,7 +1536,7 @@
 </RecParents>
 </Node>
 
-<Node idx="120"ASAP="28"BB="if.end19">
+<Node idx="120"ASAP="28"BB="if.end19"CONST="1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="28"/>
@@ -1561,7 +1561,7 @@
 </RecParents>
 </Node>
 
-<Node idx="43"ASAP="28"BB="if.then54">
+<Node idx="43"ASAP="28"BB="if.then54"CONST="240">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="42"/>
@@ -1574,7 +1574,7 @@
 </RecParents>
 </Node>
 
-<Node idx="143"ASAP="29"BB="for.end">
+<Node idx="143"ASAP="29"BB="for.end"CONST="2047">
 <OP>STOREB</OP>
 <Inputs>
 	<Input idx="68"/>
@@ -1586,7 +1586,7 @@
 </RecParents>
 </Node>
 
-<Node idx="20"ASAP="29"BB="if.end19">
+<Node idx="20"ASAP="29"BB="if.end19"CONST="88">
 <OP>CLT</OP>
 <Inputs>
 	<Input idx="15"/>
@@ -1638,7 +1638,7 @@
 </RecParents>
 </Node>
 
-<Node idx="11"ASAP="29"BB="if.else55">
+<Node idx="11"ASAP="29"BB="if.else55"CONST="255">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="10"/>
@@ -1650,7 +1650,7 @@
 </RecParents>
 </Node>
 
-<Node idx="121"ASAP="29"BB="if.end19_24_1">
+<Node idx="121"ASAP="29"BB="if.end19_24_1"CONST="-32768">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="120"/>
@@ -1662,7 +1662,7 @@
 </RecParents>
 </Node>
 
-<Node idx="117"ASAP="30"BB="if.end19">
+<Node idx="117"ASAP="30"BB="if.end19"CONST="1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="20"/>
@@ -1699,7 +1699,7 @@
 </RecParents>
 </Node>
 
-<Node idx="24"ASAP="30"BB="if.end19">
+<Node idx="24"ASAP="30"BB="if.end19"CONST="-32768">
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="119"/>
@@ -1713,7 +1713,7 @@
 </RecParents>
 </Node>
 
-<Node idx="27"ASAP="31"BB="if.end19">
+<Node idx="27"ASAP="31"BB="if.end19"CONST="32767">
 <OP>CLT</OP>
 <Inputs>
 	<Input idx="24"/>
@@ -1726,7 +1726,7 @@
 </RecParents>
 </Node>
 
-<Node idx="118"ASAP="31"BB="if.end19_16_1">
+<Node idx="118"ASAP="31"BB="if.end19_16_1"CONST="88">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="117"/>
@@ -1738,7 +1738,7 @@
 </RecParents>
 </Node>
 
-<Node idx="123"ASAP="32"BB="if.end19">
+<Node idx="123"ASAP="32"BB="if.end19"CONST="1">
 <OP>XOR</OP>
 <Inputs>
 	<Input idx="27"/>
@@ -1763,7 +1763,7 @@
 </RecParents>
 </Node>
 
-<Node idx="16"ASAP="32"BB="if.end19">
+<Node idx="16"ASAP="32"BB="if.end19"CONST="88">
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="116"/>
@@ -1778,7 +1778,7 @@
 </RecParents>
 </Node>
 
-<Node idx="18"ASAP="33"BB="if.end19">
+<Node idx="18"ASAP="33"BB="if.end19"CONST="-1">
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="16"/>
@@ -1790,7 +1790,7 @@
 </RecParents>
 </Node>
 
-<Node idx="124"ASAP="33"BB="if.end19_25_1">
+<Node idx="124"ASAP="33"BB="if.end19_25_1"CONST="32767">
 <OP>CMERGE</OP>
 <Inputs>
 	<Input idx="123"/>
@@ -1828,7 +1828,7 @@
 </RecParents>
 </Node>
 
-<Node idx="17"ASAP="34"BB="if.end19">
+<Node idx="17"ASAP="34"BB="if.end19"CONST="-1">
 <OP>STORE</OP>
 <Inputs>
 	<Input idx="16"/>
@@ -1839,7 +1839,7 @@
 </RecParents>
 </Node>
 
-<Node idx="25"ASAP="34"BB="if.end19">
+<Node idx="25"ASAP="34"BB="if.end19"CONST="32767">
 <OP>SELECT</OP>
 <Inputs>
 	<Input idx="122"/>
@@ -1866,7 +1866,7 @@
 </RecParents>
 </Node>
 
-<Node idx="26"ASAP="35"BB="if.end19">
+<Node idx="26"ASAP="35"BB="if.end19"CONST="-1">
 <OP>STORE</OP>
 <Inputs>
 	<Input idx="25"/>

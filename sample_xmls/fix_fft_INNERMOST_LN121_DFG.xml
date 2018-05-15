@@ -1,7 +1,7 @@
 <MutexBB>
 </MutexBB>
 <DFG count="53">
-<Node idx="22"ASAP="0"BB="for.body77">
+<Node idx="22"ASAP="0"BB="for.body77"CONST="-1">
 <OP>LOAD</OP>
 <Inputs>
 </Inputs>
@@ -42,7 +42,7 @@
 </RecParents>
 </Node>
 
-<Node idx="36"ASAP="2"BB="for.body77">
+<Node idx="36"ASAP="2"BB="for.body77"CONST="-1">
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="21"/>
@@ -55,7 +55,7 @@
 </RecParents>
 </Node>
 
-<Node idx="32"ASAP="2"BB="for.body77">
+<Node idx="32"ASAP="2"BB="for.body77"CONST="-1">
 <OP>LOAD</OP>
 <Inputs>
 </Inputs>
@@ -67,7 +67,7 @@
 </RecParents>
 </Node>
 
-<Node idx="27"ASAP="2"BB="for.body77">
+<Node idx="27"ASAP="2"BB="for.body77"CONST="-1">
 <OP>LOAD</OP>
 <Inputs>
 </Inputs>
@@ -79,7 +79,7 @@
 </RecParents>
 </Node>
 
-<Node idx="23"ASAP="2"BB="for.body77">
+<Node idx="23"ASAP="2"BB="for.body77"CONST="-1">
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="21"/>
@@ -92,7 +92,7 @@
 </RecParents>
 </Node>
 
-<Node idx="4"ASAP="3"BB="for.body77">
+<Node idx="4"ASAP="3"BB="for.body77"CONST="-1">
 <OP>LOAD</OP>
 <Inputs>
 </Inputs>
@@ -103,7 +103,7 @@
 </RecParents>
 </Node>
 
-<Node idx="6"ASAP="3"BB="for.body77">
+<Node idx="6"ASAP="3"BB="for.body77"CONST="-1">
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="0"/>
@@ -128,7 +128,7 @@
 </RecParents>
 </Node>
 
-<Node idx="10"ASAP="3"BB="for.body77">
+<Node idx="10"ASAP="3"BB="for.body77"CONST="-1">
 <OP>LOADH</OP>
 <Inputs>
 </Inputs>
@@ -140,7 +140,7 @@
 </RecParents>
 </Node>
 
-<Node idx="14"ASAP="3"BB="for.body77">
+<Node idx="14"ASAP="3"BB="for.body77"CONST="-1">
 <OP>ADD</OP>
 <Inputs>
 	<Input idx="0"/>
@@ -165,7 +165,7 @@
 </RecParents>
 </Node>
 
-<Node idx="2"ASAP="3"BB="for.body77">
+<Node idx="2"ASAP="3"BB="for.body77"CONST="-1">
 <OP>LOAD</OP>
 <Inputs>
 </Inputs>
@@ -176,7 +176,7 @@
 </RecParents>
 </Node>
 
-<Node idx="48"ASAP="4"BB="for.body77">
+<Node idx="48"ASAP="4"BB="for.body77"CONST="4094">
 <OP>LOADB</OP>
 <Inputs>
 </Inputs>
@@ -226,7 +226,7 @@
 </RecParents>
 </Node>
 
-<Node idx="53"ASAP="4"BB="for.body77">
+<Node idx="53"ASAP="4"BB="for.body77"CONST="512">
 <OP>MOVC</OP>
 <Inputs>
 </Inputs>
@@ -237,7 +237,7 @@
 </RecParents>
 </Node>
 
-<Node idx="25"ASAP="4"BB="for.body77">
+<Node idx="25"ASAP="4"BB="for.body77"CONST="131076">
 <OP>SEXT</OP>
 <Inputs>
 	<Input idx="24"/>
@@ -250,7 +250,7 @@
 </RecParents>
 </Node>
 
-<Node idx="38"ASAP="4"BB="for.body77">
+<Node idx="38"ASAP="4"BB="for.body77"CONST="131076">
 <OP>SEXT</OP>
 <Inputs>
 	<Input idx="37"/>
@@ -263,7 +263,7 @@
 </RecParents>
 </Node>
 
-<Node idx="47"ASAP="4"BB="for.body77">
+<Node idx="47"ASAP="4"BB="for.body77"CONST="-1">
 <OP>LOAD</OP>
 <Inputs>
 	<Input idx="49"/>
@@ -341,7 +341,7 @@
 </RecParents>
 </Node>
 
-<Node idx="49"ASAP="5"BB="for.body77">
+<Node idx="49"ASAP="5"BB="for.body77"CONST="2">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="48"/>
@@ -353,7 +353,7 @@
 </RecParents>
 </Node>
 
-<Node idx="50"ASAP="5"BB="for.body77">
+<Node idx="50"ASAP="5"BB="for.body77"CONST="-3">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="48"/>
@@ -392,7 +392,7 @@
 </RecParents>
 </Node>
 
-<Node idx="28"ASAP="6"BB="for.body77">
+<Node idx="28"ASAP="6"BB="for.body77"CONST="15">
 <OP>RS</OP>
 <Inputs>
 	<Input idx="26"/>
@@ -404,7 +404,7 @@
 </RecParents>
 </Node>
 
-<Node idx="33"ASAP="6"BB="for.body77">
+<Node idx="33"ASAP="6"BB="for.body77"CONST="15">
 <OP>RS</OP>
 <Inputs>
 	<Input idx="31"/>
@@ -416,7 +416,7 @@
 </RecParents>
 </Node>
 
-<Node idx="51"ASAP="6"BB="for.body77">
+<Node idx="51"ASAP="6"BB="for.body77"CONST="4094">
 <OP>STOREB</OP>
 <Inputs>
 	<Input idx="50"/>
@@ -427,7 +427,7 @@
 </RecParents>
 </Node>
 
-<Node idx="5"ASAP="6"BB="for.body77">
+<Node idx="5"ASAP="6"BB="for.body77"CONST="0">
 <OP>OR</OP>
 <Inputs>
 	<Input idx="3"/>
@@ -440,7 +440,7 @@
 </RecParents>
 </Node>
 
-<Node idx="40"ASAP="6"BB="for.body77">
+<Node idx="40"ASAP="6"BB="for.body77"CONST="15">
 <OP>RS</OP>
 <Inputs>
 	<Input idx="39"/>
@@ -452,7 +452,7 @@
 </RecParents>
 </Node>
 
-<Node idx="43"ASAP="6"BB="for.body77">
+<Node idx="43"ASAP="6"BB="for.body77"CONST="15">
 <OP>RS</OP>
 <Inputs>
 	<Input idx="42"/>
@@ -464,7 +464,7 @@
 </RecParents>
 </Node>
 
-<Node idx="41"ASAP="7"BB="for.body77">
+<Node idx="41"ASAP="7"BB="for.body77"CONST="65535">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="40"/>
@@ -476,7 +476,7 @@
 </RecParents>
 </Node>
 
-<Node idx="44"ASAP="7"BB="for.body77">
+<Node idx="44"ASAP="7"BB="for.body77"CONST="65535">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="43"/>
@@ -501,7 +501,7 @@
 </RecParents>
 </Node>
 
-<Node idx="34"ASAP="7"BB="for.body77">
+<Node idx="34"ASAP="7"BB="for.body77"CONST="65535">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="33"/>
@@ -513,7 +513,7 @@
 </RecParents>
 </Node>
 
-<Node idx="52"ASAP="7"BB="for.inc128.loopexit">
+<Node idx="52"ASAP="7"BB="for.inc128.loopexit"CONST="2047">
 <OP>STOREB</OP>
 <Inputs>
 	<Input idx="5"/>
@@ -525,7 +525,7 @@
 </RecParents>
 </Node>
 
-<Node idx="29"ASAP="7"BB="for.body77">
+<Node idx="29"ASAP="7"BB="for.body77"CONST="65535">
 <OP>AND</OP>
 <Inputs>
 	<Input idx="28"/>
