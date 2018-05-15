@@ -1283,6 +1283,8 @@ void CGRAXMLCompile::PE::getArithmeticIns(
 	supportedOPs["CLT"]=1; //20
 	supportedOPs["CGT"]=1; //21
 
+	supportedOPs["MOVC"]=1; //11
+
 }
 
 void CGRAXMLCompile::PE::getMemOnlyIns(std::map<std::string, int>& supportedOPs) {
@@ -1295,6 +1297,7 @@ void CGRAXMLCompile::PE::getMemOnlyIns(std::map<std::string, int>& supportedOPs)
 	supportedOPs["STOREH"]=2;
 	supportedOPs["STOREB"]=2;
 
+	supportedOPs["MOVC"]=1; //11
 }
 
 void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,

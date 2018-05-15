@@ -30,6 +30,7 @@ public:
 	std::string op;
 	std::vector<DFGNode*> parents;
 	std::vector<DFGNode*> phiParents;
+	std::vector<DFGNode*> recParents;
 	std::vector<DFGNode*> children;
 	std::vector<DFGNode*> phiChildren;
 

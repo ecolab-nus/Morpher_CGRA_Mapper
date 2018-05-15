@@ -61,6 +61,9 @@ public:
 		else if(peType == "MFU_HyCUBE_4REGF"){
 			createMultiFU_HyCUBEPE_RegFile(isMEMpe,numDPs,4,4,4);
 		}
+		else if(peType == "MFU_HyCUBE_4REGF2P"){
+			createMultiFU_HyCUBEPE_RegFile(isMEMpe,numDPs,4,2,2);
+		}
 		else if(peType == "MFU_STDNOC_4REG"){
 			createMultiFU_StdNoCPE(isMEMpe,numDPs);
 		}
