@@ -27,6 +27,8 @@ public:
 	DFGNode();
 	int idx;
 	int ASAP;
+	int constant;
+	bool hasConst=false;
 	std::string op;
 	std::vector<DFGNode*> parents;
 	std::vector<DFGNode*> phiParents;

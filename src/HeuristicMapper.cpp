@@ -1159,6 +1159,9 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog() {
 								dpHeader << dp->getName() << ",";
 								if(dp->getMappedNode()){
 									dpOp << dp->getMappedNode()->idx << ":" << dp->getMappedNode()->op;
+									if(dp->getMappedNode()->hasConst){
+										dpOp << "+C";
+									}
 									dpOp << "(";
 									for(DFGNode* parent : dp->getMappedNode()->parents){
 										dpOp << parent->idx << "-";

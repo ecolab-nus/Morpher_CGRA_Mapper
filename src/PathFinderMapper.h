@@ -30,6 +30,7 @@ public:
 
 	bool checkConflictedPortCompatibility();
 	bool checkRegALUConflicts();
+	bool checkDPFree(DataPath* dp, DFGNode* node);
 
 
 private:

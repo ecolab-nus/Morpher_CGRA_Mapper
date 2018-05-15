@@ -277,7 +277,8 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 						if(fu->currOP.compare(node->op)==0){
 							for(Module* submodFU : fu->subModules){
 								if(DataPath* dp = dynamic_cast<DataPath*>(submodFU)){
-									if(dp->getMappedNode()==NULL){
+									if(checkDPFree(dp,node)){
+//									if(dp->getMappedNode()==NULL){
 //									if(dataPathCheck(dp,&node)){
 
 										if(node->blacklistDest.find(dp)==node->blacklistDest.end()){
@@ -290,7 +291,8 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 						else if(fu->currOP.compare("NOP")==0){
 							for(Module* submodFU : fu->subModules){
 								if(DataPath* dp = dynamic_cast<DataPath*>(submodFU)){
-									if(dp->getMappedNode()==NULL){
+									if(checkDPFree(dp,node)){
+//									if(dp->getMappedNode()==NULL){
 //									if(dataPathCheck(dp,&node)){
 
 										if(node->blacklistDest.find(dp)==node->blacklistDest.end()){
@@ -1209,4 +1211,45 @@ bool CGRAXMLCompile::PathFinderMapper::checkRegALUConflicts() {
 
 		std::cout << "t=" << t << "," << "timeslice=" << timeslice_count << "\n";
 	}
+}
+
+bool CGRAXMLCompile::PathFinderMapper::checkDPFree(DataPath* dp, DFGNode* node) {
+	PE* currPE = dp->getPE();
+	FU* currFU = dp->getFU();
+
+
+	int numberFUs=0;
+	int numberUsedFUs=0;
+	int numberConstants=0;
+	for(Module* submod_fu : currPE->subModules){
+		if(FU* fu = dynamic_cast<FU*>(submod_fu)){
+			int dp_used = 0;
+			for(Module* submod_dp : fu->subModules){
+				if(DataPath* dp = dynamic_cast<DataPath*>(submod_dp)){
+					if(dp->getMappedNode()!=NULL){
+						dp_used = 1;
+						if(dp->getMappedNode()->hasConst){
+							numberConstants++;
+						}
+					}
+				}
+			}
+			numberUsedFUs += dp_used;
+			numberFUs+=1;
+		}
+	}
+
+	//increment for the current node
+	numberUsedFUs++;
+	if(node->hasConst){
+		numberConstants++;
+	}
+
+	//with current node it should be less than or equal to number of FUs
+	if(numberConstants + numberUsedFUs <= numberFUs){
+		if(dp->getMappedNode()==NULL){
+			return true;
+		}
+	}
+	return false;
 }

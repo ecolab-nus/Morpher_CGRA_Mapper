@@ -75,6 +75,12 @@ bool DFG::parseXML(std::string fileName) {
 		std::string BBNameStr(BBName);
 		currDFGNode.BB=BBNameStr;
 
+		int constant;
+		if(node->QueryIntAttribute("CONST",&constant) == XML_SUCCESS){
+			currDFGNode.constant = constant;
+			currDFGNode.hasConst = true;
+		}
+
 		std::cout << ",idx=" << idx << ",";
 		currDFGNode.idx=idx;
 
