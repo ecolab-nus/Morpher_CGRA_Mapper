@@ -142,6 +142,10 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(Port* start,
 				if(true){ // unmapped port
 	if(detailedDebug)				std::cout << "\tnextPort=" << nextPort->getFullName() << ",";
 					int nextPortCost = cost_to_port[currPort] + calculateCost(currPort,nextPort,end);
+					if(checkRecParentViolation(node,nextPort)) {
+						std::cout << "Port is not inserted, since it violated recurrence parent..\n";
+						continue;
+					}
 	if(detailedDebug)				std::cout << "cost=" << nextPortCost << "\n";
 //					if(isNextPortMutex){
 //						//no cost is added in using mutually exclusive routes

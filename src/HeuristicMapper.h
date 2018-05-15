@@ -226,6 +226,8 @@ public:
 	void printMappingLog();
 	void printMappingLog2();
 
+	bool checkRecParentViolation(DFGNode* node, Port* nextPort);
+
 protected:
 	int regDiscourageFactor=10;
 	int PETransitionCostFactor=100;

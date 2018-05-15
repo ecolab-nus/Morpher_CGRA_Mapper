@@ -145,6 +145,20 @@ bool DFG::parseXML(std::string fileName) {
 
 			output = output->NextSiblingElement("Output");
 		}
+
+		XMLElement* RecParents = node->FirstChildElement("RecParents");
+		assert(RecParents);
+		std::cout << "|RecParents=";
+
+		XMLElement* RecParent = RecParents->FirstChildElement("RecParent");
+		while(RecParent){
+			int RecParent_idx;
+			RecParent->QueryIntAttribute("idx",&RecParent_idx);
+			std::cout << RecParent_idx << ",";
+
+			findNode(idx)->recParents.push_back(findNode(RecParent_idx));
+			RecParent = RecParent->NextSiblingElement("RecParent");
+		}
 		std::cout << "\n";
 	}
 }
