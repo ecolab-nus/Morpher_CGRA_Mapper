@@ -218,16 +218,25 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 	outputPorts.push_back(Port("SOUTH_O",OUT,this));
 
 	//create xbar input ports
-	internalPorts.push_back( Port("NORTH_XBARI",OUT,this) );
-	internalPorts.push_back( Port("EAST_XBARI",OUT,this) );
-	internalPorts.push_back( Port("WEST_XBARI",OUT,this) );
-	internalPorts.push_back( Port("SOUTH_XBARI",OUT,this) );
+	internalPorts.push_back( Port("NORTH_XBARI",INT,this) );
+	internalPorts.push_back( Port("EAST_XBARI",INT,this) );
+	internalPorts.push_back( Port("WEST_XBARI",INT,this) );
+	internalPorts.push_back( Port("SOUTH_XBARI",INT,this) );
+
+	internalPorts.push_back( Port("NORTH_PRE_XBARI",INT,this) );
+	internalPorts.push_back( Port("EAST_PRE_XBARI",INT,this) );
+	internalPorts.push_back( Port("WEST_PRE_XBARI",INT,this) );
+	internalPorts.push_back( Port("SOUTH_PRE_XBARI",INT,this) );
 
 	Port* NORTH_XBARI = getInternalPort("NORTH_XBARI");
 	Port* EAST_XBARI = getInternalPort("EAST_XBARI");
 	Port* WEST_XBARI = getInternalPort("WEST_XBARI");
 	Port* SOUTH_XBARI = getInternalPort("SOUTH_XBARI");
 
+	Port* NORTH_PRE_XBARI = getInternalPort("NORTH_PRE_XBARI");
+	Port* EAST_PRE_XBARI = getInternalPort("EAST_PRE_XBARI");
+	Port* WEST_PRE_XBARI = getInternalPort("WEST_PRE_XBARI");
+	Port* SOUTH_PRE_XBARI = getInternalPort("SOUTH_PRE_XBARI");
 
 	//create PE-level time extended ports
 	for(RegFile* RF : allRegs){
@@ -266,10 +275,15 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 //	connectedTo[WEST_I].push_back(WEST_XBARI);
 //	connectedTo[SOUTH_I].push_back(SOUTH_XBARI);
 
-	insertConnection(NORTH_I,NORTH_XBARI);
-	insertConnection(EAST_I,EAST_XBARI);
-	insertConnection(WEST_I,WEST_XBARI);
-	insertConnection(SOUTH_I,SOUTH_XBARI);
+	insertConnection(NORTH_I,NORTH_PRE_XBARI);
+	insertConnection(EAST_I,EAST_PRE_XBARI);
+	insertConnection(WEST_I,WEST_PRE_XBARI);
+	insertConnection(SOUTH_I,SOUTH_PRE_XBARI);
+
+	insertConnection(NORTH_PRE_XBARI,NORTH_XBARI);
+	insertConnection(EAST_PRE_XBARI,EAST_XBARI);
+	insertConnection(WEST_PRE_XBARI,WEST_XBARI);
+	insertConnection(SOUTH_PRE_XBARI,SOUTH_XBARI);
 
 	//connect the readports of the register file to xbar inputs
 //	connectedTo[RF0->getOutPort("RDP0")].push_back(NORTH_XBARI);
@@ -330,20 +344,20 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 
 	CGRA* currCGRA = getCGRA();
 
-	currCGRA->insertConflictPort(RF0->getOutPort("RDP0"),NORTH_I);
-	currCGRA->insertConflictPort(RF1->getOutPort("RDP0"),EAST_I);
-	currCGRA->insertConflictPort(RF2->getOutPort("RDP0"),WEST_I);
-	currCGRA->insertConflictPort(RF3->getOutPort("RDP0"),SOUTH_I);
+	currCGRA->insertConflictPort(RF0->getOutPort("RDP0"),NORTH_PRE_XBARI);
+	currCGRA->insertConflictPort(RF1->getOutPort("RDP0"),EAST_PRE_XBARI);
+	currCGRA->insertConflictPort(RF2->getOutPort("RDP0"),WEST_PRE_XBARI);
+	currCGRA->insertConflictPort(RF3->getOutPort("RDP0"),SOUTH_PRE_XBARI);
 
 //	conflictPorts[RF0->getOutPort("RDP0")].push_back(NORTH_I);
 //	conflictPorts[RF1->getOutPort("RDP0")].push_back(EAST_I);
 //	conflictPorts[RF2->getOutPort("RDP0")].push_back(WEST_I);
 //	conflictPorts[RF3->getOutPort("RDP0")].push_back(SOUTH_I);
 
-	currCGRA->insertConflictPort(NORTH_I,RF0->getOutPort("RDP0"));
-	currCGRA->insertConflictPort(EAST_I,RF1->getOutPort("RDP0"));
-	currCGRA->insertConflictPort(WEST_I,RF2->getOutPort("RDP0"));
-	currCGRA->insertConflictPort(SOUTH_I,RF3->getOutPort("RDP0"));
+	currCGRA->insertConflictPort(NORTH_PRE_XBARI,RF0->getOutPort("RDP0"));
+	currCGRA->insertConflictPort(EAST_PRE_XBARI,RF1->getOutPort("RDP0"));
+	currCGRA->insertConflictPort(WEST_PRE_XBARI,RF2->getOutPort("RDP0"));
+	currCGRA->insertConflictPort(SOUTH_PRE_XBARI,RF3->getOutPort("RDP0"));
 
 //	conflictPorts[NORTH_I].push_back(RF0->getOutPort("RDP0"));
 //	conflictPorts[EAST_I].push_back(RF1->getOutPort("RDP0"));
@@ -824,10 +838,10 @@ void CGRAXMLCompile::PE::createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs) {
 	outputPorts.push_back(Port("SOUTH_O",OUT,this));
 
 	//create xbar input ports
-	internalPorts.push_back( Port("NORTH_XBARI",OUT,this) );
-	internalPorts.push_back( Port("EAST_XBARI",OUT,this) );
-	internalPorts.push_back( Port("WEST_XBARI",OUT,this) );
-	internalPorts.push_back( Port("SOUTH_XBARI",OUT,this) );
+	internalPorts.push_back( Port("NORTH_XBARI",INT,this) );
+	internalPorts.push_back( Port("EAST_XBARI",INT,this) );
+	internalPorts.push_back( Port("WEST_XBARI",INT,this) );
+	internalPorts.push_back( Port("SOUTH_XBARI",INT,this) );
 
 	Port* NORTH_XBARI = getInternalPort("NORTH_XBARI");
 	Port* EAST_XBARI = getInternalPort("EAST_XBARI");
@@ -1568,10 +1582,10 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs) {
 	outputPorts.push_back(Port("SOUTH_O",OUT,this));
 
 	//create xbar input ports
-	internalPorts.push_back( Port("NORTH_XBARI",OUT,this) );
-	internalPorts.push_back( Port("EAST_XBARI",OUT,this) );
-	internalPorts.push_back( Port("WEST_XBARI",OUT,this) );
-	internalPorts.push_back( Port("SOUTH_XBARI",OUT,this) );
+	internalPorts.push_back( Port("NORTH_XBARI",INT,this) );
+	internalPorts.push_back( Port("EAST_XBARI",INT,this) );
+	internalPorts.push_back( Port("WEST_XBARI",INT,this) );
+	internalPorts.push_back( Port("SOUTH_XBARI",INT,this) );
 
 	Port* NORTH_XBARI = getInternalPort("NORTH_XBARI");
 	Port* EAST_XBARI = getInternalPort("EAST_XBARI");
@@ -2012,10 +2026,10 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs) {
 	outputPorts.push_back(Port("SOUTH_O",OUT,this));
 
 	//create xbar input ports
-	internalPorts.push_back( Port("NORTH_XBARI",OUT,this) );
-	internalPorts.push_back( Port("EAST_XBARI",OUT,this) );
-	internalPorts.push_back( Port("WEST_XBARI",OUT,this) );
-	internalPorts.push_back( Port("SOUTH_XBARI",OUT,this) );
+	internalPorts.push_back( Port("NORTH_XBARI",INT,this) );
+	internalPorts.push_back( Port("EAST_XBARI",INT,this) );
+	internalPorts.push_back( Port("WEST_XBARI",INT,this) );
+	internalPorts.push_back( Port("SOUTH_XBARI",INT,this) );
 
 	Port* NORTH_XBARI = getInternalPort("NORTH_XBARI");
 	Port* EAST_XBARI = getInternalPort("EAST_XBARI");

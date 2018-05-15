@@ -170,6 +170,7 @@ CGRAXMLCompile::Port* CGRAXMLCompile::Module::getInPort(std::string Pname) {
 			return &p;
 		}
 	}
+	assert(false);
 }
 
 CGRAXMLCompile::Port* CGRAXMLCompile::Module::getOutPort(std::string Pname) {
@@ -178,6 +179,7 @@ CGRAXMLCompile::Port* CGRAXMLCompile::Module::getOutPort(std::string Pname) {
 			return &p;
 		}
 	}
+	assert(false);
 }
 
 CGRAXMLCompile::Port* CGRAXMLCompile::Module::getInternalPort(std::string Pname) {
@@ -186,6 +188,7 @@ CGRAXMLCompile::Port* CGRAXMLCompile::Module::getInternalPort(std::string Pname)
 			return &p;
 		}
 	}
+	assert(false);
 }
 
 CGRAXMLCompile::Module* CGRAXMLCompile::Module::getSubMod(std::string Mname) {
