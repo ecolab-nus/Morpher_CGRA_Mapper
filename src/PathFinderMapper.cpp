@@ -1246,7 +1246,7 @@ bool CGRAXMLCompile::PathFinderMapper::checkDPFree(DataPath* dp, DFGNode* node) 
 	}
 
 	//with current node it should be less than or equal to number of FUs
-	if(numberConstants + numberUsedFUs <= numberFUs){
+	if(numberConstants + numberUsedFUs <= numberFUs || numberFUs == 1){
 		if(dp->getMappedNode()==NULL){
 			return true;
 		}
