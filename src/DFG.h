@@ -29,6 +29,7 @@ public:
 
 	std::vector<std::set<DFGNode*>> getSCCs();
 	int unmappedMemOps=0;
+	std::set<DFGNode*> unmappedMemOpSet;
 
 	bool isMutexNodes(DFGNode* a, DFGNode* b);
 

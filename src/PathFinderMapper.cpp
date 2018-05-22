@@ -263,6 +263,8 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 	}
 
 	std::vector<DataPath*> candidateDests;
+	int penalty=0;
+	std::map<DataPath*,int> dpPenaltyMap;
 	for (int t = 0; t < cgra->get_t_max(); ++t) {
 		for (int y = 0; y < cgra->get_y_max(); ++y) {
 			for (int x = 0; x < cgra->get_x_max(); ++x) {
@@ -277,12 +279,13 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 						if(fu->currOP.compare(node->op)==0){
 							for(Module* submodFU : fu->subModules){
 								if(DataPath* dp = dynamic_cast<DataPath*>(submodFU)){
-									if(checkDPFree(dp,node)){
+									if(checkDPFree(dp,node,penalty)){
 //									if(dp->getMappedNode()==NULL){
 //									if(dataPathCheck(dp,&node)){
 
 										if(node->blacklistDest.find(dp)==node->blacklistDest.end()){
 											candidateDests.push_back(dp);
+											dpPenaltyMap[dp] = penalty;
 										}
 									}
 								}
@@ -291,12 +294,13 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 						else if(fu->currOP.compare("NOP")==0){
 							for(Module* submodFU : fu->subModules){
 								if(DataPath* dp = dynamic_cast<DataPath*>(submodFU)){
-									if(checkDPFree(dp,node)){
+									if(checkDPFree(dp,node,penalty)){
 //									if(dp->getMappedNode()==NULL){
 //									if(dataPathCheck(dp,&node)){
 
 										if(node->blacklistDest.find(dp)==node->blacklistDest.end()){
 											candidateDests.push_back(dp);
+											dpPenaltyMap[dp] = penalty;
 										}
 									}
 								}
@@ -342,6 +346,7 @@ if(detailedDebug)				std::cout << "Estimating Path" << startCand->getFullName() 
 if(detailedDebug)			    std::cout << "Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
 					continue;
 				}
+				cost += dpPenaltyMap[dest];
 				res.push(cand_src_with_cost(startCand,destPort,cost));
 			}
 			if(res.empty()){
@@ -1213,7 +1218,7 @@ bool CGRAXMLCompile::PathFinderMapper::checkRegALUConflicts() {
 	}
 }
 
-bool CGRAXMLCompile::PathFinderMapper::checkDPFree(DataPath* dp, DFGNode* node) {
+bool CGRAXMLCompile::PathFinderMapper::checkDPFree(DataPath* dp, DFGNode* node, int& penalty) {
 	PE* currPE = dp->getPE();
 	FU* currFU = dp->getFU();
 
@@ -1221,13 +1226,17 @@ bool CGRAXMLCompile::PathFinderMapper::checkDPFree(DataPath* dp, DFGNode* node) 
 	int numberFUs=0;
 	int numberUsedFUs=0;
 	int numberConstants=0;
+	bool memfu_found=false;
+	bool memop_found=false;
 	for(Module* submod_fu : currPE->subModules){
 		if(FU* fu = dynamic_cast<FU*>(submod_fu)){
 			int dp_used = 0;
+			if(!memfu_found) memfu_found = fu->isMEMFU();
 			for(Module* submod_dp : fu->subModules){
 				if(DataPath* dp = dynamic_cast<DataPath*>(submod_dp)){
 					if(dp->getMappedNode()!=NULL){
 						dp_used = 1;
+						if(!memop_found) memop_found = dp->getMappedNode()->isMemOp();
 						if(dp->getMappedNode()->hasConst){
 							numberConstants++;
 						}
@@ -1243,6 +1252,53 @@ bool CGRAXMLCompile::PathFinderMapper::checkDPFree(DataPath* dp, DFGNode* node) 
 	numberUsedFUs++;
 	if(node->hasConst){
 		numberConstants++;
+	}
+
+	assert(this->dfg->unmappedMemOps == this->dfg->unmappedMemOpSet.size());
+	assert(this->cgra->freeMemNodes == this->cgra->freeMemNodeSet.size());
+
+    penalty = 0;
+	if(memfu_found){
+		int memnode_const_count=0;
+		for(DFGNode* memnode : this->dfg->unmappedMemOpSet){
+			if(memnode->hasConst){
+				memnode_const_count++;
+			}
+		}
+
+		int freeMemPEs_const = 0;
+		for(DataPath* memdp : this->cgra->freeMemNodeSet){
+			int memPEConstants = 0;
+			int memUsedFUs = 0;
+			PE* memPE = memdp->getPE();
+			for(Module* submod_fu : memPE->subModules){
+				if(FU* fu = dynamic_cast<FU*>(submod_fu)){
+					int dp_used = 0;
+					for(Module* submod_dp : fu->subModules){
+						if(DataPath* dp = dynamic_cast<DataPath*>(submod_dp)){
+							if(dp->getMappedNode()!=NULL){
+								dp_used = 1;
+								if(!memop_found) memop_found = dp->getMappedNode()->isMemOp();
+								if(dp->getMappedNode()->hasConst){
+									memPEConstants++;
+								}
+							}
+						}
+					}
+					memUsedFUs += dp_used;
+				}
+			}
+			if(memUsedFUs + memPEConstants <= 1){
+				freeMemPEs_const++;
+			}
+		}
+
+
+		if((!node->isMemOp()) && (!memop_found)){
+			double penalty_ratio_dbl = (double)memnode_const_count / (double)freeMemPEs_const;
+			double penalty_dbl = penalty_ratio_dbl* (double)MRC;
+			penalty = (int)penalty_dbl;
+		}
 	}
 
 	//with current node it should be less than or equal to number of FUs

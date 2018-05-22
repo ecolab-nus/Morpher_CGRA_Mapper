@@ -54,6 +54,7 @@ void CGRAXMLCompile::HeuristicMapper::SortTopoGraphicalDFG() {
 		if(node->isMemOp()){
 			if(node->rootDP==NULL){
 				unmappedMemNodeCount++;
+				dfg->unmappedMemOpSet.insert(node);
 			}
 		}
 	}

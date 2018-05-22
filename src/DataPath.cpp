@@ -103,10 +103,12 @@ void CGRAXMLCompile::DataPath::assignNode(DFGNode* node, DFG* dfg) {
 
 	if(fu->supportedOPs.find("LOAD")!=fu->supportedOPs.end()){
 		cgra->freeMemNodes--;
+		cgra->freeMemNodeSet.erase(this);
 	}
 
 	if(node->isMemOp()){
 		dfg->unmappedMemOps--;
+		dfg->unmappedMemOpSet.erase(node);
 	}
 
 }

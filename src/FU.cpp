@@ -127,3 +127,10 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 
 
 }
+
+bool CGRAXMLCompile::FU::isMEMFU() {
+	if(supportedOPs.find("LOAD")!=supportedOPs.end()){
+		return true;
+	}
+	return false;
+}

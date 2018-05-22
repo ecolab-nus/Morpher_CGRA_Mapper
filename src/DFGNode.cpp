@@ -38,6 +38,7 @@ void CGRAXMLCompile::DFGNode::clear(DFG* dfg) {
 
 		if(this->isMemOp()){
 			dfg->unmappedMemOps++;
+			dfg->unmappedMemOpSet.insert(this);
 		}
 
 		rootDP=NULL;

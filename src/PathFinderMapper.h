@@ -30,12 +30,12 @@ public:
 
 	bool checkConflictedPortCompatibility();
 	bool checkRegALUConflicts();
-	bool checkDPFree(DataPath* dp, DFGNode* node);
+	bool checkDPFree(DataPath* dp, DFGNode* node, int& penalty);
 
 
 private:
 	std::map<Port*,std::set<DFGNode*>> congestedPorts;
-	int maxIter = 15;
+	int maxIter = 30;
 
 };
 

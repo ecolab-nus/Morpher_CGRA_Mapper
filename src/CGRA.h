@@ -37,6 +37,7 @@ public:
 									if(DataPath* dp = dynamic_cast<DataPath*>(submod2)){
 										if(dp->getMappedNode()==NULL){
 											freeMemNodes++;
+											freeMemNodeSet.insert(dp);
 										}
 									}
 								}
@@ -63,6 +64,7 @@ public:
 	std::string peType;
 	int  numberofDPs=1;
 	int freeMemNodes=0;
+	std::set<DataPath*> freeMemNodeSet;
 
 	std::vector<Port*> getConflictPorts(Port* p);
 	void insertConflictPort(Port* a, Port* b);

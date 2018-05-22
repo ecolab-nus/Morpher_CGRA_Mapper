@@ -28,6 +28,8 @@ public:
 	std::map<std::string,int> supportedOPs;
 	std::string currOP="NOP";
 
+	bool isMEMFU();
+
 private:
 	int numberDPs;
 
