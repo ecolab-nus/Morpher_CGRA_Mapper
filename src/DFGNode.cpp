@@ -34,6 +34,7 @@ void CGRAXMLCompile::DFGNode::clear(DFG* dfg) {
 		FU* fu = rootDP->getFU();
 		if(fu->supportedOPs.find("LOAD")!=fu->supportedOPs.end()){
 			cgra->freeMemNodes++;
+			cgra->freeMemNodeSet.insert(rootDP);
 		}
 
 		if(this->isMemOp()){
