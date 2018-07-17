@@ -105,6 +105,7 @@ public:
 	void getLogicalIns(std::map<std::string,int>& supportedOPs);
 	void getArithmeticIns(std::map<std::string,int>& supportedOPs);
 	void getMemOnlyIns(std::map<std::string,int>& supportedOPs);
+	void getOutMemOnlyIns(std::map<std::string,int>& supportedOPs);
 
 private:
 	bool alreadyInit=false;

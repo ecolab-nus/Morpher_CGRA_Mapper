@@ -624,7 +624,7 @@
 </Node>
 
 <Node idx="106"ASAP="17"BB="for.body"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 	<Input idx="140"/>
 </Inputs>
@@ -636,7 +636,7 @@
 </Node>
 
 <Node idx="97"ASAP="17"BB="for.body"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 	<Input idx="140"/>
 </Inputs>
@@ -648,7 +648,7 @@
 </Node>
 
 <Node idx="94"ASAP="17"BB="for.body"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 	<Input idx="140"/>
 </Inputs>
@@ -777,7 +777,7 @@
 </Node>
 
 <Node idx="9"ASAP="18"BB="if.end60"CONST="-1">
-<OP>STORE</OP>
+<OP>OSTORE</OP>
 <Inputs>
 	<Input idx="8"/>
 </Inputs>
@@ -812,7 +812,7 @@
 </Node>
 
 <Node idx="76"ASAP="18"BB="if.end60"CONST="-1">
-<OP>STORE</OP>
+<OP>OSTORE</OP>
 <Inputs>
 	<Input idx="75"/>
 </Inputs>
@@ -1362,7 +1362,7 @@
 </Node>
 
 <Node idx="6"ASAP="27"BB="if.end19"CONST="-1">
-<OP>STOREB</OP>
+<OP>OSTOREB</OP>
 <Inputs>
 	<Input idx="2"/>
 </Inputs>
@@ -1829,7 +1829,7 @@
 </Node>
 
 <Node idx="17"ASAP="34"BB="if.end19"CONST="-1">
-<OP>STORE</OP>
+<OP>OSTORE</OP>
 <Inputs>
 	<Input idx="16"/>
 </Inputs>
@@ -1867,7 +1867,7 @@
 </Node>
 
 <Node idx="26"ASAP="35"BB="if.end19"CONST="-1">
-<OP>STORE</OP>
+<OP>OSTORE</OP>
 <Inputs>
 	<Input idx="25"/>
 </Inputs>

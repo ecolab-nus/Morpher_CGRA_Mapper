@@ -1234,6 +1234,14 @@ void CGRAXMLCompile::PE::getMEMIns(std::map<std::string, int>& supportedOPs) {
 	supportedOPs["STOREH"]=2;
 	supportedOPs["STOREB"]=2;
 
+	supportedOPs["OLOADCL"]=2;
+	supportedOPs["OLOAD"]=2;
+	supportedOPs["OLOADH"]=2;
+	supportedOPs["OLOADB"]=2;
+	supportedOPs["OSTORE"]=2;
+	supportedOPs["OSTOREH"]=2;
+	supportedOPs["OSTOREB"]=2;
+
 	supportedOPs["JUMPL"]=2; //20
 	supportedOPs["MOVC"]=2; //21
 
@@ -1280,7 +1288,6 @@ void CGRAXMLCompile::PE::getLogicalIns(
 	supportedOPs["MOVCL"]=1; //9
 	supportedOPs["JUMPL"]=1; //10
 	supportedOPs["MOVC"]=1; //11
-
 }
 
 void CGRAXMLCompile::PE::getArithmeticIns(
@@ -1311,7 +1318,30 @@ void CGRAXMLCompile::PE::getMemOnlyIns(std::map<std::string, int>& supportedOPs)
 	supportedOPs["STOREH"]=2;
 	supportedOPs["STOREB"]=2;
 
+	supportedOPs["OLOADCL"]=1;
+	supportedOPs["OLOAD"]=1;
+	supportedOPs["OLOADH"]=1;
+	supportedOPs["OLOADB"]=1;
+	supportedOPs["OSTORE"]=1;
+	supportedOPs["OSTOREH"]=1;
+	supportedOPs["OSTOREB"]=1;
+
 	supportedOPs["MOVC"]=1; //11
+}
+
+void CGRAXMLCompile::PE::getOutMemOnlyIns(
+		std::map<std::string, int>& supportedOPs) {
+
+	supportedOPs["OLOADCL"]=1;
+	supportedOPs["OLOAD"]=1;
+	supportedOPs["OLOADH"]=1;
+	supportedOPs["OLOADB"]=1;
+	supportedOPs["OSTORE"]=1;
+	supportedOPs["OSTOREH"]=1;
+	supportedOPs["OSTOREB"]=1;
+
+	supportedOPs["MOVC"]=1; //11
+
 }
 
 void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
@@ -1332,6 +1362,13 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 	if(isMEMpe){
 		supportedOPs.clear();
 		getMemOnlyIns(supportedOPs);
+		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
+		subModules.push_back(memFU);
+		allFUs.push_back(memFU);
+	}
+	else{
+		supportedOPs.clear();
+		getOutMemOnlyIns(supportedOPs);
 		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
@@ -1544,6 +1581,13 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs) {
 	if(isMEMpe){
 		supportedOPs.clear();
 		getMemOnlyIns(supportedOPs);
+		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
+		subModules.push_back(memFU);
+		allFUs.push_back(memFU);
+	}
+	else{
+		supportedOPs.clear();
+		getOutMemOnlyIns(supportedOPs);
 		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
@@ -1798,6 +1842,13 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
+	else{
+		supportedOPs.clear();
+		getOutMemOnlyIns(supportedOPs);
+		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
+		subModules.push_back(memFU);
+		allFUs.push_back(memFU);
+	}
 
 	supportedOPs.clear();
 	getArithmeticIns(supportedOPs);
@@ -1988,6 +2039,13 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs) {
 	if(isMEMpe){
 		supportedOPs.clear();
 		getMemOnlyIns(supportedOPs);
+		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
+		subModules.push_back(memFU);
+		allFUs.push_back(memFU);
+	}
+	else{
+		supportedOPs.clear();
+		getOutMemOnlyIns(supportedOPs);
 		memFU=new FU(this,"memFU0",numberofDPs,supportedOPs);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
@@ -2237,3 +2295,5 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs) {
 
 
 }
+
+

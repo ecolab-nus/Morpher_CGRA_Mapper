@@ -743,7 +743,7 @@
 </Node>
 
 <Node idx="84"ASAP="11"BB="for.body"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 	<Input idx="114"/>
 </Inputs>
@@ -755,7 +755,7 @@
 </Node>
 
 <Node idx="82"ASAP="11"BB="for.body"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 	<Input idx="114"/>
 </Inputs>
@@ -816,7 +816,7 @@
 </Node>
 
 <Node idx="86"ASAP="11"BB="for.body"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 	<Input idx="114"/>
 </Inputs>
@@ -1351,7 +1351,7 @@
 </Node>
 
 <Node idx="32"ASAP="18"BB="if.end"CONST="-1">
-<OP>STORE</OP>
+<OP>OSTORE</OP>
 <Inputs>
 	<Input idx="31"/>
 </Inputs>
@@ -1454,7 +1454,7 @@
 </Node>
 
 <Node idx="10"ASAP="23"BB="if.end"CONST="-1">
-<OP>STORE</OP>
+<OP>OSTORE</OP>
 <Inputs>
 	<Input idx="9"/>
 </Inputs>

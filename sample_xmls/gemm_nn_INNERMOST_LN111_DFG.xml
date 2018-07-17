@@ -8,7 +8,7 @@
 </MutexBB>
 <DFG count="99">
 <Node idx="11"ASAP="0"BB="for.body7.us.us"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 </Inputs>
 <Outputs>
@@ -48,7 +48,7 @@
 </Node>
 
 <Node idx="5"ASAP="1"BB="for.body7.us.us"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 </Inputs>
 <Outputs>
@@ -196,7 +196,7 @@
 </Node>
 
 <Node idx="15"ASAP="2"BB="for.body7.us.us"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 </Inputs>
 <Outputs>
@@ -668,7 +668,7 @@
 </Node>
 
 <Node idx="94"ASAP="3"BB="for.body7.us.us"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 	<Input idx="95"/>
 </Inputs>
@@ -790,7 +790,7 @@
 </Node>
 
 <Node idx="2"ASAP="4"BB="for.body7.us.us"CONST="-1">
-<OP>STORE</OP>
+<OP>OSTORE</OP>
 <Inputs>
 	<Input idx="1"/>
 </Inputs>

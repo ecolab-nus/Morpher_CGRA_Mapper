@@ -36,7 +36,7 @@
 </Node>
 
 <Node idx="15"ASAP="0"BB="for.body6.us.us"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 </Inputs>
 <Outputs>
@@ -54,7 +54,7 @@
 </Node>
 
 <Node idx="20"ASAP="0"BB="for.body6.us.us"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 </Inputs>
 <Outputs>
@@ -867,7 +867,7 @@
 </Node>
 
 <Node idx="97"ASAP="6"BB="for.body6.us.us"CONST="-1">
-<OP>LOAD</OP>
+<OP>OLOAD</OP>
 <Inputs>
 	<Input idx="98"/>
 </Inputs>
@@ -1055,7 +1055,7 @@
 </Node>
 
 <Node idx="12"ASAP="8"BB="for.body6.us.us"CONST="-1">
-<OP>STORE</OP>
+<OP>OSTORE</OP>
 <Inputs>
 	<Input idx="11"/>
 </Inputs>
@@ -1297,7 +1297,7 @@
 </Node>
 
 <Node idx="9"ASAP="14"BB="for.body6.us.us"CONST="-1">
-<OP>STORE</OP>
+<OP>OSTORE</OP>
 <Inputs>
 	<Input idx="8"/>
 </Inputs>
