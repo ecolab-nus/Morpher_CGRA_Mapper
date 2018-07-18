@@ -23,18 +23,19 @@ using namespace CGRAXMLCompile;
 int main(int argn, char* argc[]) {
 	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 
-	if(argn < 6){
-		std::cout << "arguments : <DFG.xml> <peType::\nGENERIC_8REGF,\nHyCUBE_8REGF,\nHyCUBE_4REG,\nN2N_4REGF,\nN2N_8REGF,\nSTDNOC_8REGF,\nSTDNOC_4REGF,\nSTDNOC_4REG,\nSTDNOC_4REGF_1P\nMFU_HyCUBE_4REG\nMFU_HyCUBE_4REGF\nMFU_STDNOC_4REG\nMFU_STDNOC_4REGF> <XDim> <YDim> <numberofDPS> <backtracklimit> <initII> <-noMTpath>\n";
+	if(argn < 7){
+		std::cout << "arguments : <DFG.xml> <peType::\nGENERIC_8REGF,\nHyCUBE_8REGF,\nHyCUBE_4REG,\nN2N_4REGF,\nN2N_8REGF,\nSTDNOC_8REGF,\nSTDNOC_4REGF,\nSTDNOC_4REG,\nSTDNOC_4REGF_1P\nMFU_HyCUBE_4REG\nMFU_HyCUBE_4REGF\nMFU_STDNOC_4REG\nMFU_STDNOC_4REGF> <XYDim> <numberofDPS> <backtracklimit> <initII> <-noMTpath>\n";
 	}
 
-	assert(argn >= 8);
+	assert(argn >= 7);
 	std::string inputDFG_filename (argc[1]);
 
 //	int xdim=4;
 //	int ydim=4;
 
-	int xdim = atoi(argc[3]);
-	int ydim = atoi(argc[4]);
+	int xydim = atoi(argc[3]);
+	int xdim = xydim / 10;
+	int ydim = xydim % 10;
 
 	DFG currDFG;
 	currDFG.parseXML(inputDFG_filename);
@@ -42,7 +43,7 @@ int main(int argn, char* argc[]) {
 
 	bool isGenericPE;
 	std::string PEType(argc[2]);
-	int numberOfDPs=atoi(argc[5]);
+	int numberOfDPs=atoi(argc[4]);
 
 	CGRA testCGRA(NULL,"testCGRA",1,ydim,xdim,&currDFG, PEType, numberOfDPs);
 
@@ -52,18 +53,18 @@ int main(int argn, char* argc[]) {
 	int II = hm.getMinimumII(&testCGRA,&currDFG);
 	std::cout << "Minimum II = " << II << "\n";
 
-	int initUserII = atoi(argc[7]);
+	int initUserII = atoi(argc[6]);
 	II = std::max(initUserII,II);
 
 	hm.enableMutexPaths=true;
 	if(argn == 9){
-		std::string noMutexPathStr(argc[8]);
+		std::string noMutexPathStr(argc[7]);
 		if(noMutexPathStr == "-noMTpath"){
 			hm.enableMutexPaths=false;
 		}
 	}
 	hm.enableBackTracking=true;
-	hm.backTrackLimit=atoi(argc[6]);
+	hm.backTrackLimit=atoi(argc[5]);
 
 
 	bool mappingSuccess=false;
