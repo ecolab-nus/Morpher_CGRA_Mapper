@@ -1179,7 +1179,7 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 				wrpName << "WRP" << i;
 				Port* wrp = RF->getInPort(wrpName.str());
 
-				getCGRA()->insertConflictPort(wrp,&ip);
+//				getCGRA()->insertConflictPort(wrp,&ip);
 				getCGRA()->insertConflictPort(&ip,wrp);
 //				conflictPorts[wrp].push_back(&ip);
 //				conflictPorts[&ip].push_back(wrp);
@@ -1193,7 +1193,7 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 				Port* rdp = RF->getOutPort(rdpName.str());
 				assert(rdp!=NULL);
 
-				getCGRA()->insertConflictPort(rdp,&op);
+//				getCGRA()->insertConflictPort(rdp,&op);
 				getCGRA()->insertConflictPort(&op,rdp);
 			}
 		}

@@ -50,6 +50,8 @@ public:
 	DataPath* getOutputDP(){return outputDP;}
 	void clear();
 
+	Port* getPotOutputPort(DFGNode* node);
+
 
 private:
 	DFGNode* mappedNode;

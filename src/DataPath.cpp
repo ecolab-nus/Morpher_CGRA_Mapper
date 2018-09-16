@@ -140,3 +140,15 @@ void CGRAXMLCompile::DataPath::clear() {
 	}
 
 }
+
+CGRAXMLCompile::Port* CGRAXMLCompile::DataPath::getPotOutputPort(DFGNode* node) {
+
+	FU* fu = getFU();
+	PE* pe = getPE();
+	CGRA* cgra = getCGRA();
+
+	assert(fu->supportedOPs.find(node->op)!=fu->supportedOPs.end());
+	int latency = fu->supportedOPs[node->op];
+	return getOutputPort(latency);
+
+}

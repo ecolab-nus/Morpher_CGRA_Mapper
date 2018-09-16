@@ -44,7 +44,7 @@ public:
 	void increastCongCost();
 	void increaseUse(HeuristicMapper* hm = NULL);
 	void decreaseUse(DFGNode* extnode, HeuristicMapper* hm = NULL);
-	void increaseConflictedUse(HeuristicMapper* hm = NULL);
+	void increaseConflictedUse(DFGNode* node, HeuristicMapper* hm = NULL);
 	int getHistoryCost(){return history_cost;}
 
 private:

@@ -62,19 +62,23 @@ void Port::setNode(DFGNode* node, HeuristicMapper* hm){
 	if(hm == NULL) return;
 
 	if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
-		for(Port* p : getMod()->getConflictPorts(this)){
-			(*pfm->getcongestedPortsPtr())[p].insert(node);
-		}
+//		for(Port* p : getMod()->getConflictPorts(this)){
+//			(*pfm->getcongestedPortsPtr())[p].insert(node);
+//		}
 	}
 }
 
-void Port::increaseConflictedUse(HeuristicMapper* hm) {
+void Port::increaseConflictedUse(DFGNode* node, HeuristicMapper* hm) {
 	increaseUse();
 
 	if(!getMod()->isConflictPortsEmpty(this)){
 		for(Port* p : getMod()->getConflictPorts(this)){
 			assert(p!=NULL);
 			p->increaseUse();
+
+			if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
+				(*pfm->getconflictedPortsPtr())[p].insert(node);
+			}
 		}
 	}
 

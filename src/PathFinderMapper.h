@@ -18,7 +18,7 @@ public:
 	PathFinderMapper(std::string fName) : HeuristicMapper(fName){};
 
 	bool Map(CGRA* cgra, DFG* dfg);
-	bool LeastCostPathAstar(Port* start, Port* end, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
+	bool LeastCostPathAstar(Port* start, Port* end, DataPath* endDP, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
 	bool estimateRouting(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes, DFGNode** failedNode);
 	bool Route(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes, DFGNode** failedNode);
 	int calculateCost(Port* src, Port* next_to_src, Port* dest);
@@ -27,6 +27,7 @@ public:
 	bool updateCongestionCosts();
 	bool clearCurrMapping();
 	std::map<Port*,std::set<DFGNode*>>* getcongestedPortsPtr(){return &congestedPorts;}
+	std::map<Port*,std::set<DFGNode*>>* getconflictedPortsPtr(){return &conflictedPorts;}
 
 	bool checkConflictedPortCompatibility();
 	bool checkRegALUConflicts();
@@ -35,6 +36,7 @@ public:
 
 private:
 	std::map<Port*,std::set<DFGNode*>> congestedPorts;
+	std::map<Port*,std::set<DFGNode*>> conflictedPorts;
 	int maxIter = 30;
 
 };
