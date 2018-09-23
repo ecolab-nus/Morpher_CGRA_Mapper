@@ -15,7 +15,10 @@ namespace CGRAXMLCompile {
 
 class PathFinderMapper : public HeuristicMapper {
 public:
-	PathFinderMapper(std::string fName) : HeuristicMapper(fName){};
+	PathFinderMapper(std::string fName) : HeuristicMapper(fName){
+
+
+	};
 
 	bool Map(CGRA* cgra, DFG* dfg);
 	bool LeastCostPathAstar(Port* start, Port* end, DataPath* endDP, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
@@ -24,7 +27,7 @@ public:
 	int calculateCost(Port* src, Port* next_to_src, Port* dest);
 	void assignPath(DFGNode* src, DFGNode* dest, std::vector<Port*> path);
 
-	bool updateCongestionCosts();
+	bool updateCongestionCosts(int iter);
 	bool clearCurrMapping();
 	std::map<Port*,std::set<DFGNode*>>* getcongestedPortsPtr(){return &congestedPorts;}
 	std::map<Port*,std::set<DFGNode*>>* getconflictedPortsPtr(){return &conflictedPorts;}
@@ -33,11 +36,18 @@ public:
 	bool checkRegALUConflicts();
 	bool checkDPFree(DataPath* dp, DFGNode* node, int& penalty);
 
+	bool updateConflictedTimeSteps(int timeStep, int conflicts);
+	int getTimeStepConflicts(int timeStep);
+
 
 private:
 	std::map<Port*,std::set<DFGNode*>> congestedPorts;
 	std::map<Port*,std::set<DFGNode*>> conflictedPorts;
-	int maxIter = 30;
+	int maxIter = 15;
+
+	std::ofstream congestionInfoFile;
+	std::map<int,int> conflictedTimeStepMap;
+
 
 };
 

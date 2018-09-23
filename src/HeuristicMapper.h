@@ -228,6 +228,9 @@ public:
 
 	bool checkRecParentViolation(DFGNode* node, Port* nextPort);
 
+	int upperboundII=1000000;
+	int upperboundIter=-1;
+
 protected:
 	int regDiscourageFactor=10;
 	int PETransitionCostFactor=100;

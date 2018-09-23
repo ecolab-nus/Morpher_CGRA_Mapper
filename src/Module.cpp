@@ -213,7 +213,8 @@ CGRAXMLCompile::CGRA* CGRAXMLCompile::Module::getCGRA() {
 }
 
 CGRAXMLCompile::PE* CGRAXMLCompile::Module::getPE() {
-	Module* mod = this->getParent();
+
+	Module* mod = this;
 	while(mod){
 		if(PE* pe = dynamic_cast<PE*>(mod)){
 			return pe;

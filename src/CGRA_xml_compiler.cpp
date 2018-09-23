@@ -89,6 +89,12 @@ int main(int argn, char* argc[]) {
 				return 0;
 			}
 
+			if(II==hm.upperboundII){
+				std::cout << "upperbound II reached : " << hm.upperboundII << "\n";
+				std::cout << "Please use the mapping with Iter = " << hm.upperboundIter << "\n";
+				return 0;
+			}
+
 			std::cout << "Increasing II to " << II << "\n";
 		}
 		else{

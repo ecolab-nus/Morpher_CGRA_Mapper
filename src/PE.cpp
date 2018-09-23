@@ -1197,8 +1197,22 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 				getCGRA()->insertConflictPort(&op,rdp);
 			}
 		}
-
 	}
+
+	//adding register connections to the input ports of the FU : N2NFIX
+//	for(Port &ip : FU0->inputPorts){
+//		inputPorts.push_back( Port(FU0->getName() + "_" + ip.getName() + "RI",IN,this) );
+//		outputPorts.push_back( Port(FU0->getName() + "_" + ip.getName() + "RO",OUT,this) );
+//
+//		Port* _ip = getInPort(FU0->getName() + "_" + ip.getName() + "RI"); assert(_ip);
+//		Port* _op = getOutPort(FU0->getName() + "_" + ip.getName() + "RO"); assert(_op);
+//
+//		Port* ip_ptr = FU0->getInPort(ip.getName()); assert(ip_ptr);
+//		Port* ip_ro_ptr = FU0->getOutPort(ip.getName()+"_RO"); assert(ip_ro_ptr);
+//
+//		insertConnection(_ip,ip_ptr);
+//		insertConnection(ip_ro_ptr,_op);
+//	}
 
 //	assert(conflictPorts.size() > 0);
 

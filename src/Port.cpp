@@ -26,12 +26,27 @@ Port::Port(std::string name, PortType pType, Module* mod) {
 void Port::increaseUse(HeuristicMapper* hm) {
 
 	if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
+		number_signals=1;
+
 		for(DFGNode* node : (*pfm->getcongestedPortsPtr())[this]){
+			if(this->node == node) continue;
+			if(pfm->dfg->isMutexNodes(this->node,node)) continue;
+			number_signals++;
+//			break;
+		}
+
+		for(DFGNode* node : (*pfm->getconflictedPortsPtr())[this]){
 			if(this->node == node) continue;
 			if(pfm->dfg->isMutexNodes(this->node,node)) continue;
 			number_signals++;
 			break;
 		}
+
+		int timeStep = this->getMod()->getPE()->T;
+		int alreadyConflicts = pfm->getTimeStepConflicts(timeStep);
+		pfm->updateConflictedTimeSteps(timeStep,number_signals-1);
+		number_signals = number_signals - alreadyConflicts;
+
 	}
 	else{
 		number_signals++;
@@ -74,11 +89,11 @@ void Port::increaseConflictedUse(DFGNode* node, HeuristicMapper* hm) {
 	if(!getMod()->isConflictPortsEmpty(this)){
 		for(Port* p : getMod()->getConflictPorts(this)){
 			assert(p!=NULL);
-			p->increaseUse();
 
 			if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
 				(*pfm->getconflictedPortsPtr())[p].insert(node);
 			}
+			p->increaseUse();
 		}
 	}
 
@@ -132,6 +147,9 @@ void CGRAXMLCompile::Port::increastCongCost() {
 }
 
 int CGRAXMLCompile::Port::getCongCost() {
+
+//	if()
+
 	int cost = base_cost*number_signals + history_cost*(number_signals+1);
 	return cost;
 }

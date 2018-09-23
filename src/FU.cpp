@@ -47,6 +47,14 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 		inputPorts.push_back(Port(portName_I1,IN,this));
 		inputPorts.push_back(Port(portName_I2,IN,this));
 
+		//N2NFIX
+//		outputPorts.push_back(Port(portName_P + "_RO",OUT,this));
+//		insertConnection(getInPort(portName_P),getOutPort(portName_P + "_RO"));
+//		outputPorts.push_back(Port(portName_I1 + "_RO",OUT,this));
+//		insertConnection(getInPort(portName_I1),getOutPort(portName_I1 + "_RO"));
+//		outputPorts.push_back(Port(portName_I2 + "_RO",OUT,this));
+//		insertConnection(getInPort(portName_I2),getOutPort(portName_I2 + "_RO"));
+
 		//insert output ports
 		std::string portName_T; portName_T.clear();
 		portName_T += "DP" + std::to_string(i) + "_T";
@@ -124,6 +132,7 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 
 		}
 	}
+
 
 
 }

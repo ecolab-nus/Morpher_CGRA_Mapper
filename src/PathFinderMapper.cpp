@@ -686,6 +686,9 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode* node,
 int CGRAXMLCompile::PathFinderMapper::calculateCost(Port* src,
 		Port* next_to_src, Port* dest) {
 
+//	std::cout << src->getName();
+//	std::cout << next_to_src->getName();
+
 	PE* srcPE = src->findParentPE();
 	assert(srcPE);
 	PE* nextPE = next_to_src->findParentPE();
@@ -777,14 +780,22 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 //	SortSCCDFG();
 	SortTopoGraphicalDFG();
 
-	std::string mappingLogFileName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs)  + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths) + ".mapping.csv";
-	std::string mappingLog2FileName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs) + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths) + ".routeInfo.log";
-	mappingLog.open(mappingLogFileName.c_str());
-	mappingLog2.open(mappingLog2FileName.c_str());
+	std::string mappingLogFileName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs)  + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths);// + ".mapping.csv";
+	std::string mappingLog2FileName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs) + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths);// + ".routeInfo.log";
 
 	bool mapSuccess=false;
 
+	std::string congestionInfoFileName = mappingLogFileName + ".congestion.info";
+	congestionInfoFile.open(congestionInfoFileName.c_str());
+
 	for (int i = 0; i < this->maxIter; ++i) {
+
+
+		std::string mappingLogFileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mapping.csv";
+		std::string mappingLog2FileName_withIter = mappingLog2FileName + "_Iter=" + std::to_string(i) + ".routeInfo.log";
+
+		mappingLog.open(mappingLogFileName_withIter.c_str());
+		mappingLog2.open(mappingLog2FileName_withIter.c_str());
 
 		while(!mappedNodes.empty()){
 			mappedNodes.pop();
@@ -973,13 +984,15 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 			backTrackCredits = std::min(this->backTrackLimit,backTrackCredits+1);
 			mappedNodes.push(node);
 		}
-		mapSuccess=updateCongestionCosts();
+		mapSuccess=updateCongestionCosts(i);
 		if(mapSuccess){
 			break;
 		}
 		clearCurrMapping();
 		estimatedRouteInfo.clear();
 	}
+
+	congestionInfoFile.close();
 
 	if(mapSuccess){
 		mappingLog << "Map Success!.\n";
@@ -1052,8 +1065,15 @@ void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode* src, DFGNode* dest,
 
 }
 
-bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts() {
+bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts(int iter) {
 	bool noCongestion=true;
+
+	std::set<int> conflictedTimeSteps;
+
+	congestionInfoFile << "**********************************\n";
+	congestionInfoFile << "II = " << this->cgra->get_t_max() << ",iter = " << iter << "\n";
+	congestionInfoFile << "**********************************\n";
+
 	for(std::pair<Port*,std::set<DFGNode*>> pair : congestedPorts){
 		Port* p = pair.first;
 		if(pair.second.size() > 1){
@@ -1064,47 +1084,85 @@ bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts() {
 					}
 					if(this->dfg->isMutexNodes(node1,node2)) continue;
 					std::cout << "CONGESTION:" << p->getFullName();
+					congestionInfoFile << "CONGESTION:" << p->getFullName();
 					for(DFGNode* node : pair.second){
 						std::cout << "," << node->idx << "|BB=" << node->BB;
+						congestionInfoFile << "," << node->idx << "|BB=" << node->BB;
 					}
 					std::cout << "\n";
+					congestionInfoFile << "\n";
 					p->increastCongCost();
 					noCongestion=false;
-					break;
+					conflictedTimeSteps.insert(p->getMod()->getPE()->T);
+//					break;
 				}
 				if(!noCongestion){
-					break;
+//					break;
 				}
 			}
 		}
 		if(p->getHistoryCost() > 0){
 			std::cout << "HISTORY_COST :: " << p->getFullName() << "," << p->getHistoryCost() << "\n";
+			congestionInfoFile << "HISTORY_COST :: " << p->getFullName() << "," << p->getHistoryCost() << "\n";
 		}
 	}
 
+	bool noConflicts=true;
 	for(std::pair<Port*,std::set<DFGNode*>> pair  : conflictedPorts){
 		Port* p = pair.first;
 
 		if(p->getNode()!=NULL){
 			std::cout << "CONFLICT :" << p->getFullName();
+			congestionInfoFile << "CONFLICT :" << p->getFullName();
 			for(DFGNode* node : pair.second){
 				std::cout << "," << node->idx << "|BB=" << node->BB;
+				congestionInfoFile << "," << node->idx << "|BB=" << node->BB;
 			}
 			std::cout << ", with MAPPED = " << p->getNode()->idx << "|BB=" << p->getNode()->BB;
 			std::cout << "\n";
-			p->increastCongCost();
-			noCongestion=false;
+
+			congestionInfoFile << ", with MAPPED = " << p->getNode()->idx << "|BB=" << p->getNode()->BB;
+			congestionInfoFile << "\n";
+
+			for (int i = 0; i < pair.second.size(); ++i) {
+				p->increastCongCost();
+			}
+			conflictedTimeSteps.insert(p->getMod()->getPE()->T);
+			noConflicts=false;
 		}
 
 		if(p->getHistoryCost() > 0){
 			std::cout << "HISTORY_COST :: " << p->getFullName() << "," << p->getHistoryCost() << "\n";
+			congestionInfoFile << "HISTORY_COST :: " << p->getFullName() << "," << p->getHistoryCost() << "\n";
 		}
 	}
 
+	if(this->upperboundII > conflictedTimeSteps.size() + this->cgra->get_t_max()){
+		this->upperboundII = conflictedTimeSteps.size() + this->cgra->get_t_max();
+		this->upperboundIter = iter;
+		std::cout << "****************************************\n";
+		std::cout << "Upperbound II = " << this->upperboundII << "\n";
+		std::cout << "On iter = " << iter << "\n";
+		std::cout << "****************************************\n";
+
+		congestionInfoFile << "****************************************\n";
+		congestionInfoFile << "Upperbound II = " << this->upperboundII << "\n";
+		congestionInfoFile << "On iter = " << iter << "\n";
+		congestionInfoFile << "****************************************\n";
+	}
+
+	congestionInfoFile << std::endl;
+
     congestedPorts.clear();
     conflictedPorts.clear();
+    conflictedTimeStepMap.clear();
     if(noCongestion) std::cout << "noCongestion!\n";
-    return noCongestion;
+    if(noConflicts) std::cout << "noConflicts!\n";
+
+    if(noCongestion) congestionInfoFile << "noCongestion!\n";
+    if(noConflicts) congestionInfoFile << "noConflicts!\n";
+
+    return noCongestion&noConflicts;
 }
 
 
@@ -1333,4 +1391,19 @@ bool CGRAXMLCompile::PathFinderMapper::checkDPFree(DataPath* dp, DFGNode* node, 
 		}
 	}
 	return false;
+}
+
+bool CGRAXMLCompile::PathFinderMapper::updateConflictedTimeSteps(int timeStep,
+		int conflicts) {
+
+	int presentConflicts = conflictedTimeStepMap[timeStep];
+	if(conflicts > presentConflicts){
+		conflictedTimeStepMap[timeStep] = conflicts;
+		return true;
+	}
+	return false;
+}
+
+int CGRAXMLCompile::PathFinderMapper::getTimeStepConflicts(int timeStep) {
+	return conflictedTimeStepMap[timeStep];
 }
