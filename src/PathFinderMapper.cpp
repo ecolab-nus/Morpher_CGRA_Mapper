@@ -1213,11 +1213,11 @@ bool CGRAXMLCompile::PathFinderMapper::checkConflictedPortCompatibility() {
 			if(p->getNode()!=NULL){
 				for(Port* cp : top->getConflictPorts(p)){
 					std::cout << "p : " << p->getFullName() << ", cp : " << cp->getFullName() << "\n";
-					if(cp!=NULL){
+					if(cp->getNode()!=NULL){
 						std::cout << "Conflict ERR!\n";
 						std::cout << p->getFullName() << ":" << p->getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
 					}
-					assert(cp==NULL);
+					assert(cp->getNode()==NULL);
 				}
 			}
 		}
@@ -1225,11 +1225,11 @@ bool CGRAXMLCompile::PathFinderMapper::checkConflictedPortCompatibility() {
 			if(p->getNode()!=NULL){
 				for(Port* cp : top->getConflictPorts(p)){
 					std::cout << "p : " << p->getFullName() << ", cp : " << cp->getFullName() << "\n";
-					if(cp!=NULL){
+					if(cp->getNode()!=NULL){
 						std::cout << "Conflict ERR!\n";
 						std::cout << p->getFullName() << ":" << p->getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
 					}
-					assert(cp==NULL);
+					assert(cp->getNode()==NULL);
 				}
 			}
 		}
@@ -1237,11 +1237,11 @@ bool CGRAXMLCompile::PathFinderMapper::checkConflictedPortCompatibility() {
 			if(p->getNode()!=NULL){
 				for(Port* cp : top->getConflictPorts(p)){
 					std::cout << "p : " << p->getFullName() << ", cp : " << cp->getFullName() << "\n";
-					if(cp!=NULL){
+					if(cp->getNode()!=NULL){
 						std::cout << "Conflict ERR!\n";
 						std::cout << p->getFullName() << ":" << p->getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
 					}
-					assert(cp==NULL);
+					assert(cp->getNode()==NULL);
 				}
 			}
 		}

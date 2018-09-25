@@ -80,7 +80,6 @@ private:
 	std::map<Port*,std::vector<Port*>> conflictPorts;
 	std::map<Port*,std::set<DFGNode*>>* congestedPortPtr;
 
-	std::vector<Port*> allRegPorts;
 
 };
 

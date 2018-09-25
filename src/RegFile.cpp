@@ -70,4 +70,14 @@ void CGRAXMLCompile::RegFile::createRegFile(int nWRPs, int nRegs, int nRDPs) {
 //		regOName << "REG_O" << i;
 //		connections[getInPort(regIName.str())].push_back(getInPort(regOName.str()));
 	}
+
+	for (int i = 0; i < nRegs; ++i) {
+		std::stringstream regIName;
+		regIName << "REG_I" << i;
+		std::stringstream regOName;
+		regOName << "REG_O" << i;
+		insertConnection(getInPort(regIName.str()),getOutPort(regOName.str()));
+	}
+
+
 }

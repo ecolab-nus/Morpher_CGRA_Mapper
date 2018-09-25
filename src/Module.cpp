@@ -32,8 +32,9 @@ Module::~Module(){
 		delete p;
 	}
 
-	for(Port* p : regPorts){
-		delete p;
+	for(std::pair<Port*,Port*> portPair : regPorts){
+		delete portPair.first;
+		delete portPair.second;
 	}
 
 	for(Module* M : subModules){
@@ -55,10 +56,16 @@ FU* Module::getFU() {
 std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 	std::vector<Port*> nextPorts;
 
+//	if(currPort->getType() == REG) std::cout << "DDDDDDDDDEBUGG : REG PORTS : ";
+
 	for(Port* p : connectedTo[currPort]){
 		bool conflicted=false;
 
 		if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
+
+//			if(currPort->getType() == REG){
+//				std::cout << p->getFullName() << ",";
+//			}
 
 		}
 		else{
@@ -74,6 +81,8 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 			nextPorts.push_back(p);
 		}
 	}
+
+//	if(currPort->getType() == REG) std::cout << "\n";
 
 	if(currPort->getType()==OUT){
 		if(getParent()){
@@ -194,21 +203,33 @@ std::string Module::getFullName() {
 	return fullName;
 }
 
-Port* Module::getRegPort(std::string Pname) {
-	for(Port *p : regPorts){
-		if(p->getName().compare(Pname)==0){
-			return p;
+std::pair<Port*,Port*> Module::getRegPort(std::string Pname) {
+
+	std::string ri = Pname + "_RI";
+
+	for(std::pair<Port*,Port*> portpair : regPorts){
+		if(portpair.first->getName() == ri){
+			return portpair;
+		}
+
+		if(portpair.first->getName() == Pname){
+			return portpair;
+		}
+
+		if(portpair.second->getName() == Pname){
+			return portpair;
 		}
 	}
 	assert(false);
 }
 
-void Module::insertRegPort(Port* p) {
-	regPorts.push_back(p);
-	CGRA* cgra = getCGRA();
-	assert(cgra);
-
-
+void Module::insertRegPort(std::string pName) {
+	Port* ri = new Port(pName + "_RI",REGI,this);
+	Port* ro = new Port(pName + "_RO",REGO,this);
+	insertConnection(ri,ro);
+	regPorts.push_back(std::make_pair(ri,ro));
+	PE* pe = getPE();
+	pe->insertRegConPort(std::make_pair(ri,ro));
 }
 
 void Module::insertConnection(Port* src, Port* dest) {

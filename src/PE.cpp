@@ -1096,10 +1096,10 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 		}
 	}
 
-	for(Port *ip : FU0->inputPorts){
-		inputPorts.push_back(new Port(FU0->getName() + "_" + ip->getName() + "RI",IN,this) );
-		outputPorts.push_back(new Port(FU0->getName() + "_" + ip->getName() + "RO",OUT,this) );
-	}
+//	for(Port *ip : FU0->inputPorts){
+//		inputPorts.push_back(new Port(FU0->getName() + "_" + ip->getName() + "RI",IN,this) );
+//		outputPorts.push_back(new Port(FU0->getName() + "_" + ip->getName() + "RO",OUT,this) );
+//	}
 
 //	inputPorts.push_back(new Port(FU0->getName() + "_" + ip.getName() + "RI",IN,this) );
 
@@ -1257,28 +1257,28 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 
 
 
-	//adding register connections to the input ports of the FU : N2NFIX
-	assert(!getNextPorts(FU0->getOutPort("DP0_T")).empty());
-	FU0->createFUInputRegConnections();
-
-	assert(!getNextPorts(FU0->getOutPort("DP0_T")).empty());
-
-	for(Port *ip : FU0->inputPorts){
-//		inputPorts.push_back(new Port(FU0->getName() + "_" + ip.getName() + "RI",IN,this) );
-//		outputPorts.push_back(new Port(FU0->getName() + "_" + ip.getName() + "RO",OUT,this) );
-
-		Port* _ip = getInPort(FU0->getName() + "_" + ip->getName() + "RI"); assert(_ip);
-		Port* _op = getOutPort(FU0->getName() + "_" + ip->getName() + "RO"); assert(_op);
-
-		Port* ip_ptr = FU0->getInPort(ip->getName()); assert(ip_ptr);
-		Port* ip_ro_ptr = FU0->getOutPort(ip->getName()+"_RO"); assert(ip_ro_ptr);
-
-
-		connectedTo[_ip].clear();
-		insertConnection(_ip,ip_ptr);
-		connectedTo[ip_ro_ptr].clear();
-		insertConnection(ip_ro_ptr,_op);
-	}
+//	//adding register connections to the input ports of the FU : N2NFIX
+//	assert(!getNextPorts(FU0->getOutPort("DP0_T")).empty());
+////	FU0->createFUInputRegConnections();
+//
+//	assert(!getNextPorts(FU0->getOutPort("DP0_T")).empty());
+//
+//	for(Port *ip : FU0->inputPorts){
+////		inputPorts.push_back(new Port(FU0->getName() + "_" + ip.getName() + "RI",IN,this) );
+////		outputPorts.push_back(new Port(FU0->getName() + "_" + ip.getName() + "RO",OUT,this) );
+//
+//		Port* _ip = getInPort(FU0->getName() + "_" + ip->getName() + "RI"); assert(_ip);
+//		Port* _op = getOutPort(FU0->getName() + "_" + ip->getName() + "RO"); assert(_op);
+//
+//		Port* ip_ptr = FU0->getInPort(ip->getName()); assert(ip_ptr);
+//		Port* ip_ro_ptr = FU0->getOutPort(ip->getName()+"_RO"); assert(ip_ro_ptr);
+//
+//
+//		connectedTo[_ip].clear();
+//		insertConnection(_ip,ip_ptr);
+//		connectedTo[ip_ro_ptr].clear();
+//		insertConnection(ip_ro_ptr,_op);
+//	}
 
 //	assert(conflictPorts.size() > 0);
 
@@ -2376,4 +2376,16 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs) {
 
 }
 
+std::pair<CGRAXMLCompile::Port*,CGRAXMLCompile::Port*> CGRAXMLCompile::PE::getRegConPort(std::string pName) {
+
+//	std::string riName = pName + "_RI";
+//	std::string roName = pName + "_RO";
+
+	for(std::pair<Port*,Port*>& pair : allRegConPorts){
+		if(pair.first->getName() == pName || pair.second->getName() == pName){
+			return pair;
+		}
+	}
+	assert(false);
+}
 

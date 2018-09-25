@@ -101,21 +101,27 @@ void CGRAXMLCompile::CGRA::createGenericCGRA(int x_max, int y_max, int t_max, st
 
 
 				//Create Input Registers linked to next time instance : N2N_FIX
-				if(peType == "N2N_4REGF"){
-					for(Module* subMod : currPE->subModules){
-						if(FU* fu = dynamic_cast<FU*>(subMod)){
-							for(Port *ip : fu->inputPorts){
-								std::string regRI_name = fu->getName() + "_" + ip->getName() + "RI";
-								std::string regRO_name = fu->getName() + "_" + ip->getName() + "RO";
+//				if(peType == "N2N_4REGF"){
+//					for(Module* subMod : currPE->subModules){
+//						if(FU* fu = dynamic_cast<FU*>(subMod)){
+//							for(Port *ip : fu->inputPorts){
+//								std::string regRI_name = fu->getName() + "_" + ip->getName() + "RI";
+//								std::string regRO_name = fu->getName() + "_" + ip->getName() + "RO";
+//
+//								Port* ri = nextCyclePE->getInPort(regRI_name); assert(ri);
+//								Port* ro = currPE->getOutPort(regRO_name); assert(ro);
+//
+//								insertConnection(ro,ri);
+//
+//							}
+//						}
+//					}
+//				}
 
-								Port* ri = nextCyclePE->getInPort(regRI_name); assert(ri);
-								Port* ro = currPE->getOutPort(regRO_name); assert(ro);
-
-								insertConnection(ro,ri);
-
-							}
-						}
-					}
+				for(std::pair<Port*,Port*> curr_portpair : currPE->getRegConPorts()){
+					std::pair<Port*,Port*> next_portpair = nextCyclePE->getRegConPort(curr_portpair.first->getName());
+					Module* mod = curr_portpair.first->getMod();
+					mod->insertConnection(curr_portpair.second,next_portpair.first);
 				}
 
 			}
