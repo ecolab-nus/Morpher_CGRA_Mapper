@@ -686,8 +686,15 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode* node,
 int CGRAXMLCompile::PathFinderMapper::calculateCost(Port* src,
 		Port* next_to_src, Port* dest) {
 
-//	std::cout << src->getName();
-//	std::cout << next_to_src->getName();
+	std::string srcName = src->getName();
+//	std::cout << src->getName() << ",";
+
+	std::string next_to_srcName = next_to_src->getName();
+//	std::cout << next_to_srcName << "\n";
+
+	assert(src);
+	assert(next_to_src);
+	assert(dest);
 
 	PE* srcPE = src->findParentPE();
 	assert(srcPE);

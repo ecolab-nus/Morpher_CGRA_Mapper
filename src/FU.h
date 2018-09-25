@@ -25,6 +25,10 @@ public:
 	void createFU(int numberDPs);
 	int getNumberDPs(){return numberDPs;}
 
+
+	void createFUInputRegConnections();
+	void createFUInputRegCreate();
+
 	std::map<std::string,int> supportedOPs;
 	std::string currOP="NOP";
 

@@ -11,6 +11,7 @@
 #include "CGRA.h"
 #include <assert.h>
 #include <sstream>
+#include <iostream>
 
 namespace CGRAXMLCompile {
 
@@ -1061,11 +1062,43 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 	outputPorts.push_back(Port("WEST_O",OUT,this));
 	outputPorts.push_back(Port("SOUTH_O",OUT,this));
 
+	//create internal ports for regfile ports that connect to input or outputs to create an
+	//additional conflict.
+	for(RegFile* RF : allRegs){
+		for (int i = 0; i < RF->get_nWRPs(); ++i) {
+			std::stringstream wrpName;
+			wrpName << "WRP" << i;
+			Port* wrp = RF->getInPort(wrpName.str());
+
+			std::stringstream intwrpName;
+			intwrpName << RF->getName() << "_" << wrpName.str() << "_INT";
+			internalPorts.push_back(Port(intwrpName.str(),INT,this));
+		}
+
+		for (int i = 0; i < RF->get_nRDPs(); ++i) {
+			std::stringstream rdpName;
+			rdpName << "RDP" << i;
+			Port* rdp = RF->getOutPort(rdpName.str());
+
+			std::stringstream intrdpName;
+			intrdpName << RF->getName() << "_" << rdpName.str() << "_INT";
+			internalPorts.push_back(Port(intrdpName.str(),INT,this));
+
+		}
+	}
+
+
+
 	for(RegFile* RF : allRegs){
 		for (int i = 0; i < RF->get_nRegs(); ++i) {
 			inputPorts.push_back(Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
 			outputPorts.push_back(Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
 		}
+	}
+
+	for(Port &ip : FU0->inputPorts){
+		inputPorts.push_back( Port(FU0->getName() + "_" + ip.getName() + "RI",IN,this) );
+		outputPorts.push_back( Port(FU0->getName() + "_" + ip.getName() + "RO",OUT,this) );
 	}
 
 	//make connections
@@ -1090,10 +1123,18 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 //			connectedTo[WEST_I].push_back(wrp);
 //			connectedTo[SOUTH_I].push_back(wrp);
 
-			insertConnection(NORTH_I,wrp);
-			insertConnection(EAST_I,wrp);
-			insertConnection(WEST_I,wrp);
-			insertConnection(SOUTH_I,wrp);
+//			insertConnection(NORTH_I,wrp);
+//			insertConnection(EAST_I,wrp);
+//			insertConnection(WEST_I,wrp);
+//			insertConnection(SOUTH_I,wrp);
+
+			Port* wrp_int = getInternalPort(RF->getName() + "_" + wrpName.str() + "_INT");
+			insertConnection(wrp_int,wrp);
+
+			insertConnection(NORTH_I,wrp_int);
+			insertConnection(EAST_I,wrp_int);
+			insertConnection(WEST_I,wrp_int);
+			insertConnection(SOUTH_I,wrp_int);
 		}
 	}
 
@@ -1118,10 +1159,11 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 //		connectedTo[WEST_I].push_back(&p);
 //		connectedTo[SOUTH_I].push_back(&p);
 
-		insertConnection(NORTH_I,&p);
-		insertConnection(EAST_I,&p);
-		insertConnection(WEST_I,&p);
-		insertConnection(SOUTH_I,&p);
+
+		insertConnection(NORTH_I,FU0->getInPort(p.getName()));
+		insertConnection(EAST_I,FU0->getInPort(p.getName()));
+		insertConnection(WEST_I,FU0->getInPort(p.getName()));
+		insertConnection(SOUTH_I,FU0->getInPort(p.getName()));
 	}
 
 	//connect register file readports to FU and writeports to main directional outputs
@@ -1133,7 +1175,7 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 
 			for(Port &p : FU0->inputPorts){
 //				connectedTo[rdp].push_back(&p);
-				insertConnection(rdp,&p);
+				insertConnection(rdp,FU0->getInPort(p.getName()));
 			}
 
 //			connectedTo[rdp].push_back(NORTH_O);
@@ -1141,10 +1183,18 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 //			connectedTo[rdp].push_back(WEST_O);
 //			connectedTo[rdp].push_back(SOUTH_O);
 
-			insertConnection(rdp,NORTH_O);
-			insertConnection(rdp,EAST_O);
-			insertConnection(rdp,WEST_O);
-			insertConnection(rdp,SOUTH_O);
+//			insertConnection(rdp,NORTH_O);
+//			insertConnection(rdp,EAST_O);
+//			insertConnection(rdp,WEST_O);
+//			insertConnection(rdp,SOUTH_O);
+
+			Port* rdp_int = getInternalPort(RF->getName() + "_" + rdpName.str() + "_INT");
+			insertConnection(rdp,rdp_int);
+
+			insertConnection(rdp_int,NORTH_O);
+			insertConnection(rdp_int,EAST_O);
+			insertConnection(rdp_int,WEST_O);
+			insertConnection(rdp_int,SOUTH_O);
 		}
 
 	}
@@ -1157,7 +1207,7 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 				wrpName << "WRP" << i;
 				Port* wrp = RF->getInPort(wrpName.str());
 //				connectedTo[&p].push_back(wrp);
-				insertConnection(&p,wrp);
+				insertConnection(FU0->getOutPort(p.getName()),wrp);
 			}
 		}
 //		connectedTo[&p].push_back(NORTH_O);
@@ -1165,10 +1215,12 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 //		connectedTo[&p].push_back(WEST_O);
 //		connectedTo[&p].push_back(SOUTH_O);
 
-		insertConnection(&p,NORTH_O);
-		insertConnection(&p,EAST_O);
-		insertConnection(&p,WEST_O);
-		insertConnection(&p,SOUTH_O);
+		std::cout << p.getName() << "\n";
+
+		insertConnection(FU0->getOutPort(p.getName()),NORTH_O);
+		insertConnection(FU0->getOutPort(p.getName()),EAST_O);
+		insertConnection(FU0->getOutPort(p.getName()),WEST_O);
+		insertConnection(FU0->getOutPort(p.getName()),SOUTH_O);
 	}
 
 	//adding conflicted ports
@@ -1177,10 +1229,11 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 			for (int i = 0; i < RF->get_nWRPs(); ++i) {
 				std::stringstream wrpName;
 				wrpName << "WRP" << i;
-				Port* wrp = RF->getInPort(wrpName.str());
+//				Port* wrp = RF->getInPort(wrpName.str());
+				Port* wrp_int = getInternalPort(RF->getName() + "_" + wrpName.str() + "_INT");
 
-//				getCGRA()->insertConflictPort(wrp,&ip);
-				getCGRA()->insertConflictPort(&ip,wrp);
+				getCGRA()->insertConflictPort(wrp_int,&ip);
+				getCGRA()->insertConflictPort(&ip,wrp_int);
 //				conflictPorts[wrp].push_back(&ip);
 //				conflictPorts[&ip].push_back(wrp);
 			}
@@ -1190,29 +1243,40 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 			for (int i = 0; i < RF->get_nRDPs(); ++i) {
 				std::stringstream rdpName;
 				rdpName << "RDP" << i;
-				Port* rdp = RF->getOutPort(rdpName.str());
-				assert(rdp!=NULL);
+//				Port* rdp = RF->getOutPort(rdpName.str());
+				Port* rdp_int = getInternalPort(RF->getName() + "_" + rdpName.str() + "_INT");
+//				assert(rdp!=NULL);
 
-//				getCGRA()->insertConflictPort(rdp,&op);
-				getCGRA()->insertConflictPort(&op,rdp);
+				getCGRA()->insertConflictPort(rdp_int,&op);
+				getCGRA()->insertConflictPort(&op,rdp_int);
 			}
 		}
 	}
 
+
+
 	//adding register connections to the input ports of the FU : N2NFIX
-//	for(Port &ip : FU0->inputPorts){
+	assert(!getNextPorts(FU0->getOutPort("DP0_T")).empty());
+	FU0->createFUInputRegConnections();
+
+	assert(!getNextPorts(FU0->getOutPort("DP0_T")).empty());
+
+	for(Port &ip : FU0->inputPorts){
 //		inputPorts.push_back( Port(FU0->getName() + "_" + ip.getName() + "RI",IN,this) );
 //		outputPorts.push_back( Port(FU0->getName() + "_" + ip.getName() + "RO",OUT,this) );
-//
-//		Port* _ip = getInPort(FU0->getName() + "_" + ip.getName() + "RI"); assert(_ip);
-//		Port* _op = getOutPort(FU0->getName() + "_" + ip.getName() + "RO"); assert(_op);
-//
-//		Port* ip_ptr = FU0->getInPort(ip.getName()); assert(ip_ptr);
-//		Port* ip_ro_ptr = FU0->getOutPort(ip.getName()+"_RO"); assert(ip_ro_ptr);
-//
-//		insertConnection(_ip,ip_ptr);
-//		insertConnection(ip_ro_ptr,_op);
-//	}
+
+		Port* _ip = getInPort(FU0->getName() + "_" + ip.getName() + "RI"); assert(_ip);
+		Port* _op = getOutPort(FU0->getName() + "_" + ip.getName() + "RO"); assert(_op);
+
+		Port* ip_ptr = FU0->getInPort(ip.getName()); assert(ip_ptr);
+		Port* ip_ro_ptr = FU0->getOutPort(ip.getName()+"_RO"); assert(ip_ro_ptr);
+
+
+		connectedTo[_ip].clear();
+		insertConnection(_ip,ip_ptr);
+		connectedTo[ip_ro_ptr].clear();
+		insertConnection(ip_ro_ptr,_op);
+	}
 
 //	assert(conflictPorts.size() > 0);
 

@@ -89,6 +89,27 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 	return nextPorts;
 }
 
+std::vector<Port*> Module::getNextPorts(Port* currPort) {
+	std::vector<Port*> nextPorts;
+
+	for(Port* p : connectedTo[currPort]){
+		nextPorts.push_back(p);
+	}
+
+	if(currPort->getType()==OUT){
+		if(getParent()){
+			for(Port* p : currPort->getMod()->getParent()->connectedTo[currPort]){
+//					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
+//				nextPorts.push_back(p);
+
+					nextPorts.push_back(p);
+
+			}
+		}
+	}
+	return nextPorts;
+}
+
 std::vector<Port*> Module::getConflictPorts(Port* currPort) {
 	assert(this->getCGRA());
 	std::vector<Port*> vec = this->getCGRA()->getConflictPorts(currPort);

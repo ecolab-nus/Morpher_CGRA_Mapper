@@ -82,6 +82,8 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 
 	}
 
+	createFUInputRegCreate();
+
 	for (int i = 0; i < numberDPs; ++i) {
 		std::string portName_P; portName_P.clear();
 		std::string portName_I1; portName_I1.clear();
@@ -130,9 +132,9 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 				}
 			}
 
+
 		}
 	}
-
 
 
 }
@@ -142,4 +144,52 @@ bool CGRAXMLCompile::FU::isMEMFU() {
 		return true;
 	}
 	return false;
+}
+
+void CGRAXMLCompile::FU::createFUInputRegConnections() {
+
+	for (int i = 0; i < numberDPs; ++i) {
+		std::string portName_P; portName_P.clear();
+		std::string portName_I1; portName_I1.clear();
+		std::string portName_I2; portName_I2.clear();
+
+		portName_P  += "DP" + std::to_string(i) + "_P";
+		portName_I1 += "DP" + std::to_string(i) + "_I1";
+		portName_I2 += "DP" + std::to_string(i) + "_I2";
+
+
+		assert(!getNextPorts(getOutPort("DP0_T")).empty());
+		//N2NFIX
+//		outputPorts.push_back(Port(portName_P + "_RO",OUT,this));
+		assert(!getNextPorts(getOutPort("DP0_T")).empty());
+		insertConnection(getInPort(portName_P),getOutPort(portName_P + "_RO"));
+		assert(!getNextPorts(getOutPort("DP0_T")).empty());
+//		outputPorts.push_back(Port(portName_I1 + "_RO",OUT,this));
+		insertConnection(getInPort(portName_I1),getOutPort(portName_I1 + "_RO"));
+		assert(!getNextPorts(getOutPort("DP0_T")).empty());
+//		outputPorts.push_back(Port(portName_I2 + "_RO",OUT,this));
+		insertConnection(getInPort(portName_I2),getOutPort(portName_I2 + "_RO"));
+		assert(!getNextPorts(getOutPort("DP0_T")).empty());
+		assert(!getNextPorts(getOutPort("DP0_T")).empty());
+
+	}
+}
+
+void CGRAXMLCompile::FU::createFUInputRegCreate() {
+
+
+	for (int i = 0; i < numberDPs; ++i) {
+		std::string portName_P; portName_P.clear();
+		std::string portName_I1; portName_I1.clear();
+		std::string portName_I2; portName_I2.clear();
+
+		portName_P  += "DP" + std::to_string(i) + "_P";
+		portName_I1 += "DP" + std::to_string(i) + "_I1";
+		portName_I2 += "DP" + std::to_string(i) + "_I2";
+
+		outputPorts.push_back(Port(portName_P + "_RO",OUT,this));
+		outputPorts.push_back(Port(portName_I1 + "_RO",OUT,this));
+		outputPorts.push_back(Port(portName_I2 + "_RO",OUT,this));
+	}
+
 }

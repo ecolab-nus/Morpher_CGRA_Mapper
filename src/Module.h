@@ -46,6 +46,7 @@ public:
 	FU* getFU();
 
 	std::vector<Port*> getNextPorts(Port* currPort, HeuristicMapper* hm);
+	std::vector<Port*> getNextPorts(Port* currPort);
 	std::vector<Port*> getFromPorts(Port* currPort, HeuristicMapper* hm);
 
 	std::vector<Port*> getConflictPorts(Port* currPort);
@@ -56,7 +57,7 @@ public:
 protected:
 
 
-private:
+//private:
 	std::map<Port*,std::vector<Port*>> connectedTo;
 	std::map<Port*,std::vector<Port*>> connectedFrom;
 	const Module* Parent;

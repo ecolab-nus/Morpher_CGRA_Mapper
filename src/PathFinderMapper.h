@@ -43,7 +43,7 @@ public:
 private:
 	std::map<Port*,std::set<DFGNode*>> congestedPorts;
 	std::map<Port*,std::set<DFGNode*>> conflictedPorts;
-	int maxIter = 15;
+	int maxIter = 30;
 
 	std::ofstream congestionInfoFile;
 	std::map<int,int> conflictedTimeStepMap;

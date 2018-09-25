@@ -9,6 +9,7 @@
 #define DATAPATH_H_
 #include "Module.h"
 #include "DFGNode.h"
+#include <assert.h>
 
 namespace CGRAXMLCompile {
 
