@@ -43,9 +43,9 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 		portName_I2 += "DP" + std::to_string(i) + "_I2";
 
 		//insert inputs ports
-		inputPorts.push_back(Port(portName_P,IN,this));
-		inputPorts.push_back(Port(portName_I1,IN,this));
-		inputPorts.push_back(Port(portName_I2,IN,this));
+		inputPorts.push_back(new Port(portName_P,IN,this));
+		inputPorts.push_back(new Port(portName_I1,IN,this));
+		inputPorts.push_back(new Port(portName_I2,IN,this));
 
 		//N2NFIX
 //		outputPorts.push_back(Port(portName_P + "_RO",OUT,this));
@@ -58,7 +58,7 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 		//insert output ports
 		std::string portName_T; portName_T.clear();
 		portName_T += "DP" + std::to_string(i) + "_T";
-		outputPorts.push_back(Port(portName_T,OUT,this));
+		outputPorts.push_back(new Port(portName_T,OUT,this));
 
 		//create DataPaths
 		std::string dataPathName; dataPathName.clear();
@@ -187,9 +187,9 @@ void CGRAXMLCompile::FU::createFUInputRegCreate() {
 		portName_I1 += "DP" + std::to_string(i) + "_I1";
 		portName_I2 += "DP" + std::to_string(i) + "_I2";
 
-		outputPorts.push_back(Port(portName_P + "_RO",OUT,this));
-		outputPorts.push_back(Port(portName_I1 + "_RO",OUT,this));
-		outputPorts.push_back(Port(portName_I2 + "_RO",OUT,this));
+		outputPorts.push_back(new Port(portName_P + "_RO",OUT,this));
+		outputPorts.push_back(new Port(portName_I1 + "_RO",OUT,this));
+		outputPorts.push_back(new Port(portName_I2 + "_RO",OUT,this));
 	}
 
 }

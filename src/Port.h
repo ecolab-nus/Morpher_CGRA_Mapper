@@ -23,7 +23,7 @@ class PE;
 class Module;
 class HeuristicMapper;
 
-enum PortType{IN,OUT,INT};
+enum PortType{IN,OUT,INT,REG};
 
 class Port {
 public:

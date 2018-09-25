@@ -20,6 +20,22 @@ Module::Module(const Module* Parent, std::string name) {
 }
 
 Module::~Module(){
+	for(Port* p : inputPorts){
+		delete p;
+	}
+
+	for(Port* p : outputPorts){
+		delete p;
+	}
+
+	for(Port* p : internalPorts){
+		delete p;
+	}
+
+	for(Port* p : regPorts){
+		delete p;
+	}
+
 	for(Module* M : subModules){
 		delete M;
 	}
@@ -178,6 +194,23 @@ std::string Module::getFullName() {
 	return fullName;
 }
 
+Port* Module::getRegPort(std::string Pname) {
+	for(Port *p : regPorts){
+		if(p->getName().compare(Pname)==0){
+			return p;
+		}
+	}
+	assert(false);
+}
+
+void Module::insertRegPort(Port* p) {
+	regPorts.push_back(p);
+	CGRA* cgra = getCGRA();
+	assert(cgra);
+
+
+}
+
 void Module::insertConnection(Port* src, Port* dest) {
 	connectedTo[src].push_back(dest);
 	connectedFrom[dest].push_back(src);
@@ -186,27 +219,27 @@ void Module::insertConnection(Port* src, Port* dest) {
 } /* namespace CGRAXMLCompile */
 
 CGRAXMLCompile::Port* CGRAXMLCompile::Module::getInPort(std::string Pname) {
-	for(Port &p : inputPorts){
-		if(p.getName().compare(Pname)==0){
-			return &p;
+	for(Port *p : inputPorts){
+		if(p->getName().compare(Pname)==0){
+			return p;
 		}
 	}
 	assert(false);
 }
 
 CGRAXMLCompile::Port* CGRAXMLCompile::Module::getOutPort(std::string Pname) {
-	for(Port &p : outputPorts){
-		if(p.getName().compare(Pname)==0){
-			return &p;
+	for(Port *p : outputPorts){
+		if(p->getName().compare(Pname)==0){
+			return p;
 		}
 	}
 	assert(false);
 }
 
 CGRAXMLCompile::Port* CGRAXMLCompile::Module::getInternalPort(std::string Pname) {
-	for(Port &p : internalPorts){
-		if(p.getName().compare(Pname)==0){
-			return &p;
+	for(Port *p : internalPorts){
+		if(p->getName().compare(Pname)==0){
+			return p;
 		}
 	}
 	assert(false);

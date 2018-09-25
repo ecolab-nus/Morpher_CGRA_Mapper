@@ -23,25 +23,25 @@ void CGRAXMLCompile::RegFile::createRegFile(int nWRPs, int nRegs, int nRDPs) {
 	for (int i = 0; i < nWRPs; ++i) {
 		std::stringstream wrpName;
 		wrpName << "WRP" << i;
-		inputPorts.push_back(Port(wrpName.str(),IN,this));
+		inputPorts.push_back(new Port(wrpName.str(),IN,this));
 	}
 
 	//create read nRDPs
 	for (int i = 0; i < nRDPs; ++i) {
 		std::stringstream rdpName;
 		rdpName << "RDP" << i;
-		outputPorts.push_back(Port(rdpName.str(),OUT,this));
+		outputPorts.push_back(new Port(rdpName.str(),OUT,this));
 	}
 
 	//create Reg Ports
 	for (int i = 0; i < nRegs; ++i) {
 		std::stringstream regIName;
 		regIName << "REG_I" << i;
-		inputPorts.push_back(Port(regIName.str(),IN,this));
+		inputPorts.push_back(new Port(regIName.str(),IN,this));
 
 		std::stringstream regOName;
 		regOName << "REG_O" << i;
-		outputPorts.push_back(Port(regOName.str(),OUT,this));
+		outputPorts.push_back(new Port(regOName.str(),OUT,this));
 	}
 
 	//make connections

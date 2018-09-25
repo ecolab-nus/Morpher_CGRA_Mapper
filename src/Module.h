@@ -26,16 +26,19 @@ class Module {
 public:
 	Module(const Module* Parent, std::string name);
 	virtual ~Module();
-	std::vector<Port> inputPorts;
-	std::vector<Port> outputPorts;
-	std::vector<Port> internalPorts;
+	std::vector<Port*> inputPorts;
+	std::vector<Port*> outputPorts;
+	std::vector<Port*> internalPorts;
 	std::vector<Module*> subModules;
 
 
 	Port* getInPort(std::string Pname);
 	Port* getOutPort(std::string Pname);
 	Port* getInternalPort(std::string Pname);
+	Port* getRegPort(std::string Pname);
 	Module* getSubMod(std::string Mname);
+
+	void insertRegPort(Port* p);
 
 	std::string getName(){return name;}
 	std::string getFullName();
@@ -54,14 +57,19 @@ public:
 
 	void insertConnection(Port* src, Port* dest);
 
+
+
 protected:
-
-
 //private:
 	std::map<Port*,std::vector<Port*>> connectedTo;
 	std::map<Port*,std::vector<Port*>> connectedFrom;
 	const Module* Parent;
 	std::string name;
+
+
+private:
+	std::vector<Port*> regPorts;
+
 };
 
 } /* namespace CGRAXMLCompile */

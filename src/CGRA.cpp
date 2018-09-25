@@ -104,9 +104,9 @@ void CGRAXMLCompile::CGRA::createGenericCGRA(int x_max, int y_max, int t_max, st
 				if(peType == "N2N_4REGF"){
 					for(Module* subMod : currPE->subModules){
 						if(FU* fu = dynamic_cast<FU*>(subMod)){
-							for(Port &ip : fu->inputPorts){
-								std::string regRI_name = fu->getName() + "_" + ip.getName() + "RI";
-								std::string regRO_name = fu->getName() + "_" + ip.getName() + "RO";
+							for(Port *ip : fu->inputPorts){
+								std::string regRI_name = fu->getName() + "_" + ip->getName() + "RI";
+								std::string regRO_name = fu->getName() + "_" + ip->getName() + "RO";
 
 								Port* ri = nextCyclePE->getInPort(regRI_name); assert(ri);
 								Port* ro = currPE->getOutPort(regRO_name); assert(ro);

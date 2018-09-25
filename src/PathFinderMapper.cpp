@@ -711,10 +711,10 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(Port* src,
 	if(srcPE!=nextPE){
 		int freePorts=0;
 
-		for(Port &p : nextPE->outputPorts){
+		for(Port *p : nextPE->outputPorts){
 			Module* parent = nextPE->getParent();
-			if(parent->getNextPorts(&p,this).empty()) continue;
-			if(p.getNode()==NULL){
+			if(parent->getNextPorts(p,this).empty()) continue;
+			if(p->getNode()==NULL){
 				freePorts++;
 			}
 		}
@@ -1185,14 +1185,14 @@ bool CGRAXMLCompile::PathFinderMapper::clearCurrMapping(){
 	while(!searchStack.empty()){
 		Module* top = searchStack.top();
 		searchStack.pop();
-		for(Port& p : top->inputPorts){
-			assert(p.getNode()==NULL);
+		for(Port* p : top->inputPorts){
+			assert(p->getNode()==NULL);
 		}
-		for(Port& p : top->internalPorts){
-			assert(p.getNode()==NULL);
+		for(Port* p : top->internalPorts){
+			assert(p->getNode()==NULL);
 		}
-		for(Port& p : top->outputPorts){
-			assert(p.getNode()==NULL);
+		for(Port* p : top->outputPorts){
+			assert(p->getNode()==NULL);
 		}
 		for(Module* submod : top->subModules){
 			searchStack.push(submod);
@@ -1209,37 +1209,37 @@ bool CGRAXMLCompile::PathFinderMapper::checkConflictedPortCompatibility() {
 	while(!searchStack.empty()){
 		Module* top = searchStack.top();
 		searchStack.pop();
-		for(Port& p : top->inputPorts){
-			if(p.getNode()!=NULL){
-				for(Port* cp : top->getConflictPorts(&p)){
-					std::cout << "p : " << p.getFullName() << ", cp : " << cp->getFullName() << "\n";
+		for(Port* p : top->inputPorts){
+			if(p->getNode()!=NULL){
+				for(Port* cp : top->getConflictPorts(p)){
+					std::cout << "p : " << p->getFullName() << ", cp : " << cp->getFullName() << "\n";
 					if(cp!=NULL){
 						std::cout << "Conflict ERR!\n";
-						std::cout << p.getFullName() << ":" << p.getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
+						std::cout << p->getFullName() << ":" << p->getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
 					}
 					assert(cp==NULL);
 				}
 			}
 		}
-		for(Port& p : top->internalPorts){
-			if(p.getNode()!=NULL){
-				for(Port* cp : top->getConflictPorts(&p)){
-					std::cout << "p : " << p.getFullName() << ", cp : " << cp->getFullName() << "\n";
+		for(Port* p : top->internalPorts){
+			if(p->getNode()!=NULL){
+				for(Port* cp : top->getConflictPorts(p)){
+					std::cout << "p : " << p->getFullName() << ", cp : " << cp->getFullName() << "\n";
 					if(cp!=NULL){
 						std::cout << "Conflict ERR!\n";
-						std::cout << p.getFullName() << ":" << p.getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
+						std::cout << p->getFullName() << ":" << p->getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
 					}
 					assert(cp==NULL);
 				}
 			}
 		}
-		for(Port& p : top->outputPorts){
-			if(p.getNode()!=NULL){
-				for(Port* cp : top->getConflictPorts(&p)){
-					std::cout << "p : " << p.getFullName() << ", cp : " << cp->getFullName() << "\n";
+		for(Port* p : top->outputPorts){
+			if(p->getNode()!=NULL){
+				for(Port* cp : top->getConflictPorts(p)){
+					std::cout << "p : " << p->getFullName() << ", cp : " << cp->getFullName() << "\n";
 					if(cp!=NULL){
 						std::cout << "Conflict ERR!\n";
-						std::cout << p.getFullName() << ":" << p.getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
+						std::cout << p->getFullName() << ":" << p->getNode()->idx << "," << cp->getFullName() << ":" << cp->getNode()->idx << "\n";
 					}
 					assert(cp==NULL);
 				}

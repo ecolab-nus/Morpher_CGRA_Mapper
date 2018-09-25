@@ -105,10 +105,10 @@ struct dest_with_cost{
 
 		if(cost==0){
 			int freePorts=0;
-			for(Port &p : dest->getPE()->outputPorts){
+			for(Port *p : dest->getPE()->outputPorts){
 				Module* parent = dest->getPE()->getParent();
-				if(parent->getNextPorts(&p,hm).empty()) continue;
-				if(p.getNode()==NULL){
+				if(parent->getNextPorts(p,hm).empty()) continue;
+				if(p->getNode()==NULL){
 					freePorts++;
 				}
 			}

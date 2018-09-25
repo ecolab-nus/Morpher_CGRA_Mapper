@@ -21,12 +21,12 @@ class DataPath : public Module {
 public:
 	DataPath(const Module* Parent, std::string name) : Module(Parent,name){
 		//create inputPorts
-		inputPorts.push_back(Port("P",IN,this));
-		inputPorts.push_back(Port("I1",IN,this));
-		inputPorts.push_back(Port("I2",IN,this));
+		inputPorts.push_back(new Port("P",IN,this));
+		inputPorts.push_back(new Port("I1",IN,this));
+		inputPorts.push_back(new Port("I2",IN,this));
 
 		//create outputPorts
-		outputPorts.push_back(Port("T",OUT,this));
+		outputPorts.push_back(new Port("T",OUT,this));
 
 		//create output to input connection
 //		connectedTo[getOutPort("T")].push_back(getInPort("P"));

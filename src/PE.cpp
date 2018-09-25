@@ -51,20 +51,20 @@ void CGRAXMLCompile::PE::createGenericPE(bool isMEMpe, int numberofDPs, int regs
 //	RegFile* RES = new RegFile(this,"RES",1,1,1); subModules.push_back(RES);allRegs.push_back(RES);
 
 	//create input and output ports
-	inputPorts.push_back(Port("NORTH_I",IN,this));
-	inputPorts.push_back(Port("EAST_I",IN,this));
-	inputPorts.push_back(Port("WEST_I",IN,this));
-	inputPorts.push_back(Port("SOUTH_I",IN,this));
+	inputPorts.push_back(new Port("NORTH_I",IN,this));
+	inputPorts.push_back(new Port("EAST_I",IN,this));
+	inputPorts.push_back(new Port("WEST_I",IN,this));
+	inputPorts.push_back(new Port("SOUTH_I",IN,this));
 
-	outputPorts.push_back(Port("NORTH_O",OUT,this));
-	outputPorts.push_back(Port("EAST_O",OUT,this));
-	outputPorts.push_back(Port("WEST_O",OUT,this));
-	outputPorts.push_back(Port("SOUTH_O",OUT,this));
+	outputPorts.push_back(new Port("NORTH_O",OUT,this));
+	outputPorts.push_back(new Port("EAST_O",OUT,this));
+	outputPorts.push_back(new Port("WEST_O",OUT,this));
+	outputPorts.push_back(new Port("SOUTH_O",OUT,this));
 
 	for(RegFile* RF : allRegs){
 		for (int i = 0; i < RF->get_nRegs(); ++i) {
-			inputPorts.push_back(Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
-			outputPorts.push_back(Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
+			inputPorts.push_back(new Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
+			outputPorts.push_back(new Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
 		}
 	}
 
@@ -114,16 +114,16 @@ void CGRAXMLCompile::PE::createGenericPE(bool isMEMpe, int numberofDPs, int regs
 	}
 
 	//connecting inputs to the FU
-	for(Port &p : nonMemFU0->inputPorts){
+	for(Port *p : nonMemFU0->inputPorts){
 //		connectedTo[NORTH_I].push_back(&p);
 //		connectedTo[EAST_I].push_back(&p);
 //		connectedTo[WEST_I].push_back(&p);
 //		connectedTo[SOUTH_I].push_back(&p);
 
-		insertConnection(NORTH_I,&p);
-		insertConnection(EAST_I,&p);
-		insertConnection(WEST_I,&p);
-		insertConnection(SOUTH_I,&p);
+		insertConnection(NORTH_I,p);
+		insertConnection(EAST_I,p);
+		insertConnection(WEST_I,p);
+		insertConnection(SOUTH_I,p);
 
 
 	}
@@ -135,9 +135,9 @@ void CGRAXMLCompile::PE::createGenericPE(bool isMEMpe, int numberofDPs, int regs
 			rdpName << "RDP" << i;
 			Port* rdp = RF->getOutPort(rdpName.str());
 
-			for(Port &p : nonMemFU0->inputPorts){
+			for(Port *p : nonMemFU0->inputPorts){
 //				connectedTo[rdp].push_back(&p);
-				insertConnection(rdp,&p);
+				insertConnection(rdp,p);
 			}
 
 //			connectedTo[rdp].push_back(NORTH_O);
@@ -153,14 +153,14 @@ void CGRAXMLCompile::PE::createGenericPE(bool isMEMpe, int numberofDPs, int regs
 	}
 
 	//connect output of FU to wrp of RegFile and main directional outputs
-	for(Port &p : nonMemFU0->outputPorts){
+	for(Port *p : nonMemFU0->outputPorts){
 		for(RegFile* RF : allRegs){
 			for (int i = 0; i < RF->get_nWRPs(); ++i) {
 				std::stringstream wrpName;
 				wrpName << "WRP" << i;
 				Port* wrp = RF->getInPort(wrpName.str());
 //				connectedTo[&p].push_back(wrp);
-				insertConnection(&p,wrp);
+				insertConnection(p,wrp);
 			}
 		}
 //		connectedTo[&p].push_back(NORTH_O);
@@ -168,10 +168,10 @@ void CGRAXMLCompile::PE::createGenericPE(bool isMEMpe, int numberofDPs, int regs
 //		connectedTo[&p].push_back(WEST_O);
 //		connectedTo[&p].push_back(SOUTH_O);
 
-		insertConnection(&p,NORTH_O);
-		insertConnection(&p,EAST_O);
-		insertConnection(&p,WEST_O);
-		insertConnection(&p,SOUTH_O);
+		insertConnection(p,NORTH_O);
+		insertConnection(p,EAST_O);
+		insertConnection(p,WEST_O);
+		insertConnection(p,SOUTH_O);
 
 	}
 
@@ -208,26 +208,26 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 	RegFile* RFT = new RegFile(this,"RFT",numberofDPs,numberofDPs,numberofDPs); subModules.push_back(RFT); allRegs.push_back(RFT);
 
 	//create input and output ports
-	inputPorts.push_back(Port("NORTH_I",IN,this));
-	inputPorts.push_back(Port("EAST_I",IN,this));
-	inputPorts.push_back(Port("WEST_I",IN,this));
-	inputPorts.push_back(Port("SOUTH_I",IN,this));
+	inputPorts.push_back(new Port("NORTH_I",IN,this));
+	inputPorts.push_back(new Port("EAST_I",IN,this));
+	inputPorts.push_back(new Port("WEST_I",IN,this));
+	inputPorts.push_back(new Port("SOUTH_I",IN,this));
 
-	outputPorts.push_back(Port("NORTH_O",OUT,this));
-	outputPorts.push_back(Port("EAST_O",OUT,this));
-	outputPorts.push_back(Port("WEST_O",OUT,this));
-	outputPorts.push_back(Port("SOUTH_O",OUT,this));
+	outputPorts.push_back(new Port("NORTH_O",OUT,this));
+	outputPorts.push_back(new Port("EAST_O",OUT,this));
+	outputPorts.push_back(new Port("WEST_O",OUT,this));
+	outputPorts.push_back(new Port("SOUTH_O",OUT,this));
 
 	//create xbar input ports
-	internalPorts.push_back( Port("NORTH_XBARI",INT,this) );
-	internalPorts.push_back( Port("EAST_XBARI",INT,this) );
-	internalPorts.push_back( Port("WEST_XBARI",INT,this) );
-	internalPorts.push_back( Port("SOUTH_XBARI",INT,this) );
+	internalPorts.push_back(new Port("NORTH_XBARI",INT,this) );
+	internalPorts.push_back(new Port("EAST_XBARI",INT,this) );
+	internalPorts.push_back(new Port("WEST_XBARI",INT,this) );
+	internalPorts.push_back(new Port("SOUTH_XBARI",INT,this) );
 
-	internalPorts.push_back( Port("NORTH_PRE_XBARI",INT,this) );
-	internalPorts.push_back( Port("EAST_PRE_XBARI",INT,this) );
-	internalPorts.push_back( Port("WEST_PRE_XBARI",INT,this) );
-	internalPorts.push_back( Port("SOUTH_PRE_XBARI",INT,this) );
+	internalPorts.push_back(new Port("NORTH_PRE_XBARI",INT,this) );
+	internalPorts.push_back(new Port("EAST_PRE_XBARI",INT,this) );
+	internalPorts.push_back(new Port("WEST_PRE_XBARI",INT,this) );
+	internalPorts.push_back(new Port("SOUTH_PRE_XBARI",INT,this) );
 
 	Port* NORTH_XBARI = getInternalPort("NORTH_XBARI");
 	Port* EAST_XBARI = getInternalPort("EAST_XBARI");
@@ -242,8 +242,8 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 	//create PE-level time extended ports
 	for(RegFile* RF : allRegs){
 		for (int i = 0; i < RF->get_nRegs(); ++i) {
-			inputPorts.push_back(Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
-			outputPorts.push_back(Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
+			inputPorts.push_back(new Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
+			outputPorts.push_back(new Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
 		}
 	}
 
@@ -313,16 +313,16 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 	}
 
 	//connecting xbar inputs to the FU
-	for(Port &p : nonMemFU0->inputPorts){
+	for(Port *p : nonMemFU0->inputPorts){
 //		connectedTo[NORTH_XBARI].push_back(&p);
 //		connectedTo[EAST_XBARI].push_back(&p);
 //		connectedTo[WEST_XBARI].push_back(&p);
 //		connectedTo[SOUTH_XBARI].push_back(&p);
 
-		insertConnection(NORTH_XBARI,&p);
-		insertConnection(EAST_XBARI,&p);
-		insertConnection(WEST_XBARI,&p);
-		insertConnection(SOUTH_XBARI,&p);
+		insertConnection(NORTH_XBARI,p);
+		insertConnection(EAST_XBARI,p);
+		insertConnection(WEST_XBARI,p);
+		insertConnection(SOUTH_XBARI,p);
 	}
 
 	//connecting input registers to outputs :: STDNOC Property
@@ -391,9 +391,9 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 			rdpName << "RDP" << i;
 			Port* rdp = RF->getOutPort(rdpName.str());
 
-			for(Port &p : nonMemFU0->inputPorts){
+			for(Port *p : nonMemFU0->inputPorts){
 //				connectedTo[rdp].push_back(&p);
-				insertConnection(rdp,&p);
+				insertConnection(rdp,p);
 			}
 		}
 	}
@@ -414,22 +414,22 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 	}
 
 	//connect output of FU to wrp of RegFile and main directional outputs
-	for(Port &p : nonMemFU0->outputPorts){
+	for(Port *p : nonMemFU0->outputPorts){
 //		connectedTo[&p].push_back(NORTH_O);
 //		connectedTo[&p].push_back(EAST_O);
 //		connectedTo[&p].push_back(WEST_O);
 //		connectedTo[&p].push_back(SOUTH_O);
 
-		insertConnection(&p,NORTH_O);
-		insertConnection(&p,EAST_O);
-		insertConnection(&p,WEST_O);
-		insertConnection(&p,SOUTH_O);
+		insertConnection(p,NORTH_O);
+		insertConnection(p,EAST_O);
+		insertConnection(p,WEST_O);
+		insertConnection(p,SOUTH_O);
 
 		for (int i = 0; i < numberofDPs; ++i) {
 			std::stringstream wrpName;
 			wrpName << "WRP" << i;
 //			connectedTo[&p].push_back(RFT->getInPort(wrpName.str()));
-			insertConnection(&p,RFT->getInPort(wrpName.str()));
+			insertConnection(p,RFT->getInPort(wrpName.str()));
 		}
 	}
 
@@ -466,20 +466,20 @@ void CGRAXMLCompile::PE::createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs,
 //	RegFile* RES = new RegFile(this,"RES",1,1,1); subModules.push_back(RES);allRegs.push_back(RES);
 
 	//create input and output ports
-	inputPorts.push_back(Port("NORTH_I",IN,this));
-	inputPorts.push_back(Port("EAST_I",IN,this));
-	inputPorts.push_back(Port("WEST_I",IN,this));
-	inputPorts.push_back(Port("SOUTH_I",IN,this));
+	inputPorts.push_back(new Port("NORTH_I",IN,this));
+	inputPorts.push_back(new Port("EAST_I",IN,this));
+	inputPorts.push_back(new Port("WEST_I",IN,this));
+	inputPorts.push_back(new Port("SOUTH_I",IN,this));
 
-	outputPorts.push_back(Port("NORTH_O",OUT,this));
-	outputPorts.push_back(Port("EAST_O",OUT,this));
-	outputPorts.push_back(Port("WEST_O",OUT,this));
-	outputPorts.push_back(Port("SOUTH_O",OUT,this));
+	outputPorts.push_back(new Port("NORTH_O",OUT,this));
+	outputPorts.push_back(new Port("EAST_O",OUT,this));
+	outputPorts.push_back(new Port("WEST_O",OUT,this));
+	outputPorts.push_back(new Port("SOUTH_O",OUT,this));
 
 	for(RegFile* RF : allRegs){
 		for (int i = 0; i < RF->get_nRegs(); ++i) {
-			inputPorts.push_back(Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
-			outputPorts.push_back(Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
+			inputPorts.push_back(new Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
+			outputPorts.push_back(new Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
 		}
 	}
 
@@ -527,16 +527,16 @@ void CGRAXMLCompile::PE::createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs,
 	}
 
 	//connecting inputs to the FU
-	for(Port &p : nonMemFU0->inputPorts){
+	for(Port *p : nonMemFU0->inputPorts){
 //		connectedTo[NORTH_I].push_back(&p);
 //		connectedTo[EAST_I].push_back(&p);
 //		connectedTo[WEST_I].push_back(&p);
 //		connectedTo[SOUTH_I].push_back(&p);
 
-		insertConnection(NORTH_I,&p);
-		insertConnection(EAST_I,&p);
-		insertConnection(WEST_I,&p);
-		insertConnection(SOUTH_I,&p);
+		insertConnection(NORTH_I,p);
+		insertConnection(EAST_I,p);
+		insertConnection(WEST_I,p);
+		insertConnection(SOUTH_I,p);
 	}
 
 	//connecting input to outputs :: HyCUBE Property
@@ -564,9 +564,9 @@ void CGRAXMLCompile::PE::createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs,
 			rdpName << "RDP" << i;
 			Port* rdp = RF->getOutPort(rdpName.str());
 
-			for(Port &p : nonMemFU0->inputPorts){
+			for(Port *p : nonMemFU0->inputPorts){
 //				connectedTo[rdp].push_back(&p);
-				insertConnection(rdp,&p);
+				insertConnection(rdp,p);
 			}
 
 //			connectedTo[rdp].push_back(NORTH_O);
@@ -583,14 +583,14 @@ void CGRAXMLCompile::PE::createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs,
 	}
 
 	//connect output of FU to wrp of RegFile and main directional outputs
-	for(Port &p : nonMemFU0->outputPorts){
+	for(Port *p : nonMemFU0->outputPorts){
 		for(RegFile* RF : allRegs){
 			for (int i = 0; i < RF->get_nWRPs(); ++i) {
 				std::stringstream wrpName;
 				wrpName << "WRP" << i;
 				Port* wrp = RF->getInPort(wrpName.str());
 //				connectedTo[&p].push_back(wrp);
-				insertConnection(&p,wrp);
+				insertConnection(p,wrp);
 			}
 		}
 //		connectedTo[&p].push_back(NORTH_O);
@@ -598,10 +598,10 @@ void CGRAXMLCompile::PE::createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs,
 //		connectedTo[&p].push_back(WEST_O);
 //		connectedTo[&p].push_back(SOUTH_O);
 
-		insertConnection(&p,NORTH_O);
-		insertConnection(&p,EAST_O);
-		insertConnection(&p,WEST_O);
-		insertConnection(&p,SOUTH_O);
+		insertConnection(p,NORTH_O);
+		insertConnection(p,EAST_O);
+		insertConnection(p,WEST_O);
+		insertConnection(p,SOUTH_O);
 	}
 
 }
@@ -637,20 +637,20 @@ void CGRAXMLCompile::PE::createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs, i
 //	RegFile* RES = new RegFile(this,"RES",1,1,1); subModules.push_back(RES);allRegs.push_back(RES);
 
 	//create input and output ports
-	inputPorts.push_back(Port("NORTH_I",IN,this));
-	inputPorts.push_back(Port("EAST_I",IN,this));
-	inputPorts.push_back(Port("WEST_I",IN,this));
-	inputPorts.push_back(Port("SOUTH_I",IN,this));
+	inputPorts.push_back(new Port("NORTH_I",IN,this));
+	inputPorts.push_back(new Port("EAST_I",IN,this));
+	inputPorts.push_back(new Port("WEST_I",IN,this));
+	inputPorts.push_back(new Port("SOUTH_I",IN,this));
 
-	outputPorts.push_back(Port("NORTH_O",OUT,this));
-	outputPorts.push_back(Port("EAST_O",OUT,this));
-	outputPorts.push_back(Port("WEST_O",OUT,this));
-	outputPorts.push_back(Port("SOUTH_O",OUT,this));
+	outputPorts.push_back(new Port("NORTH_O",OUT,this));
+	outputPorts.push_back(new Port("EAST_O",OUT,this));
+	outputPorts.push_back(new Port("WEST_O",OUT,this));
+	outputPorts.push_back(new Port("SOUTH_O",OUT,this));
 
 	for(RegFile* RF : allRegs){
 		for (int i = 0; i < RF->get_nRegs(); ++i) {
-			inputPorts.push_back(Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
-			outputPorts.push_back(Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
+			inputPorts.push_back(new Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
+			outputPorts.push_back(new Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
 		}
 	}
 
@@ -698,16 +698,16 @@ void CGRAXMLCompile::PE::createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs, i
 	}
 
 	//connecting inputs to the FU
-	for(Port &p : nonMemFU0->inputPorts){
+	for(Port *p : nonMemFU0->inputPorts){
 //		connectedTo[NORTH_I].push_back(&p);
 //		connectedTo[EAST_I].push_back(&p);
 //		connectedTo[WEST_I].push_back(&p);
 //		connectedTo[SOUTH_I].push_back(&p);
 
-		insertConnection(NORTH_I,&p);
-		insertConnection(EAST_I,&p);
-		insertConnection(WEST_I,&p);
-		insertConnection(SOUTH_I,&p);
+		insertConnection(NORTH_I,p);
+		insertConnection(EAST_I,p);
+		insertConnection(WEST_I,p);
+		insertConnection(SOUTH_I,p);
 	}
 
 	//connecting input to outputs :: HyCUBE Property
@@ -755,9 +755,9 @@ void CGRAXMLCompile::PE::createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs, i
 			rdpName << "RDP" << i;
 			Port* rdp = RF->getOutPort(rdpName.str());
 
-			for(Port &p : nonMemFU0->inputPorts){
+			for(Port *p : nonMemFU0->inputPorts){
 //				connectedTo[rdp].push_back(&p);
-				insertConnection(rdp,&p);
+				insertConnection(rdp,p);
 			}
 
 //			connectedTo[rdp].push_back(NORTH_O);
@@ -773,14 +773,14 @@ void CGRAXMLCompile::PE::createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs, i
 	}
 
 	//connect output of FU to wrp of RegFile and main directional outputs
-	for(Port &p : nonMemFU0->outputPorts){
+	for(Port *p : nonMemFU0->outputPorts){
 		for(RegFile* RF : allRegs){
 			for (int i = 0; i < RF->get_nWRPs(); ++i) {
 				std::stringstream wrpName;
 				wrpName << "WRP" << i;
 				Port* wrp = RF->getInPort(wrpName.str());
 //				connectedTo[&p].push_back(wrp);
-				insertConnection(&p,wrp);
+				insertConnection(p,wrp);
 			}
 		}
 //		connectedTo[&p].push_back(NORTH_O);
@@ -788,10 +788,10 @@ void CGRAXMLCompile::PE::createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs, i
 //		connectedTo[&p].push_back(WEST_O);
 //		connectedTo[&p].push_back(SOUTH_O);
 
-		insertConnection(&p,NORTH_O);
-		insertConnection(&p,EAST_O);
-		insertConnection(&p,WEST_O);
-		insertConnection(&p,SOUTH_O);
+		insertConnection(p,NORTH_O);
+		insertConnection(p,EAST_O);
+		insertConnection(p,WEST_O);
+		insertConnection(p,SOUTH_O);
 
 	}
 
@@ -828,21 +828,21 @@ void CGRAXMLCompile::PE::createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs) {
 	RegFile* RFT = new RegFile(this,"RFT",numberofDPs,numberofDPs,numberofDPs); subModules.push_back(RFT); allRegs.push_back(RFT);
 
 	//create input and output ports
-	inputPorts.push_back(Port("NORTH_I",IN,this));
-	inputPorts.push_back(Port("EAST_I",IN,this));
-	inputPorts.push_back(Port("WEST_I",IN,this));
-	inputPorts.push_back(Port("SOUTH_I",IN,this));
+	inputPorts.push_back(new Port("NORTH_I",IN,this));
+	inputPorts.push_back(new Port("EAST_I",IN,this));
+	inputPorts.push_back(new Port("WEST_I",IN,this));
+	inputPorts.push_back(new Port("SOUTH_I",IN,this));
 
-	outputPorts.push_back(Port("NORTH_O",OUT,this));
-	outputPorts.push_back(Port("EAST_O",OUT,this));
-	outputPorts.push_back(Port("WEST_O",OUT,this));
-	outputPorts.push_back(Port("SOUTH_O",OUT,this));
+	outputPorts.push_back(new Port("NORTH_O",OUT,this));
+	outputPorts.push_back(new Port("EAST_O",OUT,this));
+	outputPorts.push_back(new Port("WEST_O",OUT,this));
+	outputPorts.push_back(new Port("SOUTH_O",OUT,this));
 
 	//create xbar input ports
-	internalPorts.push_back( Port("NORTH_XBARI",INT,this) );
-	internalPorts.push_back( Port("EAST_XBARI",INT,this) );
-	internalPorts.push_back( Port("WEST_XBARI",INT,this) );
-	internalPorts.push_back( Port("SOUTH_XBARI",INT,this) );
+	internalPorts.push_back(new Port("NORTH_XBARI",INT,this) );
+	internalPorts.push_back(new Port("EAST_XBARI",INT,this) );
+	internalPorts.push_back(new Port("WEST_XBARI",INT,this) );
+	internalPorts.push_back(new Port("SOUTH_XBARI",INT,this) );
 
 	Port* NORTH_XBARI = getInternalPort("NORTH_XBARI");
 	Port* EAST_XBARI = getInternalPort("EAST_XBARI");
@@ -853,8 +853,8 @@ void CGRAXMLCompile::PE::createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs) {
 	//create PE-level time extended ports
 	for(RegFile* RF : allRegs){
 		for (int i = 0; i < RF->get_nRegs(); ++i) {
-			inputPorts.push_back(Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
-			outputPorts.push_back(Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
+			inputPorts.push_back(new Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
+			outputPorts.push_back(new Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
 		}
 	}
 
@@ -919,16 +919,16 @@ void CGRAXMLCompile::PE::createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs) {
 	}
 
 	//connecting xbar inputs to the FU
-	for(Port &p : nonMemFU0->inputPorts){
+	for(Port *p : nonMemFU0->inputPorts){
 //		connectedTo[NORTH_XBARI].push_back(&p);
 //		connectedTo[EAST_XBARI].push_back(&p);
 //		connectedTo[WEST_XBARI].push_back(&p);
 //		connectedTo[SOUTH_XBARI].push_back(&p);
 
-		insertConnection(NORTH_XBARI,&p);
-		insertConnection(EAST_XBARI,&p);
-		insertConnection(WEST_XBARI,&p);
-		insertConnection(SOUTH_XBARI,&p);
+		insertConnection(NORTH_XBARI,p);
+		insertConnection(EAST_XBARI,p);
+		insertConnection(WEST_XBARI,p);
+		insertConnection(SOUTH_XBARI,p);
 	}
 
 	//connecting xbar inputs to outputs :: HyCUBE Property
@@ -977,9 +977,9 @@ void CGRAXMLCompile::PE::createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs) {
 			rdpName << "RDP" << i;
 			Port* rdp = RF->getOutPort(rdpName.str());
 
-			for(Port &p : nonMemFU0->inputPorts){
+			for(Port *p : nonMemFU0->inputPorts){
 //				connectedTo[rdp].push_back(&p);
-				insertConnection(rdp,&p);
+				insertConnection(rdp,p);
 			}
 		}
 	}
@@ -1000,22 +1000,22 @@ void CGRAXMLCompile::PE::createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs) {
 	}
 
 	//connect output of FU to wrp of RegFile and main directional outputs
-	for(Port &p : nonMemFU0->outputPorts){
+	for(Port *p : nonMemFU0->outputPorts){
 //		connectedTo[&p].push_back(NORTH_O);
 //		connectedTo[&p].push_back(EAST_O);
 //		connectedTo[&p].push_back(WEST_O);
 //		connectedTo[&p].push_back(SOUTH_O);
 
-		insertConnection(&p,NORTH_O);
-		insertConnection(&p,EAST_O);
-		insertConnection(&p,WEST_O);
-		insertConnection(&p,SOUTH_O);
+		insertConnection(p,NORTH_O);
+		insertConnection(p,EAST_O);
+		insertConnection(p,WEST_O);
+		insertConnection(p,SOUTH_O);
 
 		for (int i = 0; i < numberofDPs; ++i) {
 			std::stringstream wrpName;
 			wrpName << "WRP" << i;
 //			connectedTo[&p].push_back(RFT->getInPort(wrpName.str()));
-			insertConnection(&p,RFT->getInPort(wrpName.str()));
+			insertConnection(p,RFT->getInPort(wrpName.str()));
 		}
 	}
 
@@ -1052,15 +1052,15 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 //	RegFile* RES = new RegFile(this,"RES",1,1,1); subModules.push_back(RES);allRegs.push_back(RES);
 
 	//create input and output ports
-	inputPorts.push_back(Port("NORTH_I",IN,this));
-	inputPorts.push_back(Port("EAST_I",IN,this));
-	inputPorts.push_back(Port("WEST_I",IN,this));
-	inputPorts.push_back(Port("SOUTH_I",IN,this));
+	inputPorts.push_back(new Port("NORTH_I",IN,this));
+	inputPorts.push_back(new Port("EAST_I",IN,this));
+	inputPorts.push_back(new Port("WEST_I",IN,this));
+	inputPorts.push_back(new Port("SOUTH_I",IN,this));
 
-	outputPorts.push_back(Port("NORTH_O",OUT,this));
-	outputPorts.push_back(Port("EAST_O",OUT,this));
-	outputPorts.push_back(Port("WEST_O",OUT,this));
-	outputPorts.push_back(Port("SOUTH_O",OUT,this));
+	outputPorts.push_back(new Port("NORTH_O",OUT,this));
+	outputPorts.push_back(new Port("EAST_O",OUT,this));
+	outputPorts.push_back(new Port("WEST_O",OUT,this));
+	outputPorts.push_back(new Port("SOUTH_O",OUT,this));
 
 	//create internal ports for regfile ports that connect to input or outputs to create an
 	//additional conflict.
@@ -1072,7 +1072,7 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 
 			std::stringstream intwrpName;
 			intwrpName << RF->getName() << "_" << wrpName.str() << "_INT";
-			internalPorts.push_back(Port(intwrpName.str(),INT,this));
+			internalPorts.push_back(new Port(intwrpName.str(),INT,this));
 		}
 
 		for (int i = 0; i < RF->get_nRDPs(); ++i) {
@@ -1082,7 +1082,7 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 
 			std::stringstream intrdpName;
 			intrdpName << RF->getName() << "_" << rdpName.str() << "_INT";
-			internalPorts.push_back(Port(intrdpName.str(),INT,this));
+			internalPorts.push_back(new Port(intrdpName.str(),INT,this));
 
 		}
 	}
@@ -1091,15 +1091,17 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 
 	for(RegFile* RF : allRegs){
 		for (int i = 0; i < RF->get_nRegs(); ++i) {
-			inputPorts.push_back(Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
-			outputPorts.push_back(Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
+			inputPorts.push_back(new Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
+			outputPorts.push_back(new Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
 		}
 	}
 
-	for(Port &ip : FU0->inputPorts){
-		inputPorts.push_back( Port(FU0->getName() + "_" + ip.getName() + "RI",IN,this) );
-		outputPorts.push_back( Port(FU0->getName() + "_" + ip.getName() + "RO",OUT,this) );
+	for(Port *ip : FU0->inputPorts){
+		inputPorts.push_back(new Port(FU0->getName() + "_" + ip->getName() + "RI",IN,this) );
+		outputPorts.push_back(new Port(FU0->getName() + "_" + ip->getName() + "RO",OUT,this) );
 	}
+
+//	inputPorts.push_back(new Port(FU0->getName() + "_" + ip.getName() + "RI",IN,this) );
 
 	//make connections
 	Port* NORTH_I = getInPort("NORTH_I");
@@ -1153,17 +1155,17 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 	}
 
 	//connecting inputs to the FU
-	for(Port &p : FU0->inputPorts){
+	for(Port *p : FU0->inputPorts){
 //		connectedTo[NORTH_I].push_back(&p);
 //		connectedTo[EAST_I].push_back(&p);
 //		connectedTo[WEST_I].push_back(&p);
 //		connectedTo[SOUTH_I].push_back(&p);
 
 
-		insertConnection(NORTH_I,FU0->getInPort(p.getName()));
-		insertConnection(EAST_I,FU0->getInPort(p.getName()));
-		insertConnection(WEST_I,FU0->getInPort(p.getName()));
-		insertConnection(SOUTH_I,FU0->getInPort(p.getName()));
+		insertConnection(NORTH_I,FU0->getInPort(p->getName()));
+		insertConnection(EAST_I,FU0->getInPort(p->getName()));
+		insertConnection(WEST_I,FU0->getInPort(p->getName()));
+		insertConnection(SOUTH_I,FU0->getInPort(p->getName()));
 	}
 
 	//connect register file readports to FU and writeports to main directional outputs
@@ -1173,9 +1175,9 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 			rdpName << "RDP" << i;
 			Port* rdp = RF->getOutPort(rdpName.str());
 
-			for(Port &p : FU0->inputPorts){
+			for(Port *p : FU0->inputPorts){
 //				connectedTo[rdp].push_back(&p);
-				insertConnection(rdp,FU0->getInPort(p.getName()));
+				insertConnection(rdp,FU0->getInPort(p->getName()));
 			}
 
 //			connectedTo[rdp].push_back(NORTH_O);
@@ -1200,14 +1202,14 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 	}
 
 	//connect output of FU to wrp of RegFile and main directional outputs
-	for(Port &p : FU0->outputPorts){
+	for(Port *p : FU0->outputPorts){
 		for(RegFile* RF : allRegs){
 			for (int i = 0; i < RF->get_nWRPs(); ++i) {
 				std::stringstream wrpName;
 				wrpName << "WRP" << i;
 				Port* wrp = RF->getInPort(wrpName.str());
 //				connectedTo[&p].push_back(wrp);
-				insertConnection(FU0->getOutPort(p.getName()),wrp);
+				insertConnection(FU0->getOutPort(p->getName()),wrp);
 			}
 		}
 //		connectedTo[&p].push_back(NORTH_O);
@@ -1215,31 +1217,31 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 //		connectedTo[&p].push_back(WEST_O);
 //		connectedTo[&p].push_back(SOUTH_O);
 
-		std::cout << p.getName() << "\n";
+		std::cout << p->getName() << "\n";
 
-		insertConnection(FU0->getOutPort(p.getName()),NORTH_O);
-		insertConnection(FU0->getOutPort(p.getName()),EAST_O);
-		insertConnection(FU0->getOutPort(p.getName()),WEST_O);
-		insertConnection(FU0->getOutPort(p.getName()),SOUTH_O);
+		insertConnection(FU0->getOutPort(p->getName()),NORTH_O);
+		insertConnection(FU0->getOutPort(p->getName()),EAST_O);
+		insertConnection(FU0->getOutPort(p->getName()),WEST_O);
+		insertConnection(FU0->getOutPort(p->getName()),SOUTH_O);
 	}
 
 	//adding conflicted ports
 	for(RegFile* RF : allRegs){
-		for(Port &ip : FU0->inputPorts){
+		for(Port *ip : FU0->inputPorts){
 			for (int i = 0; i < RF->get_nWRPs(); ++i) {
 				std::stringstream wrpName;
 				wrpName << "WRP" << i;
 //				Port* wrp = RF->getInPort(wrpName.str());
 				Port* wrp_int = getInternalPort(RF->getName() + "_" + wrpName.str() + "_INT");
 
-				getCGRA()->insertConflictPort(wrp_int,&ip);
-				getCGRA()->insertConflictPort(&ip,wrp_int);
+				getCGRA()->insertConflictPort(wrp_int,ip);
+				getCGRA()->insertConflictPort(ip,wrp_int);
 //				conflictPorts[wrp].push_back(&ip);
 //				conflictPorts[&ip].push_back(wrp);
 			}
 		}
 
-		for(Port &op : FU0->outputPorts){
+		for(Port *op : FU0->outputPorts){
 			for (int i = 0; i < RF->get_nRDPs(); ++i) {
 				std::stringstream rdpName;
 				rdpName << "RDP" << i;
@@ -1247,8 +1249,8 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 				Port* rdp_int = getInternalPort(RF->getName() + "_" + rdpName.str() + "_INT");
 //				assert(rdp!=NULL);
 
-				getCGRA()->insertConflictPort(rdp_int,&op);
-				getCGRA()->insertConflictPort(&op,rdp_int);
+				getCGRA()->insertConflictPort(rdp_int,op);
+				getCGRA()->insertConflictPort(op,rdp_int);
 			}
 		}
 	}
@@ -1261,15 +1263,15 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 
 	assert(!getNextPorts(FU0->getOutPort("DP0_T")).empty());
 
-	for(Port &ip : FU0->inputPorts){
-//		inputPorts.push_back( Port(FU0->getName() + "_" + ip.getName() + "RI",IN,this) );
-//		outputPorts.push_back( Port(FU0->getName() + "_" + ip.getName() + "RO",OUT,this) );
+	for(Port *ip : FU0->inputPorts){
+//		inputPorts.push_back(new Port(FU0->getName() + "_" + ip.getName() + "RI",IN,this) );
+//		outputPorts.push_back(new Port(FU0->getName() + "_" + ip.getName() + "RO",OUT,this) );
 
-		Port* _ip = getInPort(FU0->getName() + "_" + ip.getName() + "RI"); assert(_ip);
-		Port* _op = getOutPort(FU0->getName() + "_" + ip.getName() + "RO"); assert(_op);
+		Port* _ip = getInPort(FU0->getName() + "_" + ip->getName() + "RI"); assert(_ip);
+		Port* _op = getOutPort(FU0->getName() + "_" + ip->getName() + "RO"); assert(_op);
 
-		Port* ip_ptr = FU0->getInPort(ip.getName()); assert(ip_ptr);
-		Port* ip_ro_ptr = FU0->getOutPort(ip.getName()+"_RO"); assert(ip_ro_ptr);
+		Port* ip_ptr = FU0->getInPort(ip->getName()); assert(ip_ptr);
+		Port* ip_ro_ptr = FU0->getOutPort(ip->getName()+"_RO"); assert(ip_ro_ptr);
 
 
 		connectedTo[_ip].clear();
@@ -1476,20 +1478,20 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 //	RegFile* RES = new RegFile(this,"RES",1,1,1); subModules.push_back(RES);allRegs.push_back(RES);
 
 	//create input and output ports
-	inputPorts.push_back(Port("NORTH_I",IN,this));
-	inputPorts.push_back(Port("EAST_I",IN,this));
-	inputPorts.push_back(Port("WEST_I",IN,this));
-	inputPorts.push_back(Port("SOUTH_I",IN,this));
+	inputPorts.push_back(new Port("NORTH_I",IN,this));
+	inputPorts.push_back(new Port("EAST_I",IN,this));
+	inputPorts.push_back(new Port("WEST_I",IN,this));
+	inputPorts.push_back(new Port("SOUTH_I",IN,this));
 
-	outputPorts.push_back(Port("NORTH_O",OUT,this));
-	outputPorts.push_back(Port("EAST_O",OUT,this));
-	outputPorts.push_back(Port("WEST_O",OUT,this));
-	outputPorts.push_back(Port("SOUTH_O",OUT,this));
+	outputPorts.push_back(new Port("NORTH_O",OUT,this));
+	outputPorts.push_back(new Port("EAST_O",OUT,this));
+	outputPorts.push_back(new Port("WEST_O",OUT,this));
+	outputPorts.push_back(new Port("SOUTH_O",OUT,this));
 
 	for(RegFile* RF : allRegs){
 		for (int i = 0; i < RF->get_nRegs(); ++i) {
-			inputPorts.push_back(Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
-			outputPorts.push_back(Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
+			inputPorts.push_back(new Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
+			outputPorts.push_back(new Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
 		}
 	}
 
@@ -1538,16 +1540,16 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 
 	//connecting inputs to the FU
 	for(FU* fu : allFUs){
-		for(Port &p : fu->inputPorts){
+		for(Port *p : fu->inputPorts){
 	//		connectedTo[NORTH_I].push_back(&p);
 	//		connectedTo[EAST_I].push_back(&p);
 	//		connectedTo[WEST_I].push_back(&p);
 	//		connectedTo[SOUTH_I].push_back(&p);
 
-			insertConnection(NORTH_I,&p);
-			insertConnection(EAST_I,&p);
-			insertConnection(WEST_I,&p);
-			insertConnection(SOUTH_I,&p);
+			insertConnection(NORTH_I,p);
+			insertConnection(EAST_I,p);
+			insertConnection(WEST_I,p);
+			insertConnection(SOUTH_I,p);
 		}
 	}
 
@@ -1597,9 +1599,9 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 			Port* rdp = RF->getOutPort(rdpName.str());
 
 			for(FU* fu : allFUs){
-				for(Port &p : fu->inputPorts){
+				for(Port *p : fu->inputPorts){
 	//				connectedTo[rdp].push_back(&p);
-					insertConnection(rdp,&p);
+					insertConnection(rdp,p);
 				}
 			}
 
@@ -1617,14 +1619,14 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 
 	//connect output of FU to wrp of RegFile and main directional outputs
 	for(FU* fu : allFUs){
-		for(Port &p : fu->outputPorts){
+		for(Port *p : fu->outputPorts){
 			for(RegFile* RF : allRegs){
 				for (int i = 0; i < RF->get_nWRPs(); ++i) {
 					std::stringstream wrpName;
 					wrpName << "WRP" << i;
 					Port* wrp = RF->getInPort(wrpName.str());
 	//				connectedTo[&p].push_back(wrp);
-					insertConnection(&p,wrp);
+					insertConnection(p,wrp);
 				}
 			}
 	//		connectedTo[&p].push_back(NORTH_O);
@@ -1632,10 +1634,10 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 	//		connectedTo[&p].push_back(WEST_O);
 	//		connectedTo[&p].push_back(SOUTH_O);
 
-			insertConnection(&p,NORTH_O);
-			insertConnection(&p,EAST_O);
-			insertConnection(&p,WEST_O);
-			insertConnection(&p,SOUTH_O);
+			insertConnection(p,NORTH_O);
+			insertConnection(p,EAST_O);
+			insertConnection(p,WEST_O);
+			insertConnection(p,SOUTH_O);
 
 		}
 	}
@@ -1696,21 +1698,21 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs) {
 	RegFile* RFT = new RegFile(this,"RFT",numberofDPs,numberofDPs,numberofDPs); subModules.push_back(RFT); allRegs.push_back(RFT);
 
 	//create input and output ports
-	inputPorts.push_back(Port("NORTH_I",IN,this));
-	inputPorts.push_back(Port("EAST_I",IN,this));
-	inputPorts.push_back(Port("WEST_I",IN,this));
-	inputPorts.push_back(Port("SOUTH_I",IN,this));
+	inputPorts.push_back(new Port("NORTH_I",IN,this));
+	inputPorts.push_back(new Port("EAST_I",IN,this));
+	inputPorts.push_back(new Port("WEST_I",IN,this));
+	inputPorts.push_back(new Port("SOUTH_I",IN,this));
 
-	outputPorts.push_back(Port("NORTH_O",OUT,this));
-	outputPorts.push_back(Port("EAST_O",OUT,this));
-	outputPorts.push_back(Port("WEST_O",OUT,this));
-	outputPorts.push_back(Port("SOUTH_O",OUT,this));
+	outputPorts.push_back(new Port("NORTH_O",OUT,this));
+	outputPorts.push_back(new Port("EAST_O",OUT,this));
+	outputPorts.push_back(new Port("WEST_O",OUT,this));
+	outputPorts.push_back(new Port("SOUTH_O",OUT,this));
 
 	//create xbar input ports
-	internalPorts.push_back( Port("NORTH_XBARI",INT,this) );
-	internalPorts.push_back( Port("EAST_XBARI",INT,this) );
-	internalPorts.push_back( Port("WEST_XBARI",INT,this) );
-	internalPorts.push_back( Port("SOUTH_XBARI",INT,this) );
+	internalPorts.push_back(new Port("NORTH_XBARI",INT,this) );
+	internalPorts.push_back(new Port("EAST_XBARI",INT,this) );
+	internalPorts.push_back(new Port("WEST_XBARI",INT,this) );
+	internalPorts.push_back(new Port("SOUTH_XBARI",INT,this) );
 
 	Port* NORTH_XBARI = getInternalPort("NORTH_XBARI");
 	Port* EAST_XBARI = getInternalPort("EAST_XBARI");
@@ -1721,8 +1723,8 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs) {
 	//create PE-level time extended ports
 	for(RegFile* RF : allRegs){
 		for (int i = 0; i < RF->get_nRegs(); ++i) {
-			inputPorts.push_back(Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
-			outputPorts.push_back(Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
+			inputPorts.push_back(new Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
+			outputPorts.push_back(new Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
 		}
 	}
 
@@ -1789,16 +1791,16 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs) {
 	//connecting xbar inputs to the FU
 
 	for(FU* fu : allFUs){
-		for(Port &p : fu->inputPorts){
+		for(Port *p : fu->inputPorts){
 	//		connectedTo[NORTH_XBARI].push_back(&p);
 	//		connectedTo[EAST_XBARI].push_back(&p);
 	//		connectedTo[WEST_XBARI].push_back(&p);
 	//		connectedTo[SOUTH_XBARI].push_back(&p);
 
-			insertConnection(NORTH_XBARI,&p);
-			insertConnection(EAST_XBARI,&p);
-			insertConnection(WEST_XBARI,&p);
-			insertConnection(SOUTH_XBARI,&p);
+			insertConnection(NORTH_XBARI,p);
+			insertConnection(EAST_XBARI,p);
+			insertConnection(WEST_XBARI,p);
+			insertConnection(SOUTH_XBARI,p);
 		}
 	}
 
@@ -1850,9 +1852,9 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs) {
 			Port* rdp = RF->getOutPort(rdpName.str());
 
 			for(FU* fu : allFUs){
-				for(Port &p : fu->inputPorts){
+				for(Port *p : fu->inputPorts){
 	//				connectedTo[rdp].push_back(&p);
-					insertConnection(rdp,&p);
+					insertConnection(rdp,p);
 				}
 			}
 		}
@@ -1876,22 +1878,22 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs) {
 	//connect output of FU to wrp of RegFile and main directional outputs
 
 	for(FU* fu : allFUs){
-		for(Port &p : fu->outputPorts){
+		for(Port *p : fu->outputPorts){
 	//		connectedTo[&p].push_back(NORTH_O);
 	//		connectedTo[&p].push_back(EAST_O);
 	//		connectedTo[&p].push_back(WEST_O);
 	//		connectedTo[&p].push_back(SOUTH_O);
 
-			insertConnection(&p,NORTH_O);
-			insertConnection(&p,EAST_O);
-			insertConnection(&p,WEST_O);
-			insertConnection(&p,SOUTH_O);
+			insertConnection(p,NORTH_O);
+			insertConnection(p,EAST_O);
+			insertConnection(p,WEST_O);
+			insertConnection(p,SOUTH_O);
 
 			for (int i = 0; i < numberofDPs; ++i) {
 				std::stringstream wrpName;
 				wrpName << "WRP" << i;
 	//			connectedTo[&p].push_back(RFT->getInPort(wrpName.str()));
-				insertConnection(&p,RFT->getInPort(wrpName.str()));
+				insertConnection(p,RFT->getInPort(wrpName.str()));
 			}
 		}
 	}
@@ -1953,20 +1955,20 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
 //	RegFile* RES = new RegFile(this,"RES",1,1,1); subModules.push_back(RES);allRegs.push_back(RES);
 
 	//create input and output ports
-	inputPorts.push_back(Port("NORTH_I",IN,this));
-	inputPorts.push_back(Port("EAST_I",IN,this));
-	inputPorts.push_back(Port("WEST_I",IN,this));
-	inputPorts.push_back(Port("SOUTH_I",IN,this));
+	inputPorts.push_back(new Port("NORTH_I",IN,this));
+	inputPorts.push_back(new Port("EAST_I",IN,this));
+	inputPorts.push_back(new Port("WEST_I",IN,this));
+	inputPorts.push_back(new Port("SOUTH_I",IN,this));
 
-	outputPorts.push_back(Port("NORTH_O",OUT,this));
-	outputPorts.push_back(Port("EAST_O",OUT,this));
-	outputPorts.push_back(Port("WEST_O",OUT,this));
-	outputPorts.push_back(Port("SOUTH_O",OUT,this));
+	outputPorts.push_back(new Port("NORTH_O",OUT,this));
+	outputPorts.push_back(new Port("EAST_O",OUT,this));
+	outputPorts.push_back(new Port("WEST_O",OUT,this));
+	outputPorts.push_back(new Port("SOUTH_O",OUT,this));
 
 	for(RegFile* RF : allRegs){
 		for (int i = 0; i < RF->get_nRegs(); ++i) {
-			inputPorts.push_back(Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
-			outputPorts.push_back(Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
+			inputPorts.push_back(new Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
+			outputPorts.push_back(new Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
 		}
 	}
 
@@ -2015,16 +2017,16 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
 
 	//connecting inputs to the FU
 	for(FU* fu : allFUs){
-		for(Port &p : fu->inputPorts){
+		for(Port *p : fu->inputPorts){
 	//		connectedTo[NORTH_I].push_back(&p);
 	//		connectedTo[EAST_I].push_back(&p);
 	//		connectedTo[WEST_I].push_back(&p);
 	//		connectedTo[SOUTH_I].push_back(&p);
 
-			insertConnection(NORTH_I,&p);
-			insertConnection(EAST_I,&p);
-			insertConnection(WEST_I,&p);
-			insertConnection(SOUTH_I,&p);
+			insertConnection(NORTH_I,p);
+			insertConnection(EAST_I,p);
+			insertConnection(WEST_I,p);
+			insertConnection(SOUTH_I,p);
 		}
 	}
 
@@ -2054,9 +2056,9 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
 			Port* rdp = RF->getOutPort(rdpName.str());
 
 			for(FU* fu : allFUs){
-				for(Port &p : fu->inputPorts){
+				for(Port *p : fu->inputPorts){
 	//				connectedTo[rdp].push_back(&p);
-					insertConnection(rdp,&p);
+					insertConnection(rdp,p);
 				}
 			}
 
@@ -2075,14 +2077,14 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
 
 	//connect output of FU to wrp of RegFile and main directional outputs
 	for(FU* fu : allFUs){
-		for(Port &p : fu->outputPorts){
+		for(Port *p : fu->outputPorts){
 			for(RegFile* RF : allRegs){
 				for (int i = 0; i < RF->get_nWRPs(); ++i) {
 					std::stringstream wrpName;
 					wrpName << "WRP" << i;
 					Port* wrp = RF->getInPort(wrpName.str());
 	//				connectedTo[&p].push_back(wrp);
-					insertConnection(&p,wrp);
+					insertConnection(p,wrp);
 				}
 			}
 	//		connectedTo[&p].push_back(NORTH_O);
@@ -2090,10 +2092,10 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
 	//		connectedTo[&p].push_back(WEST_O);
 	//		connectedTo[&p].push_back(SOUTH_O);
 
-			insertConnection(&p,NORTH_O);
-			insertConnection(&p,EAST_O);
-			insertConnection(&p,WEST_O);
-			insertConnection(&p,SOUTH_O);
+			insertConnection(p,NORTH_O);
+			insertConnection(p,EAST_O);
+			insertConnection(p,WEST_O);
+			insertConnection(p,SOUTH_O);
 		}
 	}
 
@@ -2154,21 +2156,21 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs) {
 	RegFile* RFT = new RegFile(this,"RFT",numberofDPs,numberofDPs,numberofDPs); subModules.push_back(RFT); allRegs.push_back(RFT);
 
 	//create input and output ports
-	inputPorts.push_back(Port("NORTH_I",IN,this));
-	inputPorts.push_back(Port("EAST_I",IN,this));
-	inputPorts.push_back(Port("WEST_I",IN,this));
-	inputPorts.push_back(Port("SOUTH_I",IN,this));
+	inputPorts.push_back(new Port("NORTH_I",IN,this));
+	inputPorts.push_back(new Port("EAST_I",IN,this));
+	inputPorts.push_back(new Port("WEST_I",IN,this));
+	inputPorts.push_back(new Port("SOUTH_I",IN,this));
 
-	outputPorts.push_back(Port("NORTH_O",OUT,this));
-	outputPorts.push_back(Port("EAST_O",OUT,this));
-	outputPorts.push_back(Port("WEST_O",OUT,this));
-	outputPorts.push_back(Port("SOUTH_O",OUT,this));
+	outputPorts.push_back(new Port("NORTH_O",OUT,this));
+	outputPorts.push_back(new Port("EAST_O",OUT,this));
+	outputPorts.push_back(new Port("WEST_O",OUT,this));
+	outputPorts.push_back(new Port("SOUTH_O",OUT,this));
 
 	//create xbar input ports
-	internalPorts.push_back( Port("NORTH_XBARI",INT,this) );
-	internalPorts.push_back( Port("EAST_XBARI",INT,this) );
-	internalPorts.push_back( Port("WEST_XBARI",INT,this) );
-	internalPorts.push_back( Port("SOUTH_XBARI",INT,this) );
+	internalPorts.push_back(new Port("NORTH_XBARI",INT,this) );
+	internalPorts.push_back(new Port("EAST_XBARI",INT,this) );
+	internalPorts.push_back(new Port("WEST_XBARI",INT,this) );
+	internalPorts.push_back(new Port("SOUTH_XBARI",INT,this) );
 
 	Port* NORTH_XBARI = getInternalPort("NORTH_XBARI");
 	Port* EAST_XBARI = getInternalPort("EAST_XBARI");
@@ -2179,8 +2181,8 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs) {
 	//create PE-level time extended ports
 	for(RegFile* RF : allRegs){
 		for (int i = 0; i < RF->get_nRegs(); ++i) {
-			inputPorts.push_back(Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
-			outputPorts.push_back(Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
+			inputPorts.push_back(new Port(RF->getName() + "_REG_I" + std::to_string(i),IN,this));
+			outputPorts.push_back(new Port(RF->getName() + "_REG_O" + std::to_string(i),OUT,this));
 		}
 	}
 
@@ -2246,16 +2248,16 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs) {
 
 	//connecting xbar inputs to the FU
 	for(FU* fu : allFUs){
-		for(Port &p : fu->inputPorts){
+		for(Port *p : fu->inputPorts){
 	//		connectedTo[NORTH_XBARI].push_back(&p);
 	//		connectedTo[EAST_XBARI].push_back(&p);
 	//		connectedTo[WEST_XBARI].push_back(&p);
 	//		connectedTo[SOUTH_XBARI].push_back(&p);
 
-			insertConnection(NORTH_XBARI,&p);
-			insertConnection(EAST_XBARI,&p);
-			insertConnection(WEST_XBARI,&p);
-			insertConnection(SOUTH_XBARI,&p);
+			insertConnection(NORTH_XBARI,p);
+			insertConnection(EAST_XBARI,p);
+			insertConnection(WEST_XBARI,p);
+			insertConnection(SOUTH_XBARI,p);
 		}
 	}
 
@@ -2326,9 +2328,9 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs) {
 			Port* rdp = RF->getOutPort(rdpName.str());
 
 			for(FU* fu : allFUs){
-				for(Port &p : fu->inputPorts){
+				for(Port *p : fu->inputPorts){
 	//				connectedTo[rdp].push_back(&p);
-					insertConnection(rdp,&p);
+					insertConnection(rdp,p);
 				}
 			}
 		}
@@ -2351,22 +2353,22 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs) {
 
 	//connect output of FU to wrp of RegFile and main directional outputs
 	for(FU* fu : allFUs){
-		for(Port &p : fu->outputPorts){
+		for(Port *p : fu->outputPorts){
 	//		connectedTo[&p].push_back(NORTH_O);
 	//		connectedTo[&p].push_back(EAST_O);
 	//		connectedTo[&p].push_back(WEST_O);
 	//		connectedTo[&p].push_back(SOUTH_O);
 
-			insertConnection(&p,NORTH_O);
-			insertConnection(&p,EAST_O);
-			insertConnection(&p,WEST_O);
-			insertConnection(&p,SOUTH_O);
+			insertConnection(p,NORTH_O);
+			insertConnection(p,EAST_O);
+			insertConnection(p,WEST_O);
+			insertConnection(p,SOUTH_O);
 
 			for (int i = 0; i < numberofDPs; ++i) {
 				std::stringstream wrpName;
 				wrpName << "WRP" << i;
 	//			connectedTo[&p].push_back(RFT->getInPort(wrpName.str()));
-				insertConnection(&p,RFT->getInPort(wrpName.str()));
+				insertConnection(p,RFT->getInPort(wrpName.str()));
 			}
 		}
 	}

@@ -1058,10 +1058,10 @@ int CGRAXMLCompile::HeuristicMapper::calculateCost(Port* src,
 	if(srcPE!=nextPE){
 		int freePorts=0;
 
-		for(Port &p : nextPE->outputPorts){
+		for(Port *p : nextPE->outputPorts){
 			Module* parent = nextPE->getParent();
-			if(parent->getNextPorts(&p,this).empty()) continue;
-			if(p.getNode()==NULL){
+			if(parent->getNextPorts(p,this).empty()) continue;
+			if(p->getNode()==NULL){
 				freePorts++;
 			}
 		}
@@ -1182,20 +1182,20 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog() {
 					}
 				}
 
-				for(Port& ip : pe->inputPorts){
-					dpHeader << ip.getName() << ",";
-					if(ip.getNode()){
-						dpOp << ip.getNode()->idx /*<< ":" << ip.getNode()->op */<< ",";
+				for(Port* ip : pe->inputPorts){
+					dpHeader << ip->getName() << ",";
+					if(ip->getNode()){
+						dpOp << ip->getNode()->idx /*<< ":" << ip.getNode()->op */<< ",";
 					}
 					else{
 						dpOp << "---,";
 					}
 				}
 
-				for(Port& op : pe->outputPorts){
-					dpHeader << op.getName() << ",";
-					if(op.getNode()){
-						dpOp << op.getNode()->idx /*<< ":" << op.getNode()->op */ << ",";
+				for(Port* op : pe->outputPorts){
+					dpHeader << op->getName() << ",";
+					if(op->getNode()){
+						dpOp << op->getNode()->idx /*<< ":" << op.getNode()->op */ << ",";
 					}
 					else{
 						dpOp << "---,";

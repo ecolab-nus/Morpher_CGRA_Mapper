@@ -71,13 +71,16 @@ public:
 	bool isConflictPortsEmpty(Port* p){return conflictPorts[p].empty();}
 	DFG* currDFG = NULL;
 
+
+
 private:
 	int x_max;
 	int y_max;
 	int t_max;
 	std::map<Port*,std::vector<Port*>> conflictPorts;
-
 	std::map<Port*,std::set<DFGNode*>>* congestedPortPtr;
+
+	std::vector<Port*> allRegPorts;
 
 };
 
