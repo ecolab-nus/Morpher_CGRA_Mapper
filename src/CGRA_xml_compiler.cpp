@@ -74,6 +74,7 @@ int main(int argn, char* argc[]) {
 		tempDFG.printDFG();
 		CGRA* tempCGRA = new CGRA(NULL,"coreCGRA",II,ydim,xdim,&tempDFG,PEType,numberOfDPs,hm.getcongestedPortsPtr());
 		hm.getcongestedPortsPtr()->clear();
+		hm.getconflictedPortsPtr()->clear();
 		mappingSuccess = hm.Map(tempCGRA,&tempDFG);
 		if(!mappingSuccess){
 
