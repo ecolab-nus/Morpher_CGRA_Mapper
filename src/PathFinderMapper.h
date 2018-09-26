@@ -21,11 +21,12 @@ public:
 	};
 
 	bool Map(CGRA* cgra, DFG* dfg);
-	bool LeastCostPathAstar(Port* start, Port* end, DataPath* endDP, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
+//	bool LeastCostPathAstar(Port* start, Port* end, DataPath* endDP, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
+	bool LeastCostPathAstar(LatPort start, LatPort end, DataPath* endDP, std::vector<LatPort>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
 	bool estimateRouting(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes, DFGNode** failedNode);
 	bool Route(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes, DFGNode** failedNode);
-	int calculateCost(Port* src, Port* next_to_src, Port* dest);
-	void assignPath(DFGNode* src, DFGNode* dest, std::vector<Port*> path);
+	int calculateCost(LatPort src, LatPort next_to_src, LatPort dest);
+	void assignPath(DFGNode* src, DFGNode* dest, std::vector<LatPort> path);
 
 	bool updateCongestionCosts(int iter);
 	bool clearCurrMapping();
@@ -38,6 +39,8 @@ public:
 
 	bool updateConflictedTimeSteps(int timeStep, int conflicts);
 	int getTimeStepConflicts(int timeStep);
+
+	void sortBackEdgePriority();
 
 
 private:

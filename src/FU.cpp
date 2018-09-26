@@ -117,9 +117,13 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 //		connectedTo[getInPort(portName_I2)].push_back(newDP->getInPort("I2"));
 //		connectedTo[newDP->getOutPort("T")].push_back(getOutPort(portName_T));
 
-		insertConnection(getInPort(portName_P),newDP->getInPort("P"));
-		insertConnection(getInPort(portName_I1),newDP->getInPort("I1"));
-		insertConnection(getInPort(portName_I2),newDP->getInPort("I2"));
+//		insertConnection(getInPort(portName_P),newDP->getInPort("P"));
+//		insertConnection(getInPort(portName_I1),newDP->getInPort("I1"));
+//		insertConnection(getInPort(portName_I2),newDP->getInPort("I2"));
+		insertConnection(getInPort(portName_P),getRegPort(portName_P).first);
+		insertConnection(getInPort(portName_I1),getRegPort(portName_I1).first);
+		insertConnection(getInPort(portName_I2),getRegPort(portName_I2).first);
+
 		insertConnection(newDP->getOutPort("T"),getOutPort(portName_T));
 
 		insertConnection(getRegPort(portName_P).first,newDP->getInPort("P"));

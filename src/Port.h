@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <assert.h>
 
 #define INIT_CONG_COST 100000
 
@@ -36,7 +37,7 @@ public:
 	Module* getMod(){return mod;}
 	PortType getType(){return pType;}
 
-	void setNode(DFGNode* node, HeuristicMapper* hm = NULL);
+	void setNode(DFGNode* node, int latency, HeuristicMapper* hm = NULL);
 
 	DFGNode* getNode(){return this->node;}
 
@@ -46,6 +47,9 @@ public:
 	void decreaseUse(DFGNode* extnode, HeuristicMapper* hm = NULL);
 	void increaseConflictedUse(DFGNode* node, HeuristicMapper* hm = NULL);
 	int getHistoryCost(){return history_cost;}
+	int getLat();
+	void setLat(int lat);
+
 
 private:
 
@@ -53,6 +57,7 @@ private:
 	Module* mod;
 	PortType pType;
 	DFGNode* node=NULL;
+	int latency=-1;
 
 	int base_cost = INIT_CONG_COST;
 	int history_cost = 0;

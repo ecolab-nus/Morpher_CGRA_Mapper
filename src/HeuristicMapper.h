@@ -28,11 +28,11 @@ class HeuristicMapper;
 
 struct dest_child_with_cost{
 	DFGNode* child;
-	Port* childDest;
-	Port* startPort;
+	LatPort childDest;
+	LatPort startPort;
 	int cost;
 
-	dest_child_with_cost(DFGNode* child, Port* childDest, Port* startPort, int cost) :
+	dest_child_with_cost(DFGNode* child, LatPort childDest, LatPort startPort, int cost) :
 		child(child),childDest(childDest), startPort(startPort), cost(cost){}
 	bool operator<(const dest_child_with_cost& rhs) const{
 		return cost > rhs.cost;
@@ -41,10 +41,10 @@ struct dest_child_with_cost{
 
 
 struct cand_src_with_cost{
-			Port* src;
-			Port* dest;
+			LatPort src;
+			LatPort dest;
 			int cost;
-			cand_src_with_cost(Port* src, Port* dest, int cost):src(src), dest(dest), cost(cost){}
+			cand_src_with_cost(LatPort src, LatPort dest, int cost):src(src), dest(dest), cost(cost){}
 
 			bool operator<(const cand_src_with_cost& rhs) const{
 				return cost > rhs.cost;
@@ -70,13 +70,14 @@ struct dest_with_cost{
 	std::priority_queue<dest_child_with_cost> alreadyMappedChilds;
 	int bestCost;
 	DataPath* dest;
+	int destLat;
 	DFGNode* node;
 	dest_with_cost(){}
 	dest_with_cost(std::priority_queue<parent_cand_src_with_cost> parentStartLocs,
 				   std::priority_queue<dest_child_with_cost> alreadyMappedChilds,
-				   DataPath* dest, DFGNode* node, int cost,
+				   DataPath* dest, int destLat, DFGNode* node, int cost,
 				   int unmappedMemNodeCount, HeuristicMapper* hm) :
-		parentStartLocs(parentStartLocs),alreadyMappedChilds(alreadyMappedChilds), dest(dest), node(node){
+		parentStartLocs(parentStartLocs),alreadyMappedChilds(alreadyMappedChilds), dest(dest), destLat(destLat), node(node){
 		bestCost = sumBestCosts(unmappedMemNodeCount, hm);
 	}
 
@@ -107,7 +108,7 @@ struct dest_with_cost{
 			int freePorts=0;
 			for(Port *p : dest->getPE()->outputPorts){
 				Module* parent = dest->getPE()->getParent();
-				if(parent->getNextPorts(p,hm).empty()) continue;
+				if(parent->getNextPorts(std::make_pair(dest->getPE()->T,p),hm).empty()) continue;
 				if(p->getNode()==NULL){
 					freePorts++;
 				}
@@ -206,15 +207,17 @@ public:
 	void SortTopoGraphicalDFG();
 	void SortSCCDFG();
 	bool Map(CGRA* cgra, DFG* dfg);
-	bool LeastCostPathAstar(Port* start, Port* end, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
+//	bool LeastCostPathAstar(Port* start, Port* end, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
+	bool LeastCostPathAstar(LatPort start, LatPort end, std::vector<LatPort>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
 	bool LeastCostPathDjk(Port* start, Port* end, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths);
-	int calculateCost(Port* src, Port* next_to_src, Port* dest);
+//	int calculateCost(Port* src, Port* next_to_src, Port* dest);
+	int calculateCost(LatPort src, LatPort next_to_src, LatPort dest);
 
 	bool estimateRouting(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes, DFGNode** failedNode);
 	bool Route(DFGNode* node, std::priority_queue<dest_with_cost>& estimatedRoutes, DFGNode** failedNode);
 
 
-	void assignPath(DFGNode* src, DFGNode* dest, std::vector<Port*> path);
+	void assignPath(DFGNode* src, DFGNode* dest, std::vector<LatPort> path);
 	bool dataPathCheck(DataPath* dp, DFGNode* node);
 
 	bool sanityCheck();
@@ -226,7 +229,7 @@ public:
 	void printMappingLog();
 	void printMappingLog2();
 
-	bool checkRecParentViolation(DFGNode* node, Port* nextPort);
+	bool checkRecParentViolation(DFGNode* node, LatPort nextPort);
 
 	int upperboundII=1000000;
 	int upperboundIter=-1;
@@ -246,6 +249,9 @@ protected:
 	std::vector<DFGNode*> sortedNodeList;
 
 	void removeFailedNode(std::stack<DFGNode*>& mappedNodes, std::stack<DFGNode*>& unmappedNodes, DFGNode* failedNode);
+
+	int getlatMinStarts(const std::map<DFGNode*,std::vector<Port*>>& possibleStarts);
+	std::map<DataPath*,int> getLatCandDests(const std::vector<DataPath*>& candidateDests, int minlat);
 
 
 };

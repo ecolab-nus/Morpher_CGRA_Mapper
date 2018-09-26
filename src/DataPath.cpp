@@ -73,13 +73,17 @@ CGRAXMLCompile::Port* CGRAXMLCompile::DataPath::getOutputPort(int latency) {
 	return outputPort;
 }
 
-void CGRAXMLCompile::DataPath::assignNode(DFGNode* node, DFG* dfg) {
+void CGRAXMLCompile::DataPath::assignNode(DFGNode* node, int lat, DFG* dfg) {
 
 	this->mappedNode = node;
+	this->latency = lat;
+
 
 	FU* fu = getFU();
 	PE* pe = getPE();
 	CGRA* cgra = getCGRA();
+
+	assert(pe->T == lat%cgra->get_t_max());
 
 	if(fu->currOP.compare("NOP")==0){
 		fu->currOP = node->op;
@@ -89,8 +93,8 @@ void CGRAXMLCompile::DataPath::assignNode(DFGNode* node, DFG* dfg) {
 		assert(fu->currOP.compare(node->op)==0);
 	}
 
-	int latency = fu->supportedOPs[node->op];
-	int next_t = (pe->T + latency)%cgra->get_t_max();
+	int oplatency = fu->supportedOPs[node->op];
+	int next_t = (pe->T + oplatency)%cgra->get_t_max();
 	std::cout << "assigning node=" << node->idx << ",to=" << pe->getName() << ",starting t=" << next_t << "\n";
 
 	PE* nextPE = cgra->PEArr[next_t][pe->Y][pe->X];
@@ -98,7 +102,7 @@ void CGRAXMLCompile::DataPath::assignNode(DFGNode* node, DFG* dfg) {
 	DataPath* nextDP = static_cast<DataPath*>(nextFU->getSubMod(this->getName()));
 
 	this->outputDP = nextDP;
-	nextDP->getOutPort("T")->setNode(node);
+	nextDP->getOutPort("T")->setNode(node,latency+oplatency);
 	node->routingPorts.push_back(std::make_pair(nextDP->getOutPort("T"),node->idx));
 
 	if(fu->supportedOPs.find("LOAD")!=fu->supportedOPs.end()){
@@ -118,6 +122,7 @@ void CGRAXMLCompile::DataPath::clear() {
 	this->outputDP->getOutPort("T")->clear();
 	mappedNode=NULL;
 	outputDP=NULL;
+	latency=-1;
 
 	FU* fu = getFU();
 

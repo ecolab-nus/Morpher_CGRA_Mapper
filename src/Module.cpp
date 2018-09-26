@@ -53,12 +53,16 @@ FU* Module::getFU() {
 	return NULL;
 }
 
-std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
-	std::vector<Port*> nextPorts;
+std::vector<LatPort> Module::getNextPorts(LatPort currPort, HeuristicMapper* hm) {
+	std::vector<LatPort> nextPorts;
 
 //	if(currPort->getType() == REG) std::cout << "DDDDDDDDDEBUGG : REG PORTS : ";
+	Port* currP = currPort.second;
+	PE* currPE = currP->getMod()->getPE();
+	int lat = currPort.first;
 
-	for(Port* p : connectedTo[currPort]){
+
+	for(Port* p : connectedTo[currP]){
 		bool conflicted=false;
 
 		if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
@@ -77,16 +81,23 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 			}
 		}
 
+		PE* nextPE = p->getMod()->getPE();
+		int tdiff = nextPE->T - currPE->T;
+		if(tdiff < 0){
+			tdiff += nextPE->getCGRA()->get_t_max();
+			assert(tdiff > 0);
+		}
+
 		if(!conflicted){
-			nextPorts.push_back(p);
+			nextPorts.push_back(std::make_pair(lat+tdiff,p));
 		}
 	}
 
 //	if(currPort->getType() == REG) std::cout << "\n";
 
-	if(currPort->getType()==OUT){
+	if(currP->getType()==OUT){
 		if(getParent()){
-			for(Port* p : currPort->getMod()->getParent()->connectedTo[currPort]){
+			for(Port* p : currP->getMod()->getParent()->connectedTo[currP]){
 //					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
 //				nextPorts.push_back(p);
 
@@ -95,7 +106,7 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 
 				}
 				else{
-					for(Port* conflict_port : getParent()->getConflictPorts(currPort)){
+					for(Port* conflict_port : getParent()->getConflictPorts(currP)){
 						if(conflict_port->getNode()!=NULL){
 							conflicted=true;
 							break;
@@ -103,9 +114,16 @@ std::vector<Port*> Module::getNextPorts(Port* currPort, HeuristicMapper* hm) {
 					}
 				}
 
+				PE* nextPE = p->getMod()->getPE();
+				int tdiff = nextPE->T - currPE->T;
+				if(tdiff < 0){
+					tdiff += nextPE->getCGRA()->get_t_max();
+					assert(tdiff > 0);
+				}
+
 
 				if(!conflicted){
-					nextPorts.push_back(p);
+					nextPorts.push_back(std::make_pair(lat+tdiff,p));
 				}
 
 			}

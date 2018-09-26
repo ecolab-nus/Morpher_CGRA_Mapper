@@ -8,6 +8,7 @@
 #include "DFG.h"
 #include <assert.h>
 #include <iostream>
+#include <queue>
 
 #include "tinyxml2.h"
 using namespace tinyxml2;
@@ -292,6 +293,29 @@ void DFG::strongconnect(DFGNode* v,
 			}
 }
 
-} /* namespace CGRAXMLCompile */
+std::vector<DFGNode*> DFG::getAncestory(const DFGNode* node) {
+	std::stack<const DFGNode*> ancestors;
 
+	std::queue<const DFGNode*> q;
+	q.push(node);
+
+	while(!q.empty()){
+		const DFGNode* top = q.front(); q.pop();
+		for(DFGNode* parent : top->parents){
+			if(parent->ASAP >= top->ASAP) continue; //ignore backedges
+			ancestors.push(parent);
+			q.push(parent);
+		}
+	}
+
+	std::vector<DFGNode*> res;
+	while(!ancestors.empty()){
+		res.push_back((DFGNode*)ancestors.top()); ancestors.pop();
+	}
+
+	return res;
+}
+
+
+} /* namespace CGRAXMLCompile */
 

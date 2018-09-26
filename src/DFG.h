@@ -32,6 +32,7 @@ public:
 	std::set<DFGNode*> unmappedMemOpSet;
 
 	bool isMutexNodes(DFGNode* a, DFGNode* b);
+	std::vector<DFGNode*> getAncestory(const DFGNode* node);
 
 private:
 	void strongconnect(DFGNode* v,
@@ -41,6 +42,8 @@ private:
 					   int& idx,
 					   std::stack<DFGNode*>& S,
 			           std::vector<std::set<DFGNode*>>& result);
+
+
 
 
 };

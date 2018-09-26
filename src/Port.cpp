@@ -71,8 +71,13 @@ void Port::decreaseUse(DFGNode* extnode, HeuristicMapper* hm) {
 	}
 }
 
-void Port::setNode(DFGNode* node, HeuristicMapper* hm){
+void Port::setNode(DFGNode* node, int latency, HeuristicMapper* hm){
 	this->node=node;
+	setLat(latency);
+
+	PE* pe = getMod()->getPE();
+	CGRA* cgra = getMod()->getCGRA();
+	assert(pe->T == latency%cgra->get_t_max());
 
 	if(hm == NULL) return;
 
@@ -175,4 +180,19 @@ void CGRAXMLCompile::Port::clear() {
 
 	node=NULL;
 	number_signals=0;
+	latency=-1;
+}
+
+void CGRAXMLCompile::Port::setLat(int lat){
+		CGRA* cgra = this->getMod()->getCGRA();
+		int ii = cgra->get_t_max();
+		assert(lat%ii == this->getMod()->getPE()->T);
+		latency=lat;
+}
+
+int CGRAXMLCompile::Port::getLat() {
+	CGRA* cgra = this->getMod()->getCGRA();
+	int ii = cgra->get_t_max();
+	assert(latency%ii == this->getMod()->getPE()->T);
+	return latency;
 }

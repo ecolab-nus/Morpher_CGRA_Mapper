@@ -21,6 +21,7 @@ class CGRA;
 class PE;
 class FU;
 class HeuristicMapper;
+typedef std::pair<int,Port*> LatPort;
 
 class Module {
 public:
@@ -48,7 +49,7 @@ public:
 	PE* getPE();
 	FU* getFU();
 
-	std::vector<Port*> getNextPorts(Port* currPort, HeuristicMapper* hm);
+	std::vector<LatPort> getNextPorts(LatPort currPort, HeuristicMapper* hm);
 	std::vector<Port*> getNextPorts(Port* currPort);
 	std::vector<Port*> getFromPorts(Port* currPort, HeuristicMapper* hm);
 

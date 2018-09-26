@@ -298,6 +298,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode* node,
 //			std::cout << "child="<< child->idx << ",childOpType=" << node.childrenOPType[child] << "\n";
 			assert(child->rootDP->getInPort(node->childrenOPType[child]));
 			alreadyMappedChildPorts[child]=child->rootDP->getInPort(node->childrenOPType[child]);
+			alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat());
 		}
 	}
 
@@ -351,6 +352,9 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode* node,
 //	assert(candidateDests.size()!=0);
 //	node->blacklistDest.clear();
 
+	int minLat = getlatMinStarts(possibleStarts);
+	std::map<DataPath*,int> minLatDests = getLatCandDests(candidateDests,minLat);
+
 	//Route Estimation
 	for(DataPath* dest : candidateDests){
 //		std::cout << "Candidate Dest =" ;
@@ -370,15 +374,18 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode* node,
 
 			for(Port* startCand : pair.second){
 				int cost;
-				std::vector<Port*> path;
+				std::vector<LatPort> path;
 				std::map<Port*,std::set<DFGNode*>> mutexPaths;
 if(detailedDebug)				std::cout << "Estimating Path" << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
-				bool pathExist = LeastCostPathAstar(startCand,destPort,path,cost,parent,mutexPaths,node);
+
+				LatPort startCandLat = std::make_pair(startCand->getLat(),startCand); assert(startCand->getLat()!=-1);
+				LatPort destPortLat = std::make_pair(minLatDests[dest],destPort);
+				bool pathExist = LeastCostPathAstar(startCandLat,destPortLat,path,cost,parent,mutexPaths,node);
 				if(!pathExist){
 if(detailedDebug)			    std::cout << "Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
 					continue;
 				}
-				res.push(cand_src_with_cost(startCand,destPort,cost));
+				res.push(cand_src_with_cost(startCandLat,destPortLat,cost));
 			}
 			if(res.empty()){
 				pathFromParentExist=false;
@@ -407,7 +414,7 @@ if(detailedDebug)			    std::cout << "Estimate Path Failed :: " << startCand->ge
 		for(std::pair<DFGNode*,Port*> pair : alreadyMappedChildPorts){
 			DFGNode* child = pair.first;
 			Port* childDestPort = pair.second;
-			std::vector<Port*> path;
+			std::vector<LatPort> path;
 			int cost;
 
 			FU* parentFU = dest->getFU();
@@ -417,14 +424,18 @@ if(detailedDebug)			    std::cout << "Estimate Path Failed :: " << startCand->ge
 
 			std::map<Port*,std::set<DFGNode*>> mutexPaths;
 if(detailedDebug)				std::cout << "Estimating Path" << destPort->getFullName() << "--->" << childDestPort->getFullName() << "\n";
-		    pathExistMappedChild = pathExistMappedChild & LeastCostPathAstar(destPort,childDestPort,path,cost,node,mutexPaths,node);
+
+			LatPort childDestPortLat = std::make_pair(childDestPort->getLat(),childDestPort); assert(childDestPort->getLat() != -1);
+			LatPort destPortLat = std::make_pair(minLatDests[dest]+latency,destPort);
+
+		    pathExistMappedChild = pathExistMappedChild & LeastCostPathAstar(destPortLat,childDestPortLat,path,cost,node,mutexPaths,node);
 
 		    if(!pathExistMappedChild){
 		    	*failedNode=child;
 		    	break;
 		    }
 
-		    dest_child_with_cost dcwc(child,childDestPort,destPort,cost);
+		    dest_child_with_cost dcwc(child,childDestPortLat,destPortLat,cost);
 		    alreadyMappedChilds.push(dcwc);
 		}
 	    if(!pathExistMappedChild){
@@ -434,7 +445,7 @@ if(detailedDebug)				std::cout << "Estimating Path" << destPort->getFullName() <
 
 	    assert(pathFromParentExist);
 	    assert(pathExistMappedChild);
-		dest_with_cost dest_with_cost_ins(parentStartLocs,alreadyMappedChilds,dest,node,0,this->dfg->unmappedMemOps,this);
+		dest_with_cost dest_with_cost_ins(parentStartLocs,alreadyMappedChilds,dest,minLatDests[dest],node,0,this->dfg->unmappedMemOps,this);
 		estimatedRoutes.push(dest_with_cost_ins);
 	}
 //	std::cout << "EstimateEouting end!\n";
@@ -481,32 +492,33 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 		std::cout << "alreadyMappedChilds = " << currDest.alreadyMappedChilds.size() << "\n";
 
 		bool alreadMappedChildRouteSucc=true; //this will change to false if failure in alreadyMappedChilds
-		std::map<DFGNode*,std::vector<Port*>> mappedChildPaths;
+		std::map<DFGNode*,std::vector<LatPort>> mappedChildPaths;
 		std::map<DFGNode*,std::map<Port*,std::set<DFGNode*>>> mappedChildMutexPaths;
 		while(!currDest.alreadyMappedChilds.empty()){
 			dest_child_with_cost dest_child_with_cost_ins = currDest.alreadyMappedChilds.top();
 			currDest.alreadyMappedChilds.pop();
 
-			std::vector<Port*> possibleStarts; possibleStarts.clear();
+			std::vector<LatPort> possibleStarts; possibleStarts.clear();
 			possibleStarts.push_back(dest_child_with_cost_ins.startPort);
 			for(std::pair<Port*,int> pair : node->routingPorts){
-				possibleStarts.push_back(pair.first);
+				possibleStarts.push_back(std::make_pair(pair.first->getLat(),pair.first)); assert(pair.first->getLat() != -1);
 			}
 
 			std::priority_queue<cand_src_with_cost> q;
 			std::map<Port*,std::set<DFGNode*>> mutexPathsTmp;
-			std::vector<Port*> pathTmp;
-			for(Port* p : possibleStarts){
+			std::vector<LatPort> pathTmp;
+			for(LatPort p : possibleStarts){
 				int cost;
+
 				if(LeastCostPathAstar(p,dest_child_with_cost_ins.childDest,pathTmp,cost,node,mutexPathsTmp,node)){
 					q.push(cand_src_with_cost(p,dest_child_with_cost_ins.childDest,cost));
 				}
 			}
 
 			int cost;
-			std::vector<Port*> path;
-			Port* src = dest_child_with_cost_ins.startPort;
-			Port* dest = dest_child_with_cost_ins.childDest;
+			std::vector<LatPort> path;
+			LatPort src = dest_child_with_cost_ins.startPort;
+			LatPort dest = dest_child_with_cost_ins.childDest;
 
 			while(!q.empty()){
 				cand_src_with_cost head = q.top();
@@ -517,20 +529,20 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 					assignPath(node,dest_child_with_cost_ins.child,path);
 					mappedChildPaths[dest_child_with_cost_ins.child]=path;
 					mappedChildMutexPaths[dest_child_with_cost_ins.child]=mutexPaths;
-					std::cout << "Route success :: from=" << src->getFullName() << "--> to=" << dest->getFullName() << "|node=" << node->idx << "\n";
+					std::cout << "Route success :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "|node=" << node->idx << "\n";
 					break;
 				}
 				else{
-					std::cout << "Route Failed :: from=" << src->getFullName() << "--> to=" << dest->getFullName() << "\n";
-					for(Port* p : path){
-						if(p->getMod()->getPE()){
-							std::cout << p->getMod()->getPE()->getName() << "-->";
+					std::cout << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
+					for(LatPort p : path){
+						if(p.second->getMod()->getPE()){
+							std::cout << p.second->getMod()->getPE()->getName() << "-->";
 						}
 					}
 					std::cout << "\n";
 
-					for(Port* p : path){
-						std::cout << p->getFullName() << "\n";
+					for(LatPort p : path){
+						std::cout << p.second->getFullName() << "\n";
 					}
 				}
 			}
@@ -555,9 +567,10 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 		}
 		else{
 			std::cout << "Already Mapped child Routes....\n";
-			for(std::pair<DFGNode*,std::vector<Port*>> pair : mappedChildPaths){
+			for(std::pair<DFGNode*,std::vector<LatPort>> pair : mappedChildPaths){
 				DFGNode* child = pair.first;
-				for(Port* p : pair.second){
+				for(LatPort lp : pair.second){
+					Port* p = lp.second;
 					std::cout << "to:" <<child->idx << " :: ";
 					std::cout << p->getFullName();
 					if(mappedChildMutexPaths[child].find(p)!=mappedChildMutexPaths[child].end()){
@@ -587,9 +600,9 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 			while(!q.empty()){
 				cand_src_with_cost cand_src_with_cost_ins = q.top();
 				q.pop();
-				Port* src = cand_src_with_cost_ins.src;
-				Port* dest = cand_src_with_cost_ins.dest;
-				std::vector<Port*> path;
+				LatPort src = cand_src_with_cost_ins.src;
+				LatPort dest = cand_src_with_cost_ins.dest;
+				std::vector<LatPort> path;
 				std::map<Port*,std::set<DFGNode*>> mutexPath;
 				int cost;
 				succ = LeastCostPathAstar(src,dest,path,cost,parent,mutexPath,node);
@@ -613,7 +626,7 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 				else{
 					addedRoutingParentPorts=0;
 					node->clear(this->dfg);
-					std::cout << "Route Failed :: from=" << src->getFullName() << "--> to=" << dest->getFullName() << "\n";
+					std::cout << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
 				}
 			}
 			if(!succ){
@@ -648,7 +661,7 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 				}
 			}
 			std::cout << "routing info done.\n";
-			currDest.dest->assignNode(node,this->dfg);
+			currDest.dest->assignNode(node,currDest.destLat,this->dfg);
 			node->rootDP = currDest.dest;
 			break;
 		}
@@ -678,7 +691,7 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode* node,
 		return true;
 	}
 	else{
-		currDest.dest->assignNode(node,this->dfg);
+		currDest.dest->assignNode(node,currDest.destLat,this->dfg);
 		node->rootDP = currDest.dest;
 		node->clear(this->dfg);
 		std::cout << "Route failed...\n";
@@ -822,31 +835,31 @@ void CGRAXMLCompile::HeuristicMapper::SortSCCDFG() {
 }
 
 void CGRAXMLCompile::HeuristicMapper::assignPath(DFGNode* src, DFGNode* dest,
-		std::vector<Port*> path) {
+		std::vector<LatPort> path) {
 
 	std::cout << "assigning path from:" << src->idx << " to:" << dest->idx << "\n";
 
 	int srcPortCount=0;
-	for(Port* p : path){
+	for(LatPort p : path){
 
 //		if(p->getName().compare("T")==0){
 //			assert(p->getNode()==src);
 //		}
 
-		if(p->getNode() == src) {
+		if(p.second->getNode() == src) {
 			srcPortCount++;
 			continue;
 		}
 
-		p->setNode(src);
+		p.second->setNode(src,p.first);
 
-		if(std::find(src->routingPorts.begin(),src->routingPorts.end(),std::make_pair(p,dest->idx))==src->routingPorts.end()){
-			if(std::find(src->routingPorts.begin(),src->routingPorts.end(),std::make_pair(p,src->idx))==src->routingPorts.end()){
-				src->routingPorts.push_back(std::make_pair(p,dest->idx));
+		if(std::find(src->routingPorts.begin(),src->routingPorts.end(),std::make_pair(p.second,dest->idx))==src->routingPorts.end()){
+			if(std::find(src->routingPorts.begin(),src->routingPorts.end(),std::make_pair(p.second,src->idx))==src->routingPorts.end()){
+				src->routingPorts.push_back(std::make_pair(p.second,dest->idx));
 			}
 			else{
-				std::cout << p->getFullName() << "\n";
-				assert(p->getName().compare("T")==0);
+				std::cout << p.second->getFullName() << "\n";
+				assert(p.second->getName().compare("T")==0);
 			}
 		}
 //		src->routingPortDestMap[p]=dest->idx;
@@ -855,13 +868,12 @@ void CGRAXMLCompile::HeuristicMapper::assignPath(DFGNode* src, DFGNode* dest,
 
 }
 
-bool CGRAXMLCompile::HeuristicMapper::LeastCostPathAstar(Port* start, Port* end,
-		std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths,  DFGNode* currNode) {
+bool CGRAXMLCompile::HeuristicMapper::LeastCostPathAstar(LatPort start, LatPort end, std::vector<LatPort>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode) {
 
 //	std::cout << "LeastCoastPath started with start=" << start->getFullName() << " to end=" << end->getFullName() << "\n";
 
-	std::map<Port*,int> cost_to_port;
-	std::map<Port*,Port*> cameFrom;
+	std::map<LatPort,int> cost_to_port;
+	std::map<LatPort,LatPort> cameFrom;
 
 	path.clear();
 	mutexPaths.clear();
@@ -869,48 +881,91 @@ bool CGRAXMLCompile::HeuristicMapper::LeastCostPathAstar(Port* start, Port* end,
 	bool detailedDebug=false;
 //	if(currNode->idx==85)detailedDebug=true;
 
-	struct port_heuristic{
-		Port* p;
-		int heuristic;
-
-		int calc_heuristic(Port* src, Port* dest){
-			PE* srcPE = src->findParentPE();
-			assert(srcPE);
-			PE* destPE = dest->findParentPE();
-			assert(destPE);
-
-			CGRA* currCGRA = srcPE->getCGRA();
-			assert(currCGRA);
-
-			int dist_dest = std::abs(destPE->Y - srcPE->Y) + std::abs(destPE->X - srcPE->X)
-			                + std::abs((destPE->T - srcPE->T + currCGRA->get_t_max())%currCGRA->get_t_max());
-			return dist_dest;
-		}
-
-		port_heuristic(Port* p, Port* dest){
-			this->p=p;
-			heuristic=calc_heuristic(p,dest);
-		}
-
-		port_heuristic(Port* p, int cost){
-			this->p=p;
-			this->heuristic=cost;
-		}
-
-		port_heuristic(Port* p, Port* dest, int cost){
-			this->p=p;
-			this->heuristic=cost*100 + calc_heuristic(p,dest);
-		}
-
-		bool operator<(const port_heuristic& rhs) const{
-			return this->heuristic > rhs.heuristic;
-		}
-
-//		bool operator>(const port_heuristic& rhs) const{
+//	struct port_heuristic{
+//		Port* p;
+//		int heuristic;
+//
+//		int calc_heuristic(Port* src, Port* dest){
+//			PE* srcPE = src->findParentPE();
+//			assert(srcPE);
+//			PE* destPE = dest->findParentPE();
+//			assert(destPE);
+//
+//			CGRA* currCGRA = srcPE->getCGRA();
+//			assert(currCGRA);
+//
+//			int dist_dest = std::abs(destPE->Y - srcPE->Y) + std::abs(destPE->X - srcPE->X)
+//			                + std::abs((destPE->T - srcPE->T + currCGRA->get_t_max())%currCGRA->get_t_max());
+//			return dist_dest;
+//		}
+//
+//		port_heuristic(Port* p, Port* dest){
+//			this->p=p;
+//			heuristic=calc_heuristic(p,dest);
+//		}
+//
+//		port_heuristic(Port* p, int cost){
+//			this->p=p;
+//			this->heuristic=cost;
+//		}
+//
+//		port_heuristic(Port* p, Port* dest, int cost){
+//			this->p=p;
+//			this->heuristic=cost*100 + calc_heuristic(p,dest);
+//		}
+//
+//		bool operator<(const port_heuristic& rhs) const{
 //			return this->heuristic > rhs.heuristic;
 //		}
+//
+////		bool operator>(const port_heuristic& rhs) const{
+////			return this->heuristic > rhs.heuristic;
+////		}
+//
+//	};
 
-	};
+	struct port_heuristic{
+						LatPort p;
+						int heuristic;
+
+						int calc_heuristic(LatPort src, LatPort dest){
+							PE* srcPE = src.second->findParentPE();
+							assert(srcPE);
+							PE* destPE = dest.second->findParentPE();
+							assert(destPE);
+
+							CGRA* currCGRA = srcPE->getCGRA();
+							assert(currCGRA);
+
+							int dist_dest = std::abs(destPE->Y - srcPE->Y) + std::abs(destPE->X - srcPE->X)
+							                + std::abs(dest.first-src.first);
+							return dist_dest;
+						}
+
+						port_heuristic(LatPort p, LatPort dest){
+							this->p=p;
+							heuristic=calc_heuristic(p,dest);
+						}
+
+						port_heuristic(LatPort p, int cost){
+							this->p=p;
+							this->heuristic=cost;
+						}
+
+						port_heuristic(LatPort p, LatPort dest, int cost){
+							this->p=p;
+							this->heuristic=cost*100 + calc_heuristic(p,dest);
+						}
+
+						bool operator<(const port_heuristic& rhs) const{
+							return this->heuristic > rhs.heuristic;
+						}
+
+				//		bool operator>(const port_heuristic& rhs) const{
+				//			return this->heuristic > rhs.heuristic;
+				//		}
+
+					};
 
 //	std::queue<Port*> q;
 	std::priority_queue<port_heuristic> q;
@@ -920,15 +975,15 @@ bool CGRAXMLCompile::HeuristicMapper::LeastCostPathAstar(Port* start, Port* end,
 
 	cost_to_port[start]=0;
 
-	Port* currPort;
-	std::vector<Port*> deadEnds;
+	LatPort currPort;
+	std::vector<LatPort> deadEnds;
 
 	while(!q.empty()){
 		port_heuristic curr = q.top();
 		currPort = curr.p;
 		q.pop();
 
-if(detailedDebug) std::cout << "currPort=" << currPort->getFullName() << "\n";
+if(detailedDebug) std::cout << "currPort=" << currPort.second->getFullName() << "\n";
 
 		if(currPort == end){
 			break;
@@ -943,11 +998,12 @@ if(detailedDebug) std::cout << "currPort=" << currPort->getFullName() << "\n";
 //				}
 //			}
 //		}
-		std::vector<Port*> nextPorts = currPort->getMod()->getNextPorts(currPort,this);
+		std::vector<LatPort> nextPorts = currPort.second->getMod()->getNextPorts(currPort,this);
 
 //		std::cout << "nextPorts size = " << nextPorts.size() << "\n";
 		int q_len = q.size();
-		for(Port* nextPort : nextPorts){
+		for(LatPort nextLatPort : nextPorts){
+			Port* nextPort = nextLatPort.second;
 			bool isNextPortFree=false;
 			bool isNextPortMutex=false;
 			if(enableMutexPaths){
@@ -969,27 +1025,27 @@ if(detailedDebug) std::cout << "currPort=" << currPort->getFullName() << "\n";
 			}
 			if(isNextPortFree){ // unmapped port
 if(detailedDebug)				std::cout << "\tnextPort=" << nextPort->getFullName() << ",";
-				int nextPortCost = cost_to_port[currPort] + calculateCost(currPort,nextPort,end);
+				int nextPortCost = cost_to_port[currPort] + calculateCost(currPort,nextLatPort,end);
 if(detailedDebug)				std::cout << "cost=" << nextPortCost << "\n";
 				if(isNextPortMutex){
 					//no cost is added in using mutually exclusive routes
 					nextPortCost = cost_to_port[currPort];
 				}
 
-				if(cost_to_port.find(nextPort)!=cost_to_port.end()){
-					if(cost_to_port[nextPort] > nextPortCost){
-						cost_to_port[nextPort]=nextPortCost;
-						cameFrom[nextPort]=currPort;
-						q.push(port_heuristic(nextPort,end,nextPortCost));
+				if(cost_to_port.find(nextLatPort)!=cost_to_port.end()){
+					if(cost_to_port[nextLatPort] > nextPortCost){
+						cost_to_port[nextLatPort]=nextPortCost;
+						cameFrom[nextLatPort]=currPort;
+						q.push(port_heuristic(nextLatPort,end,nextPortCost));
 					}
 					else{
 if(detailedDebug)		std::cout << "Port is not inserted..\n";
 					}
 				}
 				else{
-					cost_to_port[nextPort]=nextPortCost;
-					cameFrom[nextPort]=currPort;
-					q.push(port_heuristic(nextPort,end,nextPortCost));
+					cost_to_port[nextLatPort]=nextPortCost;
+					cameFrom[nextLatPort]=currPort;
+					q.push(port_heuristic(nextLatPort,end,nextPortCost));
 				}
 			}
 			else{
@@ -1003,11 +1059,11 @@ if(detailedDebug)		std::cout << "\t[MAPPED="<< nextPort->getNode()->idx << "]nex
 
 
 	if(currPort!=end){
-//		std::cout << "LeastCostPath failed!\n";
+		std::cout << "LeastCostPath failed!\n";
 		path.clear();
-		for(Port* p : deadEnds){
-			std::vector<Port*> tmpPath;
-			while(p !=start){
+		for(LatPort p : deadEnds){
+			std::vector<LatPort> tmpPath;
+			while(p != start){
 				tmpPath.push_back(p);
 				assert(cameFrom.find(p)!=cameFrom.end());
 				p = cameFrom[p];
@@ -1015,7 +1071,7 @@ if(detailedDebug)		std::cout << "\t[MAPPED="<< nextPort->getNode()->idx << "]nex
 			tmpPath.push_back(start);
 			std::reverse(tmpPath.begin(),tmpPath.end());
 
-			for(Port* p2 : tmpPath){
+			for(LatPort p2 : tmpPath){
 				path.push_back(p2);
 			}
 		}
@@ -1042,12 +1098,12 @@ if(detailedDebug)		std::cout << "\t[MAPPED="<< nextPort->getNode()->idx << "]nex
 	return true;
 }
 
-int CGRAXMLCompile::HeuristicMapper::calculateCost(Port* src,
-		Port* next_to_src,  Port* dest) {
+int CGRAXMLCompile::HeuristicMapper::calculateCost(LatPort src,
+		LatPort next_to_src,  LatPort dest) {
 
-	PE* srcPE = src->findParentPE();
+	PE* srcPE = src.second->findParentPE();
 	assert(srcPE);
-	PE* nextPE = next_to_src->findParentPE();
+	PE* nextPE = next_to_src.second->findParentPE();
 	assert(nextPE);
 
 	int distance = abs(nextPE->Y-srcPE->Y) + abs(nextPE->X-srcPE->X)
@@ -1060,7 +1116,7 @@ int CGRAXMLCompile::HeuristicMapper::calculateCost(Port* src,
 
 		for(Port *p : nextPE->outputPorts){
 			Module* parent = nextPE->getParent();
-			if(parent->getNextPorts(p,this).empty()) continue;
+			if(parent->getNextPorts(std::make_pair(next_to_src.first,p),this).empty()) continue;
 			if(p->getNode()==NULL){
 				freePorts++;
 			}
@@ -1091,11 +1147,11 @@ int CGRAXMLCompile::HeuristicMapper::calculateCost(Port* src,
 //	}
 //	dfg->unmappedMemOps = unmappedMemNodeCount;
 
-	if((next_to_src->getName().compare("P")==0)
-	   || (next_to_src->getName().compare("I1")==0)
-	   || (next_to_src->getName().compare("I2")==0)){
+	if((next_to_src.second->getName().compare("P")==0)
+	   || (next_to_src.second->getName().compare("I1")==0)
+	   || (next_to_src.second->getName().compare("I2")==0)){
 
-		FU* fu = next_to_src->getMod()->getFU();
+		FU* fu = next_to_src.second->getMod()->getFU();
 		if((fu->supportedOPs.find("LOAD")!=fu->supportedOPs.end())&&(dest==next_to_src)){
 			double memrescost_dbl = (double)this->dfg->unmappedMemOps/(double)cgra->freeMemNodes;
 			memrescost_dbl = memrescost_dbl*(double)MEMResourceCost;
@@ -1252,170 +1308,170 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog() {
 bool CGRAXMLCompile::HeuristicMapper::LeastCostPathDjk(Port* start, Port* end,
 		std::vector<Port*>& path, int& cost, DFGNode* node,
 		std::map<Port*, std::set<DFGNode*> >& mutexPaths) {
-
-	//	std::cout << "LeastCoastPath started with start=" << start->getFullName() << " to end=" << end->getFullName() << "\n";
-
-		std::map<Port*,int> cost_to_port;
-		std::map<Port*,Port*> cameFrom;
-
-		struct port_heuristic{
-			Port* p;
-			int heuristic;
-
-			int calc_heuristic(Port* src, Port* dest){
-				PE* srcPE = src->findParentPE();
-				assert(srcPE);
-				PE* destPE = dest->findParentPE();
-				assert(destPE);
-
-				CGRA* currCGRA = srcPE->getCGRA();
-				assert(currCGRA);
-
-				int dist_dest = std::abs(destPE->Y - srcPE->Y) + std::abs(destPE->X - srcPE->X)
-				                + std::abs((destPE->T - srcPE->T + currCGRA->get_t_max())%currCGRA->get_t_max());
-				return dist_dest;
-			}
-
-			port_heuristic(Port* p, Port* dest){
-				this->p=p;
-				heuristic=calc_heuristic(p,dest);
-			}
-
-			port_heuristic(Port* p, int cost){
-				this->p=p;
-				this->heuristic=cost;
-			}
-
-			port_heuristic(Port* p, Port* dest, int cost){
-				this->p=p;
-				this->heuristic=cost*100 + calc_heuristic(p,dest);
-			}
-
-			bool operator<(const port_heuristic& rhs) const{
-				return this->heuristic > rhs.heuristic;
-			}
-
-	//		bool operator>(const port_heuristic& rhs) const{
-	//			return this->heuristic > rhs.heuristic;
-	//		}
-
-		};
-
-	//	std::queue<Port*> q;
-		std::priority_queue<port_heuristic> q;
-
-		q.push(port_heuristic(start,0));
-	//	path.push_back(start);
-
-		cost_to_port[start]=0;
-
-		Port* currPort;
-		while(!q.empty()){
-			port_heuristic curr = q.top();
-			currPort = curr.p;
-			q.pop();
-
-	//		std::cout << "currPort=" << currPort->getFullName() << "\n";
-
-			if(currPort == end){
-				break;
-			}
-
-
-			std::vector<Port*> nextPorts = currPort->getMod()->getNextPorts(currPort,this);
-//			std::vector<Port*> nextPorts = currPort->getMod()->connections[currPort];
-//			if(currPort->getType()==OUT){
-//				if(currPort->getMod()->getParent()){
-//					for(Port* p : currPort->getMod()->getParent()->connections[currPort]){
-//	//					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
-//						nextPorts.push_back(p);
+//
+//	//	std::cout << "LeastCoastPath started with start=" << start->getFullName() << " to end=" << end->getFullName() << "\n";
+//
+//		std::map<Port*,int> cost_to_port;
+//		std::map<Port*,Port*> cameFrom;
+//
+//		struct port_heuristic{
+//			Port* p;
+//			int heuristic;
+//
+//			int calc_heuristic(Port* src, Port* dest){
+//				PE* srcPE = src->findParentPE();
+//				assert(srcPE);
+//				PE* destPE = dest->findParentPE();
+//				assert(destPE);
+//
+//				CGRA* currCGRA = srcPE->getCGRA();
+//				assert(currCGRA);
+//
+//				int dist_dest = std::abs(destPE->Y - srcPE->Y) + std::abs(destPE->X - srcPE->X)
+//				                + std::abs((destPE->T - srcPE->T + currCGRA->get_t_max())%currCGRA->get_t_max());
+//				return dist_dest;
+//			}
+//
+//			port_heuristic(Port* p, Port* dest){
+//				this->p=p;
+//				heuristic=calc_heuristic(p,dest);
+//			}
+//
+//			port_heuristic(Port* p, int cost){
+//				this->p=p;
+//				this->heuristic=cost;
+//			}
+//
+//			port_heuristic(Port* p, Port* dest, int cost){
+//				this->p=p;
+//				this->heuristic=cost*100 + calc_heuristic(p,dest);
+//			}
+//
+//			bool operator<(const port_heuristic& rhs) const{
+//				return this->heuristic > rhs.heuristic;
+//			}
+//
+//	//		bool operator>(const port_heuristic& rhs) const{
+//	//			return this->heuristic > rhs.heuristic;
+//	//		}
+//
+//		};
+//
+//	//	std::queue<Port*> q;
+//		std::priority_queue<port_heuristic> q;
+//
+//		q.push(port_heuristic(start,0));
+//	//	path.push_back(start);
+//
+//		cost_to_port[start]=0;
+//
+//		Port* currPort;
+//		while(!q.empty()){
+//			port_heuristic curr = q.top();
+//			currPort = curr.p;
+//			q.pop();
+//
+//	//		std::cout << "currPort=" << currPort->getFullName() << "\n";
+//
+//			if(currPort == end){
+//				break;
+//			}
+//
+//
+//			std::vector<Port*> nextPorts = currPort->getMod()->getNextPorts(currPort,this);
+////			std::vector<Port*> nextPorts = currPort->getMod()->connections[currPort];
+////			if(currPort->getType()==OUT){
+////				if(currPort->getMod()->getParent()){
+////					for(Port* p : currPort->getMod()->getParent()->connections[currPort]){
+////	//					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
+////						nextPorts.push_back(p);
+////					}
+////				}
+////			}
+//
+//	//		std::cout << "nextPorts size = " << nextPorts.size() << "\n";
+//			for(Port* nextPort : nextPorts){
+//				bool isNextPortFree=false;
+//				bool isNextPortMutex=false;
+//				if(enableMutexPaths){
+//					if(nextPort->getNode()==NULL){
+//						isNextPortFree=true;
+//					}
+//					else if(dfg->mutexBBs[nextPort->getNode()->BB].find(node->BB)!=dfg->mutexBBs[nextPort->getNode()->BB].end()){
+//						// next BB is mutually exclusive with current nodes BB, then this can be mapped.
+//						isNextPortFree=true;
+//						isNextPortMutex=true;
+//						mutexPaths[nextPort].insert(nextPort->getNode());
+//						mutexPaths[nextPort].insert(node);
 //					}
 //				}
+//				else{
+//					if(nextPort->getNode()==NULL){
+//						isNextPortFree=true;
+//					}
+//				}
+//				if(isNextPortFree){ // unmapped port
+//	//				std::cout << "\tnextPort=" << nextPort->getFullName() << ",";
+//					int nextPortCost = cost_to_port[currPort] + calculateCost(currPort,nextPort,end);
+//	//				std::cout << "cost=" << nextPortCost << "\n";
+//					if(isNextPortMutex){
+//						//no cost is added in using mutually exclusive routes
+//						nextPortCost = cost_to_port[currPort];
+//					}
+//
+//					if(cost_to_port.find(nextPort)!=cost_to_port.end()){
+//						if(cost_to_port[nextPort] > nextPortCost){
+//							cost_to_port[nextPort]=nextPortCost;
+//							cameFrom[nextPort]=currPort;
+//							q.push(port_heuristic(nextPort,end,nextPortCost));
+//						}
+//					}
+//					else{
+//						cost_to_port[nextPort]=nextPortCost;
+//						cameFrom[nextPort]=currPort;
+//						q.push(port_heuristic(nextPort,end,nextPortCost));
+//					}
+//				}
+//				else{
+//	//				std::cout << "\t[MAPPED="<< nextPort->node->idx << "]nextPort=" << nextPort->getFullName() << ",";
+//				}
 //			}
-
-	//		std::cout << "nextPorts size = " << nextPorts.size() << "\n";
-			for(Port* nextPort : nextPorts){
-				bool isNextPortFree=false;
-				bool isNextPortMutex=false;
-				if(enableMutexPaths){
-					if(nextPort->getNode()==NULL){
-						isNextPortFree=true;
-					}
-					else if(dfg->mutexBBs[nextPort->getNode()->BB].find(node->BB)!=dfg->mutexBBs[nextPort->getNode()->BB].end()){
-						// next BB is mutually exclusive with current nodes BB, then this can be mapped.
-						isNextPortFree=true;
-						isNextPortMutex=true;
-						mutexPaths[nextPort].insert(nextPort->getNode());
-						mutexPaths[nextPort].insert(node);
-					}
-				}
-				else{
-					if(nextPort->getNode()==NULL){
-						isNextPortFree=true;
-					}
-				}
-				if(isNextPortFree){ // unmapped port
-	//				std::cout << "\tnextPort=" << nextPort->getFullName() << ",";
-					int nextPortCost = cost_to_port[currPort] + calculateCost(currPort,nextPort,end);
-	//				std::cout << "cost=" << nextPortCost << "\n";
-					if(isNextPortMutex){
-						//no cost is added in using mutually exclusive routes
-						nextPortCost = cost_to_port[currPort];
-					}
-
-					if(cost_to_port.find(nextPort)!=cost_to_port.end()){
-						if(cost_to_port[nextPort] > nextPortCost){
-							cost_to_port[nextPort]=nextPortCost;
-							cameFrom[nextPort]=currPort;
-							q.push(port_heuristic(nextPort,end,nextPortCost));
-						}
-					}
-					else{
-						cost_to_port[nextPort]=nextPortCost;
-						cameFrom[nextPort]=currPort;
-						q.push(port_heuristic(nextPort,end,nextPortCost));
-					}
-				}
-				else{
-	//				std::cout << "\t[MAPPED="<< nextPort->node->idx << "]nextPort=" << nextPort->getFullName() << ",";
-				}
-			}
-		}
-
-
-		if(currPort!=end){
-	//		std::cout << "LeastCostPath failed!\n";
-			path.clear();
-			while(currPort!=start){
-				path.push_back(currPort);
-				assert(cameFrom.find(currPort)!=cameFrom.end());
-				currPort = cameFrom[currPort];
-			}
-			path.push_back(start);
-			std::reverse(path.begin(),path.end());
-			return false; //routing failure
-		}
-
-		path.clear();
-		assert(currPort==end);
-		while(currPort!=start){
-			path.push_back(currPort);
-			assert(cameFrom.find(currPort)!=cameFrom.end());
-			currPort = cameFrom[currPort];
-		}
-		path.push_back(start);
-		std::reverse(path.begin(),path.end());
-		cost=cost_to_port[end];
-
-	//	std::cout << "Path::";
-	//	for(Port* p : path){
-	//		std::cout  << p->getFullName() << "-->";
-	//	}
-	//	std::cout << "\n";
-	//	std::cout << "LeastCostPath success!\n";
-		return true;
-
-
+//		}
+//
+//
+//		if(currPort!=end){
+//	//		std::cout << "LeastCostPath failed!\n";
+//			path.clear();
+//			while(currPort!=start){
+//				path.push_back(currPort);
+//				assert(cameFrom.find(currPort)!=cameFrom.end());
+//				currPort = cameFrom[currPort];
+//			}
+//			path.push_back(start);
+//			std::reverse(path.begin(),path.end());
+//			return false; //routing failure
+//		}
+//
+//		path.clear();
+//		assert(currPort==end);
+//		while(currPort!=start){
+//			path.push_back(currPort);
+//			assert(cameFrom.find(currPort)!=cameFrom.end());
+//			currPort = cameFrom[currPort];
+//		}
+//		path.push_back(start);
+//		std::reverse(path.begin(),path.end());
+//		cost=cost_to_port[end];
+//
+//	//	std::cout << "Path::";
+//	//	for(Port* p : path){
+//	//		std::cout  << p->getFullName() << "-->";
+//	//	}
+//	//	std::cout << "\n";
+//	//	std::cout << "LeastCostPath success!\n";
+//		return true;
+//
+//
 
 }
 
@@ -1460,8 +1516,8 @@ bool CGRAXMLCompile::HeuristicMapper::dataPathCheck(DataPath* dp,
 			}
 		}
 
-		for(Port* p : currPort->getMod()->getNextPorts(currPort,this)){
-			q.push(p);
+		for(LatPort lp : currPort->getMod()->getNextPorts(std::make_pair(currPort->getMod()->getPE()->T,currPort),this)){
+			q.push(lp.second);
 		}
 //
 //		if(currPort->getType()==OUT){
@@ -1553,13 +1609,76 @@ void CGRAXMLCompile::HeuristicMapper::removeFailedNode(std::stack<DFGNode*>& map
 }
 
 bool CGRAXMLCompile::HeuristicMapper::checkRecParentViolation(DFGNode* node,
-		Port* nextPort) {
+		LatPort nextPort) {
 	for (DFGNode* recParent : node->recParents){
 		assert(recParent->rootDP != NULL); //should be mapped
 		DataPath* recParentDP = recParent->rootDP;
-		if(nextPort->getMod()->getPE()->T == recParentDP->getPE()->T){
+		if(nextPort.first >= recParentDP->getLat() + this->cgra->get_t_max()){
 			return true;
 		}
 	}
 	return false;
+}
+
+int CGRAXMLCompile::HeuristicMapper::getlatMinStarts(
+		const std::map<DFGNode*, std::vector<Port*> >& possibleStarts) {
+
+	int min;
+	std::map<DFGNode*,int> minLat;
+
+	for(std::pair<DFGNode*,std::vector<Port*>> pair : possibleStarts){
+		int latm=100000000;
+
+		for(Port* p: pair.second){
+			if(p->getLat() < latm){
+				latm = p->getLat();
+			}
+		}
+		assert(latm != 100000000);
+		minLat[pair.first]=latm;
+	}
+
+	int max = 0;
+	for(std::pair<DFGNode*,int> pair : minLat){
+		if(max < pair.second){
+			max = pair.second;
+		}
+	}
+
+//	assert(max!=-1);
+	return max;
+}
+
+std::map<CGRAXMLCompile::DataPath*,int> CGRAXMLCompile::HeuristicMapper::getLatCandDests(
+		const std::vector<DataPath*>& candidateDests, int minLat) {
+
+	std::map<CGRAXMLCompile::DataPath*,int> res;
+
+	for(DataPath* dp : candidateDests){
+		PE* pe = dp->getPE();
+		CGRA* cgra = dp->getCGRA();
+		int ii = cgra->get_t_max();
+		int t = pe->T;
+		int minLatmodii = minLat%ii;
+
+		int lat = minLat;
+		if(minLatmodii > t){
+			lat += ii + (t - minLatmodii);
+		}
+		else{
+			lat += t - minLatmodii;
+		}
+
+		if(lat%ii != t){
+			std::cout << "ii = " << ii << "\n";
+			std::cout << "minLat = " << minLat << "\n";
+			std::cout << "t = " << t << "\n";
+			std::cout << "minLatmodii = " << minLatmodii << "\n";
+			std::cout << "lat = " << lat << "\n";
+		}
+
+		assert(lat%ii == t);
+		res[dp]=lat;
+	}
+	return res;
 }
