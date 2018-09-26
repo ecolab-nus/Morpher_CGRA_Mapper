@@ -1079,7 +1079,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 		estimatedRouteInfo.clear();
 	}
 
-	congestionInfoFile.close();
+//	congestionInfoFile.close();
 
 	if(mapSuccess){
 		mappingLog << "Map Success!.\n";

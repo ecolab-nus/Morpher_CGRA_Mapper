@@ -75,6 +75,7 @@ int main(int argn, char* argc[]) {
 		CGRA* tempCGRA = new CGRA(NULL,"coreCGRA",II,ydim,xdim,&tempDFG,PEType,numberOfDPs,hm.getcongestedPortsPtr());
 		hm.getcongestedPortsPtr()->clear();
 		mappingSuccess = hm.Map(tempCGRA,&tempDFG);
+		hm.congestionInfoFile.close();
 		if(!mappingSuccess){
 
 			for(DFGNode& node : currDFG.nodeList){
