@@ -233,6 +233,7 @@ public:
 
 	int upperboundII=1000000;
 	int upperboundIter=-1;
+	int upperboundFoundBy=-1;
 
 protected:
 	int regDiscourageFactor=10;

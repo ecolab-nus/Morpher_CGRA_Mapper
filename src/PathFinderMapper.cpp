@@ -1077,6 +1077,8 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 		}
 		clearCurrMapping();
 		estimatedRouteInfo.clear();
+		mappingLog.close();
+		mappingLog2.close();
 	}
 
 //	congestionInfoFile.close();
@@ -1227,6 +1229,7 @@ bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts(int iter) {
 	if(this->upperboundII > conflictedTimeSteps.size() + this->cgra->get_t_max()){
 		this->upperboundII = conflictedTimeSteps.size() + this->cgra->get_t_max();
 		this->upperboundIter = iter;
+		this->upperboundFoundBy = this->cgra->get_t_max();
 		std::cout << "****************************************\n";
 		std::cout << "Upperbound II = " << this->upperboundII << "\n";
 		std::cout << "On iter = " << iter << "\n";
@@ -1504,15 +1507,31 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriority() {
 		int dist;
 		BEDist(DFGNode* parent,DFGNode* child,int dist) : parent(parent), child(child), dist(dist){}
 		bool operator<(const BEDist& other) const{
+			if(dist == other.dist){
+				return true;
+			}
 			return dist > other.dist;
 		}
+//		bool operator==(const BEDist& other) const{
+//			return parent==other.parent & child==other.child;
+//		}
 	};
 
 	std::set<BEDist> backedges;
 
 	for(DFGNode& node : dfg->nodeList){
+
+		if(node.idx == 97){
+			std::cout << "node_idx:97,node_ASAP:" << node.ASAP << "\n";
+		}
 		for(DFGNode* child : node.children){
+
+			if(node.idx == 97){
+				std::cout << "child_idx:" << child->idx << "child_ASAP:" << child->ASAP << "\n";
+			}
+
 			if(child->ASAP <= node.ASAP){
+				std::cout << "inserting for : node=" << node.idx << ",child:" << child->idx << "\n";
 				backedges.insert(BEDist(&node,child,node.ASAP-child->ASAP));
 			}
 		}
@@ -1524,14 +1543,45 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriority() {
 		}
 	}
 
+	std::map<DFGNode*,std::vector<DFGNode*>> beparentAncestors;
+//	std::map<DFGNode*,std::vector<DFGNode*>> bechildAncestors;
+
 	for(BEDist be : backedges){
-		std::vector<DFGNode*> ancestoryNodes = dfg->getAncestory(be.parent);
+		std::cout << "BE PARENT = " << be.parent->idx << ",dist=" << be.dist << "\n";
+		std::cout << "BE CHILD = " << be.child->idx << "\n";
+
+		beparentAncestors[be.parent]=dfg->getAncestory(be.parent);
+//		bechildAncestors[be.child]=dfg->getAncestory(be.child);
+	}
+
+//	std::vector<DFGNode*> mergedAncestory;
+	std::map<DFGNode*,std::vector<DFGNode*>> mergedAncestories;
+	std::map<DFGNode*,DFGNode*> mergedKeys;
+	for(BEDist be : backedges){
+//		write a logic to merge ancestories where if one be's child is present in some other be's parent's ancesotory'
+		bool merged=false;
+		for(std::pair<DFGNode*,std::vector<DFGNode*>> pair : mergedAncestories){
+			DFGNode* key = pair.first;
+			if(std::find(mergedAncestories[key].begin(),mergedAncestories[key].end(),be.child) != mergedAncestories[key].end()){
+				mergedAncestories[key] = dfg->mergeAncestory(mergedAncestories[key],beparentAncestors[be.parent]); merged=true;
+				mergedKeys[be.parent]=key;
+			}
+		}
+		if(!merged){
+			mergedAncestories[be.parent]=dfg->getAncestory(be.parent);
+			mergedKeys[be.parent]=be.parent;
+		}
+	}
+
+	for(BEDist be : backedges){
+		assert(mergedKeys.find(be.parent) != mergedKeys.end());
+		std::vector<DFGNode*> ancestoryNodes = mergedAncestories[mergedKeys[be.parent]];
 		for(DFGNode* ancestorNode : ancestoryNodes){
 			if(std::find(sortedNodeList.begin(),sortedNodeList.end(),ancestorNode) == sortedNodeList.end()){
 				sortedNodeList.push_back(ancestorNode);
 			}
 		}
-		std::cout << "BE PARENT = " << be.parent->idx << "\n";
+		std::cout << "BE PARENT = " << be.parent->idx << ",dist=" << be.dist << "\n";
 		if(std::find(sortedNodeList.begin(),sortedNodeList.end(),be.parent) == sortedNodeList.end()){
 			sortedNodeList.push_back(be.parent);
 		}

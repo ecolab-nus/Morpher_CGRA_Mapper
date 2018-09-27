@@ -244,6 +244,33 @@ bool DFG::isMutexNodes(DFGNode* a, DFGNode* b) {
 	return false;
 }
 
+std::vector<DFGNode*> DFG::mergeAncestory(const std::vector<DFGNode*>& in1,
+		const std::vector<DFGNode*>& in2) {
+
+	std::map<int,std::vector<DFGNode*>> asapLevelNodeList;
+	for(DFGNode* node : in1){
+		asapLevelNodeList[node->ASAP].push_back(node);
+	}
+	for(DFGNode* node : in2){
+		asapLevelNodeList[node->ASAP].push_back(node);
+	}
+
+	int maxASAPlevel=0;
+	for(std::pair<int,std::vector<DFGNode*>> pair : asapLevelNodeList){
+		if(pair.first > maxASAPlevel){
+			maxASAPlevel = pair.first;
+		}
+	}
+
+	std::vector<DFGNode*> res;
+	for (int i = 0; i <= maxASAPlevel; ++i) {
+		for(DFGNode* node : asapLevelNodeList[i]){
+			res.push_back(node);
+		}
+	}
+	return res;
+}
+
 void DFG::strongconnect(DFGNode* v,
 						std::map<DFGNode*,int>& v_idx,
 						std::map<DFGNode*,int>& v_lowlink,
