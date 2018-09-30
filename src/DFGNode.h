@@ -41,6 +41,7 @@ public:
 //	std::map<Port*,int> routingPortDestMap;
 
 	std::map<DFGNode*,std::string> childrenOPType;
+	std::map<DFGNode*,int> childNextIter;
 
 	std::string BB;
 

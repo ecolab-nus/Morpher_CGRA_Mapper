@@ -88,6 +88,8 @@ std::vector<LatPort> Module::getNextPorts(LatPort currPort, HeuristicMapper* hm)
 			assert(tdiff > 0);
 		}
 
+		assert(tdiff <= 1);
+
 		if(!conflicted){
 			nextPorts.push_back(std::make_pair(lat+tdiff,p));
 		}
@@ -251,6 +253,19 @@ void Module::insertRegPort(std::string pName) {
 }
 
 void Module::insertConnection(Port* src, Port* dest) {
+
+	PE* src_pe = src->getMod()->getPE();
+	PE* dest_pe = dest->getMod()->getPE();
+
+//	if(src_pe && dest_pe){
+		if(src_pe->T > dest_pe->T && dest_pe->T != 0){
+			std::cout << "ILLEGAL CONNECTION!\n";
+			std::cout << src_pe->getFullName() << "\n";
+			std::cout << dest_pe->getFullName() << "\n";
+		}
+		assert(src_pe->T <= dest_pe->T || dest_pe->T == 0);
+//	}
+
 	connectedTo[src].push_back(dest);
 	connectedFrom[dest].push_back(src);
 }

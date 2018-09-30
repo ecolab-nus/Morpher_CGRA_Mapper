@@ -144,6 +144,12 @@ bool DFG::parseXML(std::string fileName) {
 
 			findNode(idx)->children.push_back(findNode(output_idx));
 
+			int output_nextiter;
+			output->QueryIntAttribute("nextiter",&output_nextiter);
+			std::cout << "nextiter = " << output_nextiter;
+			assert(output_nextiter == 0 || output_nextiter == 1);
+			findNode(idx)->childNextIter[findNode(output_idx)]=output_nextiter;
+
 			const char* type;
 			output->QueryStringAttribute("type",&type);
 			if(type){
@@ -325,11 +331,13 @@ std::vector<DFGNode*> DFG::getAncestory(const DFGNode* node) {
 
 	std::queue<const DFGNode*> q;
 	q.push(node);
+	ancestors.push(node);
 
 	while(!q.empty()){
 		const DFGNode* top = q.front(); q.pop();
 		for(DFGNode* parent : top->parents){
 			if(parent->ASAP >= top->ASAP) continue; //ignore backedges
+			std::cout << parent->idx << ",";
 			ancestors.push(parent);
 			q.push(parent);
 		}
