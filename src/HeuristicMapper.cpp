@@ -30,6 +30,7 @@ namespace CGRAXMLCompile {
 
 void CGRAXMLCompile::HeuristicMapper::SortTopoGraphicalDFG() {
 	sortedNodeList.clear();
+	assert(false);
 	std::map<int,std::vector<DFGNode*>> asapLevelNodeList;
 	for(DFGNode& node : dfg->nodeList){
 		asapLevelNodeList[node.ASAP].push_back(&node);
@@ -1648,6 +1649,8 @@ int CGRAXMLCompile::HeuristicMapper::getlatMinStarts(
 //	assert(max!=-1);
 	return max;
 }
+
+
 
 std::map<CGRAXMLCompile::DataPath*,int> CGRAXMLCompile::HeuristicMapper::getLatCandDests(
 		const std::vector<DataPath*>& candidateDests, int minLat) {

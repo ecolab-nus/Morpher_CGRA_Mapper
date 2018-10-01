@@ -50,7 +50,8 @@ public:
 	bool updateConflictedTimeSteps(int timeStep, int conflicts);
 	int getTimeStepConflicts(int timeStep);
 
-	void sortBackEdgePriority();
+	void sortBackEdgePriorityASAP();
+	void sortBackEdgePriorityALAP();
 	std::ofstream congestionInfoFile;
 
 private:
@@ -61,6 +62,9 @@ private:
 
 
 	std::map<int,int> conflictedTimeStepMap;
+
+	std::set<DFGNode*> RecPHIs;
+	int getlatMinStartsPHI(const DFGNode* currNode, const std::map<DFGNode*,std::vector<Port*>>& possibleStarts);
 
 
 };

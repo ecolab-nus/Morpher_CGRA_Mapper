@@ -67,9 +67,12 @@ bool DFG::parseXML(std::string fileName) {
 		DFGNode currDFGNode;
 		int idx;
 		node->QueryIntAttribute("idx",&idx);
-		int asap;
-		node->QueryIntAttribute("ASAP",&asap);
+		int asap=-1;
+		node->QueryIntAttribute("ASAP",&asap); assert(asap!=-1);
 		currDFGNode.ASAP = asap;
+		int alap=-1;
+		node->QueryIntAttribute("ALAP",&alap); assert(alap!=-1);
+		currDFGNode.ALAP = alap;
 
 		const char* BBName;
 		node->QueryStringAttribute("BB",&BBName);
@@ -250,7 +253,7 @@ bool DFG::isMutexNodes(DFGNode* a, DFGNode* b) {
 	return false;
 }
 
-std::vector<DFGNode*> DFG::mergeAncestory(const std::vector<DFGNode*>& in1,
+std::vector<DFGNode*> DFG::mergeAncestoryASAP(const std::vector<DFGNode*>& in1,
 		const std::vector<DFGNode*>& in2) {
 
 	std::map<int,std::vector<DFGNode*>> asapLevelNodeList;
@@ -275,6 +278,62 @@ std::vector<DFGNode*> DFG::mergeAncestory(const std::vector<DFGNode*>& in1,
 		}
 	}
 	return res;
+}
+
+std::vector<DFGNode*> DFG::mergeAncestoryALAP(const std::vector<DFGNode*>& in1,
+		const std::vector<DFGNode*>& in2) {
+
+	std::map<int,std::vector<DFGNode*>> alapLevelNodeList;
+	for(DFGNode* node : in1){
+		alapLevelNodeList[node->ALAP].push_back(node);
+	}
+	for(DFGNode* node : in2){
+		alapLevelNodeList[node->ALAP].push_back(node);
+	}
+
+	int maxALAPlevel=0;
+	for(std::pair<int,std::vector<DFGNode*>> pair : alapLevelNodeList){
+		if(pair.first > maxALAPlevel){
+			maxALAPlevel = pair.first;
+		}
+	}
+
+	std::vector<DFGNode*> res;
+	for (int i = 0; i <= maxALAPlevel; ++i) {
+		for(DFGNode* node : alapLevelNodeList[i]){
+			res.push_back(node);
+		}
+	}
+	return res;
+}
+
+std::vector<DFGNode*> DFG::getAncestoryALAP(const DFGNode* node) {
+	std::stack<const DFGNode*> ancestors;
+	std::set<const DFGNode*> anc_visited;
+
+	std::queue<const DFGNode*> q;
+	q.push(node);
+	ancestors.push(node);
+
+	while(!q.empty()){
+		const DFGNode* top = q.front(); q.pop();
+		for(DFGNode* parent : top->parents){
+			if(parent->ALAP >= top->ALAP) continue; //ignore backedges
+			if(anc_visited.find(parent)!=anc_visited.end()) continue;
+			std::cout << parent->idx << ",";
+			ancestors.push(parent);
+			anc_visited.insert(parent);
+			q.push(parent);
+		}
+	}
+
+	std::vector<DFGNode*> res;
+	while(!ancestors.empty()){
+		res.push_back((DFGNode*)ancestors.top()); ancestors.pop();
+	}
+
+	return res;
+
 }
 
 void DFG::strongconnect(DFGNode* v,
@@ -326,7 +385,7 @@ void DFG::strongconnect(DFGNode* v,
 			}
 }
 
-std::vector<DFGNode*> DFG::getAncestory(const DFGNode* node) {
+std::vector<DFGNode*> DFG::getAncestoryASAP(const DFGNode* node) {
 	std::stack<const DFGNode*> ancestors;
 
 	std::queue<const DFGNode*> q;

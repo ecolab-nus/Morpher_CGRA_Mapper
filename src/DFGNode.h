@@ -27,6 +27,7 @@ public:
 	DFGNode();
 	int idx;
 	int ASAP;
+	int ALAP;
 	int constant;
 	bool hasConst=false;
 	std::string op;

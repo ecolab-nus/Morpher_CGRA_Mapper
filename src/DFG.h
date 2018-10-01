@@ -32,8 +32,10 @@ public:
 	std::set<DFGNode*> unmappedMemOpSet;
 
 	bool isMutexNodes(DFGNode* a, DFGNode* b);
-	std::vector<DFGNode*> getAncestory(const DFGNode* node);
-	std::vector<DFGNode*> mergeAncestory(const std::vector<DFGNode*>& in1, const std::vector<DFGNode*>& in2);
+	std::vector<DFGNode*> getAncestoryASAP(const DFGNode* node);
+	std::vector<DFGNode*> getAncestoryALAP(const DFGNode* node);
+	std::vector<DFGNode*> mergeAncestoryASAP(const std::vector<DFGNode*>& in1, const std::vector<DFGNode*>& in2);
+	std::vector<DFGNode*> mergeAncestoryALAP(const std::vector<DFGNode*>& in1, const std::vector<DFGNode*>& in2);
 
 private:
 	void strongconnect(DFGNode* v,
