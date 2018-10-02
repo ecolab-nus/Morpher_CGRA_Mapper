@@ -319,8 +319,9 @@ std::vector<DFGNode*> DFG::getAncestoryALAP(const DFGNode* node) {
 		const DFGNode* top = q.front(); q.pop();
 		for(DFGNode* parent : top->parents){
 			if(parent->ALAP >= top->ALAP) continue; //ignore backedges
-			if(anc_visited.find(parent)!=anc_visited.end()) continue;
-			std::cout << parent->idx << ",";
+			if(anc_visited.find(parent)==anc_visited.end()){
+				std::cout << parent->idx << ",";
+			}
 			ancestors.push(parent);
 			anc_visited.insert(parent);
 			q.push(parent);
