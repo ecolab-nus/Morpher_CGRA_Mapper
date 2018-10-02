@@ -11,6 +11,7 @@
 #include <vector>
 #include <set>
 #include <stack>
+#include <unordered_set>
 #include "DFGNode.h"
 
 namespace CGRAXMLCompile {
@@ -32,6 +33,7 @@ public:
 	std::set<DFGNode*> unmappedMemOpSet;
 
 	bool isMutexNodes(DFGNode* a, DFGNode* b);
+	bool getAncestoryASAPUntil(DFGNode* beParent, DFGNode* beChild, std::set<DFGNode*>& result);
 	std::vector<DFGNode*> getAncestoryASAP(const DFGNode* node);
 	std::vector<DFGNode*> getAncestoryALAP(const DFGNode* node);
 	std::vector<DFGNode*> mergeAncestoryASAP(const std::vector<DFGNode*>& in1, const std::vector<DFGNode*>& in2);

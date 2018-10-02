@@ -26,7 +26,7 @@ DFGNode::DFGNode() {
 
 void CGRAXMLCompile::DFGNode::clear(DFG* dfg) {
 	if(rootDP!=NULL){
-		rootDP->getOutPort("T")->clear();
+		rootDP->getOutputDP()->getOutPort("T")->clear();
 
 		rootDP->clear();
 
@@ -61,6 +61,8 @@ void CGRAXMLCompile::DFGNode::clear(DFG* dfg) {
 //			assert(parent->routingPortDestMap.find(p)!=parent->routingPortDestMap.end());
 //			int dest_idx = routingPortDestMap[p];
 //			assert(dest!=NULL);
+
+			if(parent->rootDP->getOutputDP()->getOutPort("T") == p) continue;
 
 			if(destIdx==this->idx){
 				p->clear();

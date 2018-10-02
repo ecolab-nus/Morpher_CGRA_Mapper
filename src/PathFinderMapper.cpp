@@ -344,7 +344,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 	std::map<DFGNode*,Port*> alreadyMappedChildPorts;
 
 	bool detailedDebug=false;
-	if(node->idx==41)detailedDebug=true;
+	if(node->idx==92)detailedDebug=true;
 
 //	std::cout << "EstimateEouting begin...\n";
 
@@ -434,8 +434,13 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 //	int minLat = getlatMinStarts(possibleStarts);
 	int minLat = getlatMinStartsPHI(node,possibleStarts);
 	std::map<DataPath*,int> minLatDests = getLatCandDests(candidateDests,minLat);
+	bool changed=false;
+	candidateDests = modifyMaxLatCandDest(minLatDests,node,changed);
+	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
 	int ii = this->cgra->get_t_max();
 
+	int minLatSucc = 1000000000;
+	std::priority_queue<dest_with_cost> estimatedRoutesTemp;
 	//Route Estimation
 	for (int i = 0; i < 1; ++i) {
 		bool pathFromParentExist=false;
@@ -540,9 +545,19 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 		    assert(pathFromParentExist);
 		    assert(pathExistMappedChild);
 			dest_with_cost dest_with_cost_ins(parentStartLocs,alreadyMappedChilds,dest,minLatDestVal,node,0,this->dfg->unmappedMemOps,this);
-			estimatedRoutes.push(dest_with_cost_ins);
+
+			if(minLatDestVal_prime < minLatSucc){
+				minLatSucc = minLatDestVal_prime;
+			}
+
+			estimatedRoutesTemp.push(dest_with_cost_ins);
 		}
 		if(pathFromParentExist & pathExistMappedChild) break;
+	}
+
+	while(!estimatedRoutesTemp.empty()){
+		dest_with_cost top = estimatedRoutesTemp.top(); estimatedRoutesTemp.pop();
+		if(minLatDests[top.dest] == minLatSucc || !changed) estimatedRoutes.push(top);
 	}
 
 
@@ -1027,22 +1042,22 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 	//					mappingLog << "route estimation failed...\n";
 	//					continue;
 
-						//				DFGNode* prevNode = mappedNodes.top();
-						//				mappedNodes.pop();
-						//				unmappedNodes.push(node);
-						//				unmappedNodes.push(prevNode);
-						//
-						//				prevNode->clear(this->dfg);
-						//				estimatedRouteInfo.erase(node);
-
-
-										assert(failedNode!=NULL);
+										DFGNode* prevNode = mappedNodes.top();
+										mappedNodes.pop();
 										unmappedNodes.push(node);
-										removeFailedNode(mappedNodes,unmappedNodes,failedNode);
-										failedNode->blacklistDest.insert(failedNode->rootDP);
-										(failedNode)->clear(this->dfg);
+										unmappedNodes.push(prevNode);
+
+										prevNode->clear(this->dfg);
 										estimatedRouteInfo.erase(node);
-										estimatedRouteInfo.erase(failedNode);
+
+
+//										assert(failedNode!=NULL);
+//										unmappedNodes.push(node);
+//										removeFailedNode(mappedNodes,unmappedNodes,failedNode);
+//										failedNode->blacklistDest.insert(failedNode->rootDP);
+//										(failedNode)->clear(this->dfg);
+//										estimatedRouteInfo.erase(node);
+//										estimatedRouteInfo.erase(failedNode);
 
 										continue;
 
@@ -1103,23 +1118,23 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 						mappingLog2.close();
 						return false;
 					}
-					assert(failedNode!=NULL);
+//					assert(failedNode!=NULL);
 					backTrackCredits--;
 
-	//				DFGNode* prevNode = mappedNodes.top();
-	//				mappedNodes.pop();
-	//				unmappedNodes.push(node);
-	//				unmappedNodes.push(prevNode);
-	//
-	//				prevNode->clear(this->dfg);
-	//				estimatedRouteInfo.erase(node);
-
+					DFGNode* prevNode = mappedNodes.top();
+					mappedNodes.pop();
 					unmappedNodes.push(node);
-					removeFailedNode(mappedNodes,unmappedNodes,failedNode);
-					failedNode->blacklistDest.insert(failedNode->rootDP);
-					(failedNode)->clear(this->dfg);
+					unmappedNodes.push(prevNode);
+
+					prevNode->clear(this->dfg);
 					estimatedRouteInfo.erase(node);
-					estimatedRouteInfo.erase(failedNode);
+
+//					unmappedNodes.push(node);
+//					removeFailedNode(mappedNodes,unmappedNodes,failedNode);
+//					failedNode->blacklistDest.insert(failedNode->rootDP);
+//					(failedNode)->clear(this->dfg);
+//					estimatedRouteInfo.erase(node);
+//					estimatedRouteInfo.erase(failedNode);
 					continue;
 				}
 				else{
@@ -1210,10 +1225,13 @@ void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode* src, DFGNode* dest,
 //			assert(p->getNode()==src);
 //		}
 
-//		if(p.second->getNode() == src) {
-//			srcPortCount++;
-//			continue;
-//		}
+		prevLat = p.first;
+		prevPort = p;
+
+		if(p.second->getNode() == src) {
+			srcPortCount++;
+			continue;
+		}
 
 		p.second->setNode(src,p.first,this);
 		congestedPorts[p.second].insert(src);
@@ -1229,8 +1247,7 @@ void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode* src, DFGNode* dest,
 			}
 		}
 //		src->routingPortDestMap[p]=dest->idx;
-		prevLat = p.first;
-		prevPort = p;
+
 	}
 	std::cout << "srcPortCount = " << srcPortCount << "\n";
 
@@ -1633,6 +1650,15 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 		}
 	}
 
+	//populate reccycles
+	for(BEDist be : backedges){
+		std::set<DFGNode*> backedgePath;
+		if(dfg->getAncestoryASAPUntil(be.parent,be.child,backedgePath)){
+			backedgePath.insert(be.parent);
+			RecCycles[BackEdge(be.parent,be.child)]=backedgePath;
+		}
+	}
+
 	for(DFGNode& node : dfg->nodeList){
 		for(DFGNode* recParent : node.recParents){
 			backedges.insert(BEDist(&node,recParent,node.ASAP-recParent->ASAP));
@@ -1641,6 +1667,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 
 	std::map<DFGNode*,std::vector<DFGNode*>> beparentAncestors;
 //	std::map<DFGNode*,std::vector<DFGNode*>> bechildAncestors;
+	std::map<std::pair<DFGNode*,DFGNode*>,bool> trueBackedges;
 
 	for(BEDist be : backedges){
 		std::cout << "BE PARENT = " << be.parent->idx << ",dist=" << be.dist << "\n";
@@ -1654,10 +1681,13 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 				               beparentAncestors[be.parent].end(),
 							   be.child) == beparentAncestors[be.parent].end()){
 			std::cout << "BE CHILD does not belong BE Parent's Ancestory\n";
+			trueBackedges[std::make_pair(be.parent,be.child)]=false;
 		}
 		else{
 			//change this be.parent if PHI nodes are not removed
-//			RecPHIs.insert(be.parent);
+			std::cout << "RecPHI inserted : " << be.child->idx << "\n";
+			trueBackedges[std::make_pair(be.parent,be.child)]=true;
+//			RecPHIs.insert(be.child);
 		}
 
 //		bechildAncestors[be.child]=dfg->getAncestory(be.child);
@@ -1671,6 +1701,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 		bool merged=false;
 		for(std::pair<DFGNode*,std::vector<DFGNode*>> pair : mergedAncestories){
 			DFGNode* key = pair.first;
+			if(trueBackedges[std::make_pair(be.parent,be.child)] == false) continue;
 			if(std::find(mergedAncestories[key].begin(),mergedAncestories[key].end(),be.child) != mergedAncestories[key].end()){
 				std::cout << "Merging :: " << key->idx << ", " << be.parent->idx << "\n";
 				mergedAncestories[key] = dfg->mergeAncestoryALAP(mergedAncestories[key],beparentAncestors[be.parent]); merged=true;
@@ -1682,6 +1713,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 			mergedKeys[be.parent]=be.parent;
 		}
 	}
+
 
 	for(BEDist be : backedges){
 		assert(mergedKeys.find(be.parent) != mergedKeys.end());
@@ -1938,6 +1970,7 @@ int CGRAXMLCompile::PathFinderMapper::getlatMinStartsPHI(const DFGNode* currNode
 		if(max < pair.second){
 			max = pair.second;
 		}
+		std::cout << "getlatMinStartsPHI :: minLat = " << max << "\n";
 	}
 
 	std::map<std::string,int> oplatencyMap;
@@ -1971,4 +2004,167 @@ int CGRAXMLCompile::PathFinderMapper::getlatMinStartsPHI(const DFGNode* currNode
 	return max;
 
 
+}
+
+std::set<CGRAXMLCompile::DFGNode*> CGRAXMLCompile::PathFinderMapper::getElders(DFGNode* node) {
+//	std::set<DFGNode*> res;
+//
+//	std::map<int,DFGNode*> descendents;
+//	std::queue<std::set<DFGNode*>> q;
+//	std::set<DFGNode*> initLevel; initLevel.insert(node);
+//	q.push(initLevel);
+//	int level_ctr=0;
+//
+//	while(!q.empty()){
+//		std::set<DFGNode*> level = q.front(); q.pop();
+//		level_ctr++;
+//		for(DFGNode* levelnode : level){
+//			for(DFGNode* child : levelnode->children){
+//				if(levelnode->childNextIter[child] == 1) continue; //ignore backedges;
+//				if(descendents.find(child) == descendents.end()){
+//					descendents.insert(child);
+//					q.push(child);
+//				}
+//			}
+//
+//
+//		}
+//
+//
+//		for(DFGNode* child : top->children){
+//			if(top->childNextIter[child] == 1) continue; //ignore backedges
+//			if(descendents.find(child) == descendents.end()){
+//				descendents.insert(child);
+//				q.push(child);
+//			}
+//		}
+//	}
+//
+//
+//
+//	return res;
+}
+
+int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode* node) {
+
+	std::set<BackEdge> setBackEdges;
+	std::cout << "getMaxLatencyBE started!\n";
+
+	for(std::pair<BackEdge,std::set<DFGNode*>> pair : RecCycles){
+		BackEdge be = pair.first;
+		std::set<DFGNode*> rec_nodes = pair.second;
+		if(rec_nodes.find(node) != rec_nodes.end()){
+			if(be.second->rootDP != NULL){
+
+				std::cout << "RecSet : ";
+				for(DFGNode* n : rec_nodes){
+					std::cout << n->idx << ",";
+				}
+				std::cout << "\n";
+				setBackEdges.insert(pair.first);
+			}
+		}
+	}
+
+	PE* samplePE = cgra->PEArr[0][0][0];
+	std::map<std::string,int> OpLatency;
+	samplePE->getNonMEMIns(OpLatency);
+	samplePE->getMemOnlyIns(OpLatency);
+
+	int maxLat = 100000000;
+	for(BackEdge be : setBackEdges){
+		int maxLatency = be.second->rootDP->getLat() + cgra->get_t_max();
+//		maxLatency = maxLatency - OpLatency[be.first->op];
+		std::cout << "maxLatency = " << maxLatency << "\n";
+		std::map<int,std::set<DFGNode*>> asapOrder;
+		std::map<int,int> asapMaxOpLat;
+		std::map<int,int> asapMaxLat;
+
+		for(DFGNode* n : RecCycles[be]){
+			asapOrder[n->ASAP].insert(n);
+		}
+
+		for(std::pair<int,std::set<DFGNode*>> pair : asapOrder){
+			int maxOplatency = 0;
+			std::cout << "ops : ";
+			for(DFGNode* n : pair.second){
+				std::cout << "idx=" << n->idx << "[" << n->op << "]" << "(" << OpLatency[n->op] << ")" << ",";
+				int new_lat = OpLatency[n->op];
+				if(new_lat > maxOplatency) maxOplatency = new_lat;
+			}
+			std::cout << "\n";
+			std::cout << "ASAP=" << pair.first << ",OPLAT=" << maxOplatency << "\n";
+			asapMaxOpLat[pair.first]=maxOplatency;
+		}
+
+		std::map<int,std::set<DFGNode*>>::reverse_iterator rit = asapOrder.rbegin();
+
+		int prevLat = maxLatency;
+		while(rit != asapOrder.rend()){
+			int asap = (*rit).first;
+			asapMaxLat[asap] = prevLat - asapMaxOpLat[asap];
+			prevLat = asapMaxLat[asap];
+			rit++;
+		}
+
+		if(asapMaxLat[node->ASAP] < maxLat) maxLat = asapMaxLat[node->ASAP];
+	}
+
+	if(maxLat != 100000000){
+		std::cout << "getMaxLatencyBE :: node=" << node->idx << " maxLat = " << maxLat << "\n";
+//		assert(false);
+	}
+	std::cout << "getMaxLatencyBE done!\n";
+	return maxLat;
+}
+
+std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::PathFinderMapper::modifyMaxLatCandDest(
+		std::map<DataPath*, int> candDestIn, DFGNode* node, bool& changed) {
+
+	std::vector<DataPath*> res;
+	int maxLat = getMaxLatencyBE(node);
+
+	changed = false;
+
+	std::map<std::string,int> memOps;
+	PE* samplePE = cgra->PEArr[0][0][0];
+	samplePE->getMemOnlyIns(memOps);
+	bool isMeMOp = memOps.find(node->op) != memOps.end();
+
+	std::cout << "MaxLat = " << maxLat << "\n";
+	std::cout << "IsMEMOp = " << isMeMOp << "\n";
+
+	for(std::pair<DataPath*, int> pair : candDestIn){
+
+		DataPath* dp = pair.first;
+		PE* pe = dp->getPE();
+//		if(pe->X == 0) assert(pe->isMemPE == true);
+		if( (pe->X == 0) && (isMeMOp == false)){
+			if(pair.second <= maxLat - 1){
+//				std::cout << "pe=" << pe->getName() << ",";
+//				std::cout << "isMeMPE=" << pe->isMemPE << ",";
+//				std::cout << "Lat= " << pair.second << "\n";
+//				std::cout << "OK\n";
+				res.push_back(pair.first);
+			}
+			else{
+				changed = true;
+			}
+		}
+		else{
+			if(pair.second <= maxLat){
+//				std::cout << "OK\n";
+				res.push_back(pair.first);
+			}
+			else{
+				changed = true;
+			}
+		}
+
+
+	}
+
+
+
+	return res;
 }

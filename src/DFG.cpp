@@ -337,6 +337,8 @@ std::vector<DFGNode*> DFG::getAncestoryALAP(const DFGNode* node) {
 
 }
 
+
+
 void DFG::strongconnect(DFGNode* v,
 						std::map<DFGNode*,int>& v_idx,
 						std::map<DFGNode*,int>& v_lowlink,
@@ -397,6 +399,7 @@ std::vector<DFGNode*> DFG::getAncestoryASAP(const DFGNode* node) {
 		const DFGNode* top = q.front(); q.pop();
 		for(DFGNode* parent : top->parents){
 			if(parent->ASAP >= top->ASAP) continue; //ignore backedges
+			if(parent->childNextIter[(DFGNode*)top] == 1) continue; //ignore backedges
 			std::cout << parent->idx << ",";
 			ancestors.push(parent);
 			q.push(parent);
@@ -409,6 +412,38 @@ std::vector<DFGNode*> DFG::getAncestoryASAP(const DFGNode* node) {
 	}
 
 	return res;
+}
+
+bool DFG::getAncestoryASAPUntil(DFGNode* beParent, DFGNode* beChild,
+		std::set<DFGNode*>& result) {
+
+	std::map<int,std::set<DFGNode*>> asapOrderSet;
+	std::queue<DFGNode*> q;
+	q.push(beParent);
+
+//	std::vector<DFGNode*> ancestory = getAncestoryASAP(beParent);
+//	if(std::find(ancestory.begin(),ancestory.end(),beChild) == ancestory.end()) return false;
+
+	while(!q.empty()){
+		DFGNode* node = q.front(); q.pop();
+		for(DFGNode* parent : node->parents){
+			if(parent->ASAP >= node->ASAP) continue; //ignore backedges
+			if(parent->childNextIter[node] == 1) continue; //ignore backedges
+
+			if(parent->ASAP <= beChild->ASAP) continue;
+			asapOrderSet[parent->ASAP].insert(parent);
+			q.push(parent);
+		}
+
+	}
+
+	for(std::pair<int,std::set<DFGNode*>> pair : asapOrderSet){
+		for(DFGNode* node : pair.second){
+			result.insert(node);
+		}
+	}
+
+	return true;
 }
 
 

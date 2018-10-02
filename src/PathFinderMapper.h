@@ -13,6 +13,8 @@
 
 namespace CGRAXMLCompile {
 
+typedef std::pair<DFGNode*,DFGNode*> BackEdge;
+
 class PathFinderMapper : public HeuristicMapper {
 public:
 	PathFinderMapper(std::string fName) : HeuristicMapper(fName){
@@ -65,7 +67,11 @@ private:
 
 	std::set<DFGNode*> RecPHIs;
 	int getlatMinStartsPHI(const DFGNode* currNode, const std::map<DFGNode*,std::vector<Port*>>& possibleStarts);
+	std::set<DFGNode*> getElders(DFGNode* node);
 
+	std::map<BackEdge,std::set<DFGNode*>> RecCycles;
+	int getMaxLatencyBE(DFGNode* node);
+	std::vector<DataPath*> modifyMaxLatCandDest(std::map<DataPath*,int> candDestIn, DFGNode* node,  bool& changed);
 
 };
 
