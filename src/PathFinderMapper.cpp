@@ -934,8 +934,8 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 	this->dfg = dfg;
 //	SortSCCDFG();
 //	SortTopoGraphicalDFG();
-//	sortBackEdgePriorityASAP();
-	sortBackEdgePriorityALAP();
+	sortBackEdgePriorityASAP();
+//	sortBackEdgePriorityALAP();
 
 	std::string mappingLogFileName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs)  + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths);// + ".mapping.csv";
 	std::string mappingLog2FileName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs) + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths);// + ".routeInfo.log";
@@ -1649,6 +1649,17 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 		std::cout << "Ancestory : " << "\n";
 		beparentAncestors[be.parent]=dfg->getAncestoryASAP(be.parent);
 		std::cout << "\n";
+
+		if(std::find(beparentAncestors[be.parent].begin(),
+				               beparentAncestors[be.parent].end(),
+							   be.child) == beparentAncestors[be.parent].end()){
+			std::cout << "BE CHILD does not belong BE Parent's Ancestory\n";
+		}
+		else{
+			//change this be.parent if PHI nodes are not removed
+//			RecPHIs.insert(be.parent);
+		}
+
 //		bechildAncestors[be.child]=dfg->getAncestory(be.child);
 	}
 
@@ -1662,7 +1673,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 			DFGNode* key = pair.first;
 			if(std::find(mergedAncestories[key].begin(),mergedAncestories[key].end(),be.child) != mergedAncestories[key].end()){
 				std::cout << "Merging :: " << key->idx << ", " << be.parent->idx << "\n";
-				mergedAncestories[key] = dfg->mergeAncestoryASAP(mergedAncestories[key],beparentAncestors[be.parent]); merged=true;
+				mergedAncestories[key] = dfg->mergeAncestoryALAP(mergedAncestories[key],beparentAncestors[be.parent]); merged=true;
 				mergedKeys[be.parent]=key;
 			}
 		}
@@ -1805,7 +1816,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityALAP() {
 		}
 		else{
 			//change this be.parent if PHI nodes are not removed
-			RecPHIs.insert(be.parent);
+//			RecPHIs.insert(be.parent);
 		}
 
 
@@ -1827,7 +1838,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityALAP() {
 			}
 		}
 		if(!merged){
-			mergedAncestories[be.parent]=dfg->getAncestoryALAP(be.parent);
+			mergedAncestories[be.parent]=beparentAncestors[be.parent];
 			mergedKeys[be.parent]=be.parent;
 		}
 	}
