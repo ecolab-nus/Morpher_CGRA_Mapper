@@ -25,6 +25,11 @@ void CGRAXMLCompile::CGRA::createGenericCGRA(int x_max, int y_max, int t_max, st
 	this->y_max=y_max;
 	this->t_max=t_max;
 
+	this->minLatBetweenPEs = 1;
+	if( peType.find("HyCUBE") != std::string::npos || peType.find("HYCUBE") != std::string::npos ){
+		this->minLatBetweenPEs = 0;
+	}
+
 	for (int t = 0; t < t_max; ++t) {
 		for (int y = 0; y < y_max; ++y) {
 			for (int x = 0; x < x_max; ++x) {

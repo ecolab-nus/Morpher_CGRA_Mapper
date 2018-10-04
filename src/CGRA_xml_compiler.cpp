@@ -86,7 +86,7 @@ int main(int argn, char* argc[]) {
 			delete tempCGRA;
 			II++;
 
-			if(II==33){
+			if(II==65){
 				std::cout << "II max of 32 has been reached and exiting...\n";
 				return 0;
 			}

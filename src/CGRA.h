@@ -71,7 +71,7 @@ public:
 	bool isConflictPortsEmpty(Port* p){return conflictPorts[p].empty();}
 	DFG* currDFG = NULL;
 
-
+	int minLatBetweenPEs = 1;
 
 private:
 	int x_max;

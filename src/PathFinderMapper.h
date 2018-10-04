@@ -13,7 +13,20 @@
 
 namespace CGRAXMLCompile {
 
+#define LARGE_VALUE 100000000
 
+struct beParentInfo{
+	DFGNode* beParent;
+	int lat;
+	int downStreamOps;
+
+	bool dsMEMfound=false;
+	int uptoMEMops=-1;
+
+	bool operator<(const beParentInfo& other) const{
+		return this->beParent < other.beParent;
+	}
+};
 
 class PathFinderMapper : public HeuristicMapper {
 public:
@@ -70,7 +83,7 @@ private:
 	std::set<DFGNode*> getElders(DFGNode* node);
 
 	std::map<BackEdge,std::set<DFGNode*>> RecCycles;
-	int getMaxLatencyBE(DFGNode* node);
+	int getMaxLatencyBE(DFGNode* node, std::map<DataPath*,beParentInfo>& beParentDests, int& downStreamOps);
 	std::vector<DataPath*> modifyMaxLatCandDest(std::map<DataPath*,int> candDestIn, DFGNode* node,  bool& changed);
 
 };

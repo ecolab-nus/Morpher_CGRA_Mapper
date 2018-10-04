@@ -2062,17 +2062,18 @@ std::set<CGRAXMLCompile::DFGNode*> CGRAXMLCompile::PathFinderMapper::getElders(D
 //	return res;
 }
 
-int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode* node) {
+int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode* node, std::map<DataPath*,beParentInfo>& beParentDests, int& downSteamOps) {
 
 	std::set<BackEdge> setBackEdges;
 	std::cout << "getMaxLatencyBE started!\n";
+
+	std::cout << "NODE ASAP = " << node->ASAP << "\n";
 
 	for(std::pair<BackEdge,std::set<DFGNode*>> pair : RecCycles){
 		BackEdge be = pair.first;
 		std::set<DFGNode*> rec_nodes = pair.second;
 		if(rec_nodes.find(node) != rec_nodes.end()){
 			if(be.second->rootDP != NULL){
-
 				std::cout << "RecSet : ";
 				for(DFGNode* n : rec_nodes){
 					std::cout << n->idx << ",";
@@ -2088,9 +2089,10 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode* node) {
 	samplePE->getNonMEMIns(OpLatency);
 	samplePE->getMemOnlyIns(OpLatency);
 
-	int maxLat = 100000000;
+	int maxLat = LARGE_VALUE;
 	for(BackEdge be : setBackEdges){
 		int maxLatency = be.second->rootDP->getLat() + cgra->get_t_max();
+		int noDownStreamOps = 0;
 //		maxLatency = maxLatency - OpLatency[be.first->op];
 		std::cout << "maxLatency = " << maxLatency << "\n";
 		std::map<int,std::set<DFGNode*>> asapOrder;
@@ -2101,6 +2103,10 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode* node) {
 			asapOrder[n->ASAP].insert(n);
 		}
 
+		beParentInfo bpi;
+		bpi.dsMEMfound=false;
+
+		int upstreamOPs=0;
 		for(std::pair<int,std::set<DFGNode*>> pair : asapOrder){
 			int maxOplatency = 0;
 			std::cout << "ops : ";
@@ -2111,6 +2117,19 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode* node) {
 			}
 			std::cout << "\n";
 			std::cout << "ASAP=" << pair.first << ",OPLAT=" << maxOplatency << "\n";
+
+			if((bpi.dsMEMfound==false) && (node->ASAP < pair.first)){
+				if(maxOplatency == 2){
+					std::cout << "MEM FOUND SET TRUE!\n";
+					bpi.dsMEMfound=true;
+					bpi.uptoMEMops=upstreamOPs;
+				}
+			}
+
+			if(node->ASAP < pair.first){
+				upstreamOPs++;
+			}
+
 			asapMaxOpLat[pair.first]=maxOplatency;
 		}
 
@@ -2121,13 +2140,27 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode* node) {
 			int asap = (*rit).first;
 			asapMaxLat[asap] = prevLat - asapMaxOpLat[asap];
 			prevLat = asapMaxLat[asap];
+
+			if(asap > node->ASAP){
+				noDownStreamOps++;
+			}
+
 			rit++;
 		}
 
-		if(asapMaxLat[node->ASAP] < maxLat) maxLat = asapMaxLat[node->ASAP];
+//		beParentInfo bpi;
+		bpi.beParent = be.first;
+		bpi.lat = asapMaxLat[node->ASAP];
+		bpi.downStreamOps = noDownStreamOps;
+		beParentDests[be.second->rootDP]=bpi;
+
+		if(asapMaxLat[node->ASAP] < maxLat){
+			maxLat = asapMaxLat[node->ASAP];
+			downSteamOps = noDownStreamOps;
+		}
 	}
 
-	if(maxLat != 100000000){
+	if(maxLat != LARGE_VALUE){
 		std::cout << "getMaxLatencyBE :: node=" << node->idx << " maxLat = " << maxLat << "\n";
 //		assert(false);
 	}
@@ -2139,7 +2172,12 @@ std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::PathFinderMapper::modifyM
 		std::map<DataPath*, int> candDestIn, DFGNode* node, bool& changed) {
 
 	std::vector<DataPath*> res;
-	int maxLat = getMaxLatencyBE(node);
+
+	std::map<DataPath*,beParentInfo> beParentDests;
+	int downStreamOps = 0;
+	int maxLat = getMaxLatencyBE(node,beParentDests,downStreamOps);
+
+	if(maxLat != LARGE_VALUE) assert(!beParentDests.empty());
 
 	changed = false;
 
@@ -2156,29 +2194,57 @@ std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::PathFinderMapper::modifyM
 
 		DataPath* dp = pair.first;
 		PE* pe = dp->getPE();
-//		if(pe->X == 0) assert(pe->isMemPE == true);
+		int offset = 0;
+
 		if( (pe->X == 0) && (isMeMOp == false)){
-			if(pair.second <= maxLat - 1){
+			offset = 1;
+		}
+
+		if(cgra->minLatBetweenPEs > 0){
+			assert(cgra->minLatBetweenPEs == 1);
+			int max_dist = 0;
+			for(std::pair<DataPath*,beParentInfo> pair : beParentDests){
+				PE* bePE = pair.first->getPE();
+				int dx = std::abs(bePE->X - pe->X);
+				int dy = std::abs(bePE->Y - pe->Y);
+				int dist = dx + dy;
+
+				int dsOps = pair.second.downStreamOps;
+				if(pair.second.dsMEMfound){
+					dist = pe->X;
+					dsOps = pair.second.uptoMEMops;
+//					std::cout << "**MEM FOUND DOWN**\n";
+				}
+
+				if(maxLat != LARGE_VALUE){
+//					std::cout << "pe=" << pe->getName() << ",";
+//					std::cout << "dist=" << dist << ",";
+//					std::cout << "slack=" << pair.second.lat - maxLat << ",";
+//					std::cout << "downstreamOps=" << dsOps << "\n";
+				}
+
+				int lat_slack = pair.second.lat - maxLat; assert(lat_slack >= 0);
+				dist = dist - lat_slack - dsOps;
+
+				if(dist > max_dist) max_dist = dist;
+			}
+
+			if(max_dist > 0) max_dist = max_dist - 1; // can reach the neighbours in the same cycle
+			offset += max_dist;
+		}
+
+
+
+		if(pair.second <= maxLat - offset){
 //				std::cout << "pe=" << pe->getName() << ",";
 //				std::cout << "isMeMPE=" << pe->isMemPE << ",";
 //				std::cout << "Lat= " << pair.second << "\n";
 //				std::cout << "OK\n";
-				res.push_back(pair.first);
-			}
-			else{
-				changed = true;
-			}
+			res.push_back(pair.first);
 		}
 		else{
-			if(pair.second <= maxLat){
-//				std::cout << "OK\n";
-				res.push_back(pair.first);
-			}
-			else{
-				changed = true;
-			}
+			changed = true;
 		}
-
 
 	}
 
