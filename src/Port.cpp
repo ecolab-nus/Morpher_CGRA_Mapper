@@ -30,14 +30,14 @@ void Port::increaseUse(HeuristicMapper* hm) {
 
 		for(DFGNode* node : (*pfm->getcongestedPortsPtr())[this]){
 			if(this->node == node) continue;
-			if(pfm->dfg->isMutexNodes(this->node,node)) continue;
+			if(pfm->dfg->isMutexNodes(this->node,node,this)) continue;
 			number_signals++;
 //			break;
 		}
 
 		for(DFGNode* node : (*pfm->getconflictedPortsPtr())[this]){
 			if(this->node == node) continue;
-			if(pfm->dfg->isMutexNodes(this->node,node)) continue;
+			if(pfm->dfg->isMutexNodes(this->node,node,this)) continue;
 			number_signals++;
 			break;
 		}
@@ -60,7 +60,7 @@ void Port::decreaseUse(DFGNode* extnode, HeuristicMapper* hm) {
 		if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
 			for(DFGNode* con_node : (*pfm->getcongestedPortsPtr())[this]){
 				if(extnode == con_node) continue;
-				if(pfm->dfg->isMutexNodes(extnode,con_node)) continue;
+				if(pfm->dfg->isMutexNodes(extnode,con_node,this)) continue;
 				number_signals--;
 				break;
 			}

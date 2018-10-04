@@ -1271,7 +1271,7 @@ bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts(int iter) {
 					if(node1==node2){
 						continue;
 					}
-					if(this->dfg->isMutexNodes(node1,node2)) continue;
+					if(this->dfg->isMutexNodes(node1,node2,p)) continue;
 					std::cout << "CONGESTION:" << p->getFullName();
 					congestionInfoFile << "CONGESTION:" << p->getFullName();
 					for(DFGNode* node : pair.second){
@@ -1651,12 +1651,27 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 	}
 
 	//populate reccycles
+	std::cout << "Populate Rec Cycles!\n";
+	RecCycles.clear();
 	for(BEDist be : backedges){
-		std::set<DFGNode*> backedgePath;
-		if(dfg->getAncestoryASAPUntil(be.parent,be.child,backedgePath)){
-			backedgePath.insert(be.parent);
-			RecCycles[BackEdge(be.parent,be.child)]=backedgePath;
+//		std::set<DFGNode*> backedgePath;
+		std::vector<DFGNode*> backedgePathVec = dfg->getAncestoryASAP(be.parent);
+
+		std::cout << "REC_CYCLE :: BE_Parent = " << be.parent->idx << "\n";
+		std::cout << "REC_CYCLE :: BE_Child = " << be.child->idx << "\n";
+		std::cout << "REC_CYCLE :: BE_Parent's ancesotry : \n";
+		for(DFGNode* n : backedgePathVec){
+			if(RecCycles[BackEdge(be.parent,be.child)].find(n)==RecCycles[BackEdge(be.parent,be.child)].end()){
+				std::cout << n->idx << ",";
+			}
+			RecCycles[BackEdge(be.parent,be.child)].insert(n);
 		}
+		std::cout << "REC_CYCLE :: Done!\n";
+//= dfg->getAncestoryASAP(be.parent);
+//		if(dfg->getAncestoryASAPUntil(be.parent,be.child,backedgePath)){
+//			backedgePath.insert(be.parent);
+//			RecCycles[BackEdge(be.parent,be.child)]=backedgePath;
+//		}
 	}
 
 	for(DFGNode& node : dfg->nodeList){
@@ -1704,8 +1719,10 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 			if(trueBackedges[std::make_pair(be.parent,be.child)] == false) continue;
 			if(std::find(mergedAncestories[key].begin(),mergedAncestories[key].end(),be.child) != mergedAncestories[key].end()){
 				std::cout << "Merging :: " << key->idx << ", " << be.parent->idx << "\n";
-				mergedAncestories[key] = dfg->mergeAncestoryALAP(mergedAncestories[key],beparentAncestors[be.parent]); merged=true;
+				mergedAncestories[key] = dfg->mergeAncestoryASAP(mergedAncestories[key],beparentAncestors[be.parent],RecCycles); merged=true;
+				std::cout << "Merging Done :: " << key->idx << ", " << be.parent->idx << "\n";
 				mergedKeys[be.parent]=key;
+//				break;
 			}
 		}
 		if(!merged){
@@ -2133,6 +2150,7 @@ std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::PathFinderMapper::modifyM
 
 	std::cout << "MaxLat = " << maxLat << "\n";
 	std::cout << "IsMEMOp = " << isMeMOp << "\n";
+	std::cout << "candDestIn size = " << candDestIn.size() << "\n";
 
 	for(std::pair<DataPath*, int> pair : candDestIn){
 

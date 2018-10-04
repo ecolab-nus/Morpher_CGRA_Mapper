@@ -16,6 +16,7 @@
 
 namespace CGRAXMLCompile {
 
+typedef std::pair<DFGNode*,DFGNode*> BackEdge;
 
 class DFG {
 public:
@@ -32,11 +33,13 @@ public:
 	int unmappedMemOps=0;
 	std::set<DFGNode*> unmappedMemOpSet;
 
-	bool isMutexNodes(DFGNode* a, DFGNode* b);
+	bool isMutexNodes(DFGNode* a, DFGNode* b, Port* p);
 	bool getAncestoryASAPUntil(DFGNode* beParent, DFGNode* beChild, std::set<DFGNode*>& result);
 	std::vector<DFGNode*> getAncestoryASAP(const DFGNode* node);
 	std::vector<DFGNode*> getAncestoryALAP(const DFGNode* node);
-	std::vector<DFGNode*> mergeAncestoryASAP(const std::vector<DFGNode*>& in1, const std::vector<DFGNode*>& in2);
+	std::vector<DFGNode*> mergeAncestoryASAP(const std::vector<DFGNode*>& in1,
+											 const std::vector<DFGNode*>& in2,
+											 const std::map<BackEdge,std::set<DFGNode*>>& RecCycles);
 	std::vector<DFGNode*> mergeAncestoryALAP(const std::vector<DFGNode*>& in1, const std::vector<DFGNode*>& in2);
 
 private:

@@ -9,6 +9,8 @@
 #include <assert.h>
 #include <iostream>
 #include <queue>
+#include "Port.h"
+#include <algorithm>
 
 #include "tinyxml2.h"
 using namespace tinyxml2;
@@ -232,7 +234,11 @@ std::vector<std::set<DFGNode*> > DFG::getSCCs() {
 	  return res;
 }
 
-bool DFG::isMutexNodes(DFGNode* a, DFGNode* b) {
+bool DFG::isMutexNodes(DFGNode* a, DFGNode* b, Port* p) {
+
+	if((p->getName().find("P") == std::string::npos) &&  (p->getName().find("I1") == std::string::npos) && (p->getName().find("I2") == std::string::npos) ){
+		return false;
+	}
 
 	if(mutexBBs.find(a->BB)==mutexBBs.end()){
 		return false;
@@ -253,16 +259,81 @@ bool DFG::isMutexNodes(DFGNode* a, DFGNode* b) {
 	return false;
 }
 
+std::vector<DFGNode*> removeDuplicates(std::vector<DFGNode*> vec_in){
+	std::vector<DFGNode*> res;
+	for(DFGNode* n : vec_in){
+		if(std::find(res.begin(),res.end(),n) == res.end()){
+			res.push_back(n);
+		}
+	}
+	return res;
+}
+
 std::vector<DFGNode*> DFG::mergeAncestoryASAP(const std::vector<DFGNode*>& in1,
-		const std::vector<DFGNode*>& in2) {
+		const std::vector<DFGNode*>& in2,
+		const std::map<BackEdge,std::set<DFGNode*>>& RecCycles) {
+
+	std::map<DFGNode*,std::vector<DFGNode*>> beParentAncestors;
+	std::map<DFGNode*,DFGNode*> beParentChildMap;
+	for(std::pair<BackEdge,std::set<DFGNode*>> pair : RecCycles){
+		DFGNode* beParent = pair.first.first;
+		DFGNode* beChild = pair.first.second;
+		beParentAncestors[beParent] = removeDuplicates(getAncestoryASAP(beParent));
+		beParentAncestors[beChild] = removeDuplicates(getAncestoryASAP(beChild));
+		beParentChildMap[beParent] = beChild;//write somehings to order same ASAP level nodes based on the fact that they are one each others beParent ancestory
+	}
+
+	struct NodeBE{
+		DFGNode* node;
+		std::set<DFGNode*> superiors;
+		bool operator<(const NodeBE& other) const{
+
+			if(other.superiors.find(this->node)!=other.superiors.end()){
+				if(this->superiors.find(other.node) != this->superiors.end()){
+					return false; // no point of swapping
+				}
+
+				return true;
+			}
+			return false;
+		}
+	};
+
+	std::map<DFGNode*,NodeBE> NodeBEMap;
 
 	std::map<int,std::vector<DFGNode*>> asapLevelNodeList;
+	std::map<int,std::vector<NodeBE>> asapLevelNBList;
 	for(DFGNode* node : in1){
 		asapLevelNodeList[node->ASAP].push_back(node);
+
+		NodeBE nb; nb.node = node;
+		for(std::pair<DFGNode*,std::vector<DFGNode*>> p : beParentAncestors){
+			DFGNode* beParent = p.first;
+			std::vector<DFGNode*> ancestors = p.second;
+
+			if(std::find(ancestors.begin(),ancestors.end(),node)!=ancestors.end()){
+				nb.superiors.insert(beParentChildMap[beParent]);
+			}
+		}
+		NodeBEMap[node]=nb;
+		asapLevelNBList[node->ASAP].push_back(nb);
 	}
 	for(DFGNode* node : in2){
 		asapLevelNodeList[node->ASAP].push_back(node);
+
+		NodeBE nb; nb.node = node;
+		for(std::pair<DFGNode*,std::vector<DFGNode*>> p : beParentAncestors){
+			DFGNode* beParent = p.first;
+			std::vector<DFGNode*> ancestors = p.second;
+
+			if(std::find(ancestors.begin(),ancestors.end(),node)!=ancestors.end()){
+				nb.superiors.insert(beParentChildMap[beParent]);
+			}
+		}
+		NodeBEMap[node]=nb;
+		asapLevelNBList[node->ASAP].push_back(nb);
 	}
+
 
 	int maxASAPlevel=0;
 	for(std::pair<int,std::vector<DFGNode*>> pair : asapLevelNodeList){
@@ -271,12 +342,18 @@ std::vector<DFGNode*> DFG::mergeAncestoryASAP(const std::vector<DFGNode*>& in1,
 		}
 	}
 
+	for (int i = 0; i <= maxASAPlevel; ++i) {
+		std::sort(asapLevelNBList[i].begin(),asapLevelNBList[i].end());
+	}
+
 	std::vector<DFGNode*> res;
 	for (int i = 0; i <= maxASAPlevel; ++i) {
-		for(DFGNode* node : asapLevelNodeList[i]){
-			res.push_back(node);
+		for(NodeBE nb : asapLevelNBList[i]){
+			res.push_back(nb.node);
 		}
 	}
+
+	assert(res.size() == in1.size() + in2.size());
 	return res;
 }
 
@@ -400,7 +477,7 @@ std::vector<DFGNode*> DFG::getAncestoryASAP(const DFGNode* node) {
 		for(DFGNode* parent : top->parents){
 			if(parent->ASAP >= top->ASAP) continue; //ignore backedges
 			if(parent->childNextIter[(DFGNode*)top] == 1) continue; //ignore backedges
-			std::cout << parent->idx << ",";
+//			std::cout << parent->idx << ",";
 			ancestors.push(parent);
 			q.push(parent);
 		}

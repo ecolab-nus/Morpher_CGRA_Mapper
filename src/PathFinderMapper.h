@@ -13,7 +13,7 @@
 
 namespace CGRAXMLCompile {
 
-typedef std::pair<DFGNode*,DFGNode*> BackEdge;
+
 
 class PathFinderMapper : public HeuristicMapper {
 public:
