@@ -1681,6 +1681,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 	}
 
 	std::map<DFGNode*,std::vector<DFGNode*>> beparentAncestors;
+	std::map<DFGNode*,std::vector<DFGNode*>> bechildAncestors;
 //	std::map<DFGNode*,std::vector<DFGNode*>> bechildAncestors;
 	std::map<std::pair<DFGNode*,DFGNode*>,bool> trueBackedges;
 
@@ -1690,6 +1691,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 
 		std::cout << "Ancestory : " << "\n";
 		beparentAncestors[be.parent]=dfg->getAncestoryASAP(be.parent);
+		bechildAncestors[be.child]=dfg->getAncestoryASAP(be.child);
 		std::cout << "\n";
 
 		if(std::find(beparentAncestors[be.parent].begin(),
@@ -1708,16 +1710,55 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 //		bechildAncestors[be.child]=dfg->getAncestory(be.child);
 	}
 
+//	{ //true backedges children are placed high priority :MERGED
+//		std::vector<DFGNode*> mergedAncestoriesChild;
+//		std::map<DFGNode*,DFGNode*> mergedKeysChild;
+//
+//		for(BEDist be : backedges){
+//			if(trueBackedges[std::make_pair(be.parent,be.child)] == true){
+//				mergedAncestoriesChild = dfg->mergeAncestoryASAP(mergedAncestoriesChild,bechildAncestors[be.child],RecCycles);
+//			}
+//		}
+//
+//		for(DFGNode* ancestorNode : mergedAncestoriesChild){
+//			if(std::find(sortedNodeList.begin(),sortedNodeList.end(),ancestorNode) == sortedNodeList.end()){
+//				sortedNodeList.push_back(ancestorNode);
+//			}
+//		}
+//
+//	}
+
+	std::map<DFGNode*,std::set<DFGNode*>> superiorChildren;
+
 //	std::vector<DFGNode*> mergedAncestory;
+	std::map<DFGNode*,std::vector<DFGNode*>> mergedAncestories;
 	mergedAncestories.clear();
 	std::map<DFGNode*,DFGNode*> mergedKeys;
 	for(BEDist be : backedges){
 //		write a logic to merge ancestories where if one be's child is present in some other be's parent's ancesotory'
 		bool merged=false;
+
+
+//		if(trueBackedges[std::make_pair(be.parent,be.child)] == true){
+//			// if true backede place the child first so that the parent's path will
+//			// be adjusted accordingly
+////			for(DFGNode* ancestorNode : bechildAncestors[be.child]){
+////				if(std::find(sortedNodeList.begin(),sortedNodeList.end(),ancestorNode) == sortedNodeList.end()){
+////					sortedNodeList.push_back(ancestorNode);
+////				}
+////			}
+//			superiorChildren[be.parent].insert(be.child);
+//		}
+
 		for(std::pair<DFGNode*,std::vector<DFGNode*>> pair : mergedAncestories){
 			DFGNode* key = pair.first;
-			if(trueBackedges[std::make_pair(be.parent,be.child)] == false) continue;
+//			if(trueBackedges[std::make_pair(be.parent,be.child)] == false) continue;
 			if(std::find(mergedAncestories[key].begin(),mergedAncestories[key].end(),be.child) != mergedAncestories[key].end()){
+
+				if(trueBackedges[std::make_pair(be.parent,be.child)] == true){
+					superiorChildren[key].insert(be.child);
+				}
+
 				std::cout << "Merging :: " << key->idx << ", " << be.parent->idx << "\n";
 				mergedAncestories[key] = dfg->mergeAncestoryASAP(mergedAncestories[key],beparentAncestors[be.parent],RecCycles); merged=true;
 				std::cout << "Merging Done :: " << key->idx << ", " << be.parent->idx << "\n";
@@ -1728,6 +1769,32 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 		if(!merged){
 			mergedAncestories[be.parent]=dfg->getAncestoryASAP(be.parent);
 			mergedKeys[be.parent]=be.parent;
+
+			if(trueBackedges[std::make_pair(be.parent,be.child)] == true){
+				superiorChildren[be.parent].insert(be.child);
+			}
+		}
+	}
+
+	for(BEDist be : backedges){
+		std::vector<DFGNode*> mergedSuperiorChildren;
+		for(DFGNode* sChild : superiorChildren[mergedKeys[be.parent]]){
+			mergedSuperiorChildren = dfg->mergeAncestoryASAP(mergedSuperiorChildren,bechildAncestors[sChild],RecCycles);
+		}
+
+//		for(DFGNode* sChild : superiorChildren[mergedKeys[be.parent]]){
+//			for(DFGNode* ancestorNode : bechildAncestors[sChild]){
+			for(DFGNode* ancestorNode : mergedSuperiorChildren){
+				if(std::find(sortedNodeList.begin(),sortedNodeList.end(),ancestorNode) == sortedNodeList.end()){
+					sortedNodeList.push_back(ancestorNode);
+				}
+			}
+//		}
+
+		for(DFGNode* ancestorNode : mergedAncestories[mergedKeys[be.parent]]){
+			if(std::find(sortedNodeList.begin(),sortedNodeList.end(),ancestorNode) == sortedNodeList.end()){
+				sortedNodeList.push_back(ancestorNode);
+			}
 		}
 	}
 
@@ -1873,6 +1940,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityALAP() {
 	}
 
 //	std::vector<DFGNode*> mergedAncestory;
+	std::map<DFGNode*,std::vector<DFGNode*>> mergedAncestories;
 	mergedAncestories.clear();
 	std::map<DFGNode*,DFGNode*> mergedKeys;
 	for(BEDist be : backedges){
@@ -2213,14 +2281,14 @@ std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::PathFinderMapper::modifyM
 				if(pair.second.dsMEMfound){
 					dist = pe->X;
 					dsOps = pair.second.uptoMEMops;
-//					std::cout << "**MEM FOUND DOWN**\n";
+					std::cout << "**MEM FOUND DOWN**\n";
 				}
 
 				if(maxLat != LARGE_VALUE){
-//					std::cout << "pe=" << pe->getName() << ",";
-//					std::cout << "dist=" << dist << ",";
-//					std::cout << "slack=" << pair.second.lat - maxLat << ",";
-//					std::cout << "downstreamOps=" << dsOps << "\n";
+					std::cout << "pe=" << pe->getName() << ",";
+					std::cout << "dist=" << dist << ",";
+					std::cout << "slack=" << pair.second.lat - maxLat << ",";
+					std::cout << "downstreamOps=" << dsOps << "\n";
 				}
 
 				int lat_slack = pair.second.lat - maxLat; assert(lat_slack >= 0);

@@ -72,7 +72,6 @@ public:
 private:
 	std::map<Port*,std::set<DFGNode*>> congestedPorts;
 	std::map<Port*,std::set<DFGNode*>> conflictedPorts;
-	std::map<DFGNode*,std::vector<DFGNode*>> mergedAncestories;
 	int maxIter = 30;
 
 
