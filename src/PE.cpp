@@ -1349,6 +1349,15 @@ void CGRAXMLCompile::PE::getNonMEMIns(
 	supportedOPs["BR"]=1;
 	supportedOPs["CGT"]=1;
 	supportedOPs["MOVCL"]=1;
+
+	supportedOPs["OLOADCL"]=1;
+	supportedOPs["OLOAD"]=1;
+	supportedOPs["OLOADH"]=1;
+	supportedOPs["OLOADB"]=1;
+	supportedOPs["OSTORE"]=1;
+	supportedOPs["OSTOREH"]=1;
+	supportedOPs["OSTOREB"]=1;
+
 	supportedOPs["JUMPL"]=1;
 	supportedOPs["MOVC"]=1;
 
