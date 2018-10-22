@@ -1611,9 +1611,14 @@ void CGRAXMLCompile::HeuristicMapper::removeFailedNode(std::stack<DFGNode*>& map
 
 bool CGRAXMLCompile::HeuristicMapper::checkRecParentViolation(DFGNode* node,
 		LatPort nextPort) {
+	//assert(false);
 	for (DFGNode* recParent : node->recParents){
 		assert(recParent->rootDP != NULL); //should be mapped
 		DataPath* recParentDP = recParent->rootDP;
+	//	assert(false);
+	//	std::cout << "RecParent = " << recParent->idx << ",";
+	//	std::cout << "Lat=" << recParentDP->getLat() << ",";
+	//	std::cout << "NextPort Lat=" << nextPort.first << "\n";
 		if(nextPort.first >= recParentDP->getLat() + this->cgra->get_t_max()){
 			return true;
 		}

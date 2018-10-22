@@ -67,9 +67,9 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 		//insert output ports
 		std::string portName_T; portName_T.clear();
 		portName_T += "DP" + std::to_string(i) + "_T";
-		insertRegPort(portName_T);
+		//insertRegPort(portName_T);
 		outputPorts.push_back(new Port(portName_T,OUT,this));
-		insertConnection(getRegPort(portName_T).first,getOutPort(portName_T));
+		//insertConnection(getRegPort(portName_T).first,getOutPort(portName_T));
 
 		//create DataPaths
 		std::string dataPathName; dataPathName.clear();
@@ -129,7 +129,7 @@ void CGRAXMLCompile::FU::createFU(int numberDPs) {
 //		insertConnection(getRegPort(portName_P).first,newDP->getInPort("P"));
 //		insertConnection(getRegPort(portName_I1).first,newDP->getInPort("I1"));
 //		insertConnection(getRegPort(portName_I2).first,newDP->getInPort("I2"));
-		insertConnection(newDP->getOutPort("T"),getRegPort(portName_T).second);
+		//insertConnection(newDP->getOutPort("T"),getRegPort(portName_T).second);
 
 
 	}

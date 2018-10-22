@@ -214,7 +214,7 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 						nextPortCost = cost_to_port[currPort];
 					}
 
-					if(checkRecParentViolation(node,nextLatPort)) {
+					if(checkRecParentViolation(currNode,nextLatPort)) {
 						std::cout << "Port is not inserted, since it violated recurrence parent..\n";
 						continue;
 					}
