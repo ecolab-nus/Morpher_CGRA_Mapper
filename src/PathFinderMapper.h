@@ -22,6 +22,7 @@ struct beParentInfo{
 
 	bool dsMEMfound=false;
 	int uptoMEMops=-1;
+	bool isLDST=false;
 
 	bool operator<(const beParentInfo& other) const{
 		return this->beParent < other.beParent;
@@ -69,6 +70,11 @@ public:
 	void sortBackEdgePriorityALAP();
 	std::ofstream congestionInfoFile;
 
+	void addPseudoEdgesOrphans(DFG* dfg);
+
+	std::vector<DFGNode*> getLongestDFGPath(DFGNode* src, DFGNode* dest);
+	int getFreeMEMPeDist(PE* currPE);
+
 private:
 	std::map<Port*,std::set<DFGNode*>> congestedPorts;
 	std::map<Port*,std::set<DFGNode*>> conflictedPorts;
@@ -82,6 +88,7 @@ private:
 	std::set<DFGNode*> getElders(DFGNode* node);
 
 	std::map<BackEdge,std::set<DFGNode*>> RecCycles;
+	std::map<BackEdge,std::set<DFGNode*>> RecCyclesLS;
 	int getMaxLatencyBE(DFGNode* node, std::map<DataPath*,beParentInfo>& beParentDests, int& downStreamOps);
 	std::vector<DataPath*> modifyMaxLatCandDest(std::map<DataPath*,int> candDestIn, DFGNode* node,  bool& changed);
 

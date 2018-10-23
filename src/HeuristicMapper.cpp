@@ -1619,7 +1619,7 @@ bool CGRAXMLCompile::HeuristicMapper::checkRecParentViolation(DFGNode* node,
 	//	std::cout << "RecParent = " << recParent->idx << ",";
 	//	std::cout << "Lat=" << recParentDP->getLat() << ",";
 	//	std::cout << "NextPort Lat=" << nextPort.first << "\n";
-		if(nextPort.first >= recParentDP->getLat() + this->cgra->get_t_max()){
+		if(nextPort.first > recParentDP->getLat() + this->cgra->get_t_max()){
 			return true;
 		}
 	}

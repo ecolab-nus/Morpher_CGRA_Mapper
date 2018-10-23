@@ -21,6 +21,7 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_set>
+#include <memory>
 
 namespace CGRAXMLCompile {
 
@@ -941,12 +942,19 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 
 	int backTrackCredits=this->backTrackLimit;
 
+
+
 	//Disable mutex paths to test pathfinder
 	this->enableMutexPaths=true;
 
 
 	this->cgra = cgra;
 	this->dfg = dfg;
+
+
+	//Testing 1 2 3
+	getLongestDFGPath(dfg->findNode(1093),dfg->findNode(82));
+
 //	SortSCCDFG();
 //	SortTopoGraphicalDFG();
 	sortBackEdgePriorityASAP();
@@ -1674,9 +1682,26 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 //		}
 	}
 
+	RecCyclesLS.clear();
 	for(DFGNode& node : dfg->nodeList){
 		for(DFGNode* recParent : node.recParents){
-			backedges.insert(BEDist(&node,recParent,node.ASAP-recParent->ASAP));
+			BEDist be_temp(&node,recParent,node.ASAP-recParent->ASAP);
+
+			std::vector<DFGNode*> backedgePathVec = dfg->getAncestoryASAP(be_temp.parent);
+
+			std::cout << "REC_CYCLELS :: BE_Parent = " << be_temp.parent->idx << "\n";
+			std::cout << "REC_CYCLELS :: BE_Child = " << be_temp.child->idx << "\n";
+			std::cout << "REC_CYCLELS :: BE_Parent's ancesotry : \n";
+			for(DFGNode* n : backedgePathVec){
+				if(n == be_temp.parent) continue;
+				if(RecCyclesLS[BackEdge(be_temp.parent,be_temp.child)].find(n)==RecCyclesLS[BackEdge(be_temp.parent,be_temp.child)].end()){
+					std::cout << n->idx << ",";
+				}
+				RecCyclesLS[BackEdge(be_temp.parent,be_temp.child)].insert(n);
+			}
+			std::cout << "REC_CYCLELS :: Done!\n";
+
+			backedges.insert(be_temp);
 		}
 	}
 
@@ -1698,12 +1723,14 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP() {
 				               beparentAncestors[be.parent].end(),
 							   be.child) == beparentAncestors[be.parent].end()){
 			std::cout << "BE CHILD does not belong BE Parent's Ancestory\n";
+
+			//Hack to force all backedges to be true backedges
 			trueBackedges[std::make_pair(be.parent,be.child)]=false;
 		}
 		else{
 			//change this be.parent if PHI nodes are not removed
 			std::cout << "RecPHI inserted : " << be.child->idx << "\n";
-			trueBackedges[std::make_pair(be.parent,be.child)]=true;
+			trueBackedges[std::make_pair(be.parent,be.child)]=false;
 //			RecPHIs.insert(be.child);
 		}
 
@@ -2058,8 +2085,13 @@ int CGRAXMLCompile::PathFinderMapper::getlatMinStartsPHI(const DFGNode* currNode
 		std::cout << "getlatMinStartsPHI :: minLat = " << max << "\n";
 	}
 
+//	std::map<std::string,int> oplatencyMap;
+//	cgra->PEArr[0][0][0]->getMEMIns(oplatencyMap);
+
+	PE* samplePE = cgra->PEArr[0][0][0];
 	std::map<std::string,int> oplatencyMap;
-	cgra->PEArr[0][0][0]->getMEMIns(oplatencyMap);
+	samplePE->getNonMEMIns(oplatencyMap);
+	samplePE->getMemOnlyIns(oplatencyMap);
 
 	int recphi_lat = 0;
 	if(RecPHIs.find((DFGNode*)currNode) != RecPHIs.end()){
@@ -2142,7 +2174,22 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode* node, std::map<Da
 		std::set<DFGNode*> rec_nodes = pair.second;
 		if(rec_nodes.find(node) != rec_nodes.end()){
 			if(be.second->rootDP != NULL){
-				std::cout << "RecSet : ";
+				std::cout << "RecSet(" << be.first->idx << "," << be.second->idx << ")" <<  " : ";
+				for(DFGNode* n : rec_nodes){
+					std::cout << n->idx << ",";
+				}
+				std::cout << "\n";
+				setBackEdges.insert(pair.first);
+			}
+		}
+	}
+
+	for(std::pair<BackEdge,std::set<DFGNode*>> pair : RecCyclesLS){
+		BackEdge be = pair.first;
+		std::set<DFGNode*> rec_nodes = pair.second;
+		if(rec_nodes.find(node) != rec_nodes.end()){
+			if(be.second->rootDP != NULL){
+				std::cout << "RecSet(" << be.first->idx << "," << be.second->idx << ")" <<  " : ";
 				for(DFGNode* n : rec_nodes){
 					std::cout << n->idx << ",";
 				}
@@ -2158,6 +2205,9 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode* node, std::map<Da
 	samplePE->getMemOnlyIns(OpLatency);
 
 	int maxLat = LARGE_VALUE;
+
+
+
 	for(BackEdge be : setBackEdges){
 		int maxLatency = be.second->rootDP->getLat() + cgra->get_t_max();
 		int noDownStreamOps = 0;
@@ -2167,12 +2217,30 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode* node, std::map<Da
 		std::map<int,int> asapMaxOpLat;
 		std::map<int,int> asapMaxLat;
 
-		for(DFGNode* n : RecCycles[be]){
-			asapOrder[n->ASAP].insert(n);
+		if(RecCycles.find(be)!=RecCycles.end()){
+//			for(DFGNode* n : RecCycles[be]){
+//				asapOrder[n->ASAP].insert(n);
+//			}
+			std::vector<DFGNode*> longPath = getLongestDFGPath(node,be.first);
+			for (int i = 0; i < longPath.size(); ++i) {
+				asapOrder[longPath[i]->ASAP].insert(longPath[i]);
+			}
 		}
 
 		beParentInfo bpi;
 		bpi.dsMEMfound=false;
+
+		if(RecCyclesLS.find(be)!=RecCyclesLS.end()){
+//			for(DFGNode* n : RecCyclesLS[be]){
+//				asapOrder[n->ASAP].insert(n);
+//			}
+			std::vector<DFGNode*> longPath = getLongestDFGPath(node,be.first);
+			for (int i = 0; i < longPath.size(); ++i) {
+				asapOrder[longPath[i]->ASAP].insert(longPath[i]);
+			}
+			maxLatency = maxLatency + 2; //the store need not to finish
+			bpi.isLDST=true;
+		}
 
 		int upstreamOPs=0;
 		for(std::pair<int,std::set<DFGNode*>> pair : asapOrder){
@@ -2236,6 +2304,119 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode* node, std::map<Da
 	return maxLat;
 }
 
+void CGRAXMLCompile::PathFinderMapper::addPseudoEdgesOrphans(DFG* dfg) {
+
+	std::set<int> orphanNodes;
+
+	for(DFGNode& node : dfg->nodeList){
+		if(node.parents.empty()){
+			orphanNodes.insert(node.idx);
+		}
+	}
+
+	for(int nodeIdx : orphanNodes){
+		DFGNode* node = dfg->findNode(nodeIdx);
+
+		std::map<int,DFGNode*> asapchild;
+		for(DFGNode* child : node->children){
+			if(node->childNextIter[child]) continue;
+			asapchild[child->ASAP]=child;
+		}
+
+		assert(!asapchild.empty());
+		DFGNode* earliestChild = (*asapchild.begin()).second;
+
+		std::map<int,DFGNode*> asapcousin;
+		for(DFGNode* parent : earliestChild->parents){
+			if(parent == node) continue;
+			if(parent->childNextIter[earliestChild]) continue;
+			asapcousin[parent->ASAP]=parent;
+		}
+
+		if(!asapcousin.empty()){
+			DFGNode* latestCousin = (*asapcousin.rbegin()).second;
+
+			std::cout << "Adding Pseudo Connection :: parent=" << latestCousin->idx << ",to" << node->idx << "\n";
+			latestCousin->children.push_back(node);
+			latestCousin->childNextIter[node]=0;
+			latestCousin->childrenOPType[node]="P";
+			node->parents.push_back(latestCousin);
+		}
+
+
+	}
+
+	assert(false);
+}
+
+std::vector<CGRAXMLCompile::DFGNode*> CGRAXMLCompile::PathFinderMapper::getLongestDFGPath(
+		DFGNode* src, DFGNode* dest) {
+
+	std::vector<DFGNode*> result;
+	if(src == dest){
+		result.push_back(src);
+		return result;
+	}
+
+	std::set<std::pair<DFGNode*,int>> q_init;
+	std::queue<std::set<std::pair<DFGNode*,int>>> q;
+
+	PE* samplePE = cgra->PEArr[0][0][0];
+	std::map<std::string,int> oplatencyMap;
+	samplePE->getNonMEMIns(oplatencyMap);
+	samplePE->getMemOnlyIns(oplatencyMap);
+
+
+	q_init.insert(std::make_pair(src,oplatencyMap[src->op]));
+	std::map<DFGNode*,std::map<int,DFGNode*>> cameFrom;
+	q.push(q_init);
+
+	while(!q.empty()){
+		std::set<std::pair<DFGNode*,int>> curr = q.front(); q.pop();
+		std::set<std::pair<DFGNode*,int>> next;
+		for(std::pair<DFGNode*,int> p1 : curr){
+			DFGNode* node = p1.first;
+			std::cout << node->idx << ",";
+			for(DFGNode* child : node->children){
+				if(node->childNextIter[child]==1) continue;
+				int nextLat = p1.second + oplatencyMap[child->op];
+				next.insert(std::make_pair(child,nextLat));
+				cameFrom[child][nextLat]=node;
+			}
+		}
+		std::cout << "\n";
+		if(!next.empty()) q.push(next);
+	}
+
+	assert(cameFrom.find(dest) != cameFrom.end());
+
+
+	DFGNode* temp = dest;
+	while(temp!=src){
+		std::cout << temp->idx << " <-- ";
+		result.push_back(temp);
+		temp = (*cameFrom[temp].rbegin()).second;
+	}
+	result.push_back(src);
+	std::cout << "\n";
+//	assert(false);
+
+	std::reverse(result.begin(),result.end());
+	return result;
+}
+
+int CGRAXMLCompile::PathFinderMapper::getFreeMEMPeDist(PE* currPE) {
+	int currT = currPE->T;
+
+	for (int y = 0; y < this->cgra->get_y_max(); ++y) {
+//		int tdiff = std::abs()
+//		PE* destPE = this->cgra->PEArr
+	}
+
+
+
+}
+
 std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::PathFinderMapper::modifyMaxLatCandDest(
 		std::map<DataPath*, int> candDestIn, DFGNode* node, bool& changed) {
 
@@ -2272,29 +2453,37 @@ std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::PathFinderMapper::modifyM
 			assert(cgra->minLatBetweenPEs == 1);
 			int max_dist = 0;
 			for(std::pair<DataPath*,beParentInfo> pair : beParentDests){
-				PE* bePE = pair.first->getPE();
-				int dx = std::abs(bePE->X - pe->X);
-				int dy = std::abs(bePE->Y - pe->Y);
-				int dist = dx + dy;
+//				if(pair.second.isLDST == false){
+					PE* bePE = pair.first->getPE();
+					int dx = std::abs(bePE->X - pe->X);
+					int dy = std::abs(bePE->Y - pe->Y);
+					int dist = dx + dy;
 
-				int dsOps = pair.second.downStreamOps;
-				if(pair.second.dsMEMfound){
-					dist = pe->X;
-					dsOps = pair.second.uptoMEMops;
-					std::cout << "**MEM FOUND DOWN**\n";
-				}
+					if(pair.second.isLDST == true){
+						dist = 0;
+					}
 
-				if(maxLat != LARGE_VALUE){
-					std::cout << "pe=" << pe->getName() << ",";
-					std::cout << "dist=" << dist << ",";
-					std::cout << "slack=" << pair.second.lat - maxLat << ",";
-					std::cout << "downstreamOps=" << dsOps << "\n";
-				}
+					int dsOps = pair.second.downStreamOps;
+					if(pair.second.dsMEMfound){
 
-				int lat_slack = pair.second.lat - maxLat; assert(lat_slack >= 0);
-				dist = dist - lat_slack - dsOps;
 
-				if(dist > max_dist) max_dist = dist;
+						dist = pe->X;
+						dsOps = pair.second.uptoMEMops;
+						std::cout << "**MEM FOUND DOWN**\n";
+					}
+
+					if(maxLat != LARGE_VALUE){
+						std::cout << "pe=" << pe->getName() << ",";
+						std::cout << "dist=" << dist << ",";
+						std::cout << "slack=" << pair.second.lat - maxLat << ",";
+						std::cout << "downstreamOps=" << dsOps << "\n";
+					}
+
+					int lat_slack = pair.second.lat - maxLat; assert(lat_slack >= 0);
+					dist = dist - lat_slack - dsOps;
+
+					if(dist > max_dist) max_dist = dist;
+//				}
 			}
 
 			if(max_dist > 0) max_dist = max_dist - 1; // can reach the neighbours in the same cycle
