@@ -367,6 +367,10 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 		if(child->rootDP!=NULL){// already mapped
 			std::cout << "child="<< child->idx << ",childOpType=" << node->childrenOPType[child] << "\n";
 			assert(child->rootDP->getLat()!=-1);
+			if(node->childrenOPType[child] == "PS") {
+				std::cout << "Skipping.....\n";
+				continue;
+			}
 			assert(child->rootDP->getInPort(node->childrenOPType[child]));
 			alreadyMappedChildPorts[child]=child->rootDP->getInPort(node->childrenOPType[child]);
 
@@ -460,6 +464,10 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 	    	pathFromParentExist=true;
 			for(std::pair<DFGNode*,std::vector<Port*>> pair : possibleStarts){
 				DFGNode* parent = pair.first;
+
+				//Skip parent if the edge is pseudo
+				if(parent->getOPtype(node) == "PS") continue;
+
 				Port* destPort = dest->getInPort(parent->getOPtype(node));
 				minLatDestVal = minLatDestVal_prime + parent->childNextIter[node]*ii;
 
