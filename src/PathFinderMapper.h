@@ -75,6 +75,8 @@ public:
 	std::vector<DFGNode*> getLongestDFGPath(DFGNode* src, DFGNode* dest);
 	int getFreeMEMPeDist(PE* currPE);
 
+	bool canExitCurrPE(LatPort p);
+
 private:
 	std::map<Port*,std::set<DFGNode*>> congestedPorts;
 	std::map<Port*,std::set<DFGNode*>> conflictedPorts;

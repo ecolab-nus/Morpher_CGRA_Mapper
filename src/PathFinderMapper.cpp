@@ -152,9 +152,9 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 
 	if(detailedDebug) std::cout << "currPort=" << currPort.second->getFullName() << "\n";
 
-			if(currPort == end){
-				break;
-			}
+//			if(currPort == end){
+//				break;
+//			}
 
 	//		std::vector<Port*> nextPorts = currPort->getMod()->connections[currPort];
 	//		if(currPort->getType()==OUT){
@@ -264,7 +264,8 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 		}
 
 
-		if(currPort!=end){
+		//		if(currPort!=end){
+		    if(cameFrom.find(end)==cameFrom.end()){
 			path.clear();
 			for(LatPort p : deadEnds){
 				std::vector<LatPort> tmpPath;
@@ -486,7 +487,23 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 //	if(detailedDebug)               std::cout << "lat = " << destPortLat.first << ",PE=" << destPort->getMod()->getPE()->getName() << ",t=" <<  destPort->getMod()->getPE()->T << "\n";
 					assert((minLatDestVal)%destPort->getMod()->getCGRA()->get_t_max()==destPort->getMod()->getPE()->T);
 
-					bool pathExist = LeastCostPathAstar(startCandLat,destPortLat,dest,path,cost,parent,mutexPaths,node);
+					bool pathExist = false;
+					{
+						FU* parentFU = dest->getFU();
+						assert(parentFU->supportedOPs.find(node->op)!=parentFU->supportedOPs.end());
+						int latency = parentFU->supportedOPs[node->op];
+						Port* destPort = dest->getOutputPort(latency);
+						LatPort destPortLat = std::make_pair(minLatDestVal+latency,destPort);
+
+						if(canExitCurrPE(destPortLat)){
+							pathExist = true;
+						}
+						else{
+							std::cout << "Cannot exit from :" << destPortLat.second->getFullName() << "\n";
+						}
+					}
+
+					pathExist = pathExist & LeastCostPathAstar(startCandLat,destPortLat,dest,path,cost,parent,mutexPaths,node);
 					path.clear();
 					if(!pathExist){
 	if(detailedDebug)			    std::cout << "par Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
@@ -2517,3 +2534,34 @@ std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::PathFinderMapper::modifyM
 
 	return res;
 }
+
+bool CGRAXMLCompile::PathFinderMapper::canExitCurrPE(LatPort p) {
+
+	std::set<LatPort> alreadyVisited;
+
+	std::stack<LatPort> st;
+	st.push(p);
+
+
+	//Todo check currDP can execute the operation
+	DataPath* dp = static_cast<DataPath*>(p.second->getMod());
+	if(dp->getMappedNode() == NULL) return true;
+
+	PE* srcPE = p.second->getMod()->getPE(); assert(srcPE);
+
+	while(!st.empty()){
+		LatPort currPort = st.top(); st.pop();
+		PE* currPE = currPort.second->getMod()->getPE(); assert(currPE);
+		if(currPE != srcPE) return true;
+		alreadyVisited.insert(currPort);
+		std::vector<LatPort> nextPorts = currPort.second->getMod()->getNextPorts(currPort,this);
+		for(LatPort lp : nextPorts){
+			if(alreadyVisited.find(lp)!=alreadyVisited.end()) continue;
+			st.push(lp);
+		}
+	}
+	return false;
+
+}
+
+

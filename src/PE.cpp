@@ -1219,10 +1219,20 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 
 		std::cout << p->getName() << "\n";
 
-		insertConnection(FU0->getOutPort(p->getName()),NORTH_O);
-		insertConnection(FU0->getOutPort(p->getName()),EAST_O);
-		insertConnection(FU0->getOutPort(p->getName()),WEST_O);
-		insertConnection(FU0->getOutPort(p->getName()),SOUTH_O);
+		std::string fu_output_int_name = FU0->getName() + "_" + FU0->getOutPort(p->getName())->getName() + "_INT";
+		internalPorts.push_back(new Port(fu_output_int_name,INT,this));
+		Port* fuo_int = getInternalPort(fu_output_int_name);
+
+		insertConnection(FU0->getOutPort(p->getName()),fuo_int);
+		insertConnection(fuo_int,NORTH_O);
+		insertConnection(fuo_int,EAST_O);
+		insertConnection(fuo_int,WEST_O);
+		insertConnection(fuo_int,SOUTH_O);
+
+//		insertConnection(FU0->getOutPort(p->getName()),NORTH_O);
+//		insertConnection(FU0->getOutPort(p->getName()),EAST_O);
+//		insertConnection(FU0->getOutPort(p->getName()),WEST_O);
+//		insertConnection(FU0->getOutPort(p->getName()),SOUTH_O);
 	}
 
 	//adding conflicted ports
@@ -1249,8 +1259,14 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 				Port* rdp_int = getInternalPort(RF->getName() + "_" + rdpName.str() + "_INT");
 //				assert(rdp!=NULL);
 
-				getCGRA()->insertConflictPort(rdp_int,op);
-				getCGRA()->insertConflictPort(op,rdp_int);
+				DataPath* DP = static_cast<DataPath*>(FU0->getSubMod("DP0"));
+				Port* DP_out = DP->getOutPort("T");
+
+				std::string fu_output_int_name =  FU0->getName() + "_" + op->getName() + "_INT";
+				Port* fuo_int = getInternalPort(fu_output_int_name);
+
+				getCGRA()->insertConflictPort(rdp_int,fuo_int);
+				getCGRA()->insertConflictPort(fuo_int,rdp_int);
 			}
 		}
 	}
