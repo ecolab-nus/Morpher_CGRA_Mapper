@@ -297,7 +297,9 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 		}
 
 		path.clear();
-		assert(currPort==end);
+//		assert(currPort==end);
+//		assert(currPort==end);
+		currPort = end;
 		while(currPort!=start){
 			path.push_back(currPort);
 			assert(cameFrom.find(currPort)!=cameFrom.end());
