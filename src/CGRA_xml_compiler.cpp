@@ -94,7 +94,7 @@ int main(int argn, char* argc[]) {
 			if(II>hm.upperboundII){
 				std::cout << "upperbound II reached : " << hm.upperboundII << "\n";
 				std::cout << "Please use the mapping with II = "<< hm.upperboundFoundBy  << ",with Iter = " << hm.upperboundIter << "\n";
-				return 0;
+				//return 0;
 			}
 
 			std::cout << "Increasing II to " << II << "\n";

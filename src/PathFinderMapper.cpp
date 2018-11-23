@@ -980,7 +980,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA* cgra, DFG* dfg) {
 
 
 	//Testing 1 2 3
-	getLongestDFGPath(dfg->findNode(1093),dfg->findNode(82));
+	//getLongestDFGPath(dfg->findNode(1093),dfg->findNode(82));
 
 //	SortSCCDFG();
 //	SortTopoGraphicalDFG();
