@@ -53,7 +53,7 @@ public:
 	std::vector<Port*> getNextPorts(Port* currPort);
 	std::vector<Port*> getFromPorts(Port* currPort, HeuristicMapper* hm);
 
-	std::vector<Port*> getConflictPorts(Port* currPort);
+	std::set<Port*> getConflictPorts(Port* currPort);
 	bool isConflictPortsEmpty(Port* p);
 
 	void insertConnection(Port* src, Port* dest);

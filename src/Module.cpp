@@ -155,9 +155,9 @@ std::vector<Port*> Module::getNextPorts(Port* currPort) {
 	return nextPorts;
 }
 
-std::vector<Port*> Module::getConflictPorts(Port* currPort) {
+std::set<Port*> Module::getConflictPorts(Port* currPort) {
 	assert(this->getCGRA());
-	std::vector<Port*> vec = this->getCGRA()->getConflictPorts(currPort);
+	std::set<Port*> vec = this->getCGRA()->getConflictPorts(currPort);
 	return vec;
 }
 
