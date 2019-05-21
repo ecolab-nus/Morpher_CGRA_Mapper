@@ -652,7 +652,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 
 		    assert(pathFromParentExist);
 		    assert(pathExistMappedChild);
-			dest_with_cost dest_with_cost_ins(parentStartLocs,alreadyMappedChilds,dest,minLatDestVal,node,0,this->dfg->unmappedMemOps,this);
+			dest_with_cost dest_with_cost_ins(parentStartLocs,alreadyMappedChilds,dest,minLatDestVal_prime,node,0,this->dfg->unmappedMemOps,this);
 
 			if(minLatDestVal_prime < minLatSucc){
 				minLatSucc = minLatDestVal_prime;
@@ -670,7 +670,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 
 
 //	std::cout << "EstimateEouting end!\n";
-	if(estimatedRoutes.empty()) assert(*failedNode!=NULL);
+//	if(estimatedRoutes.empty()) assert(*failedNode!=NULL);
 	return !estimatedRoutes.empty();
 
 }
