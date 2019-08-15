@@ -236,6 +236,14 @@ std::vector<std::set<DFGNode*> > DFG::getSCCs() {
 
 bool DFG::isMutexNodes(DFGNode* a, DFGNode* b, Port* p) {
 
+	//Making the operand port mutex
+	if((p->getName() == "P") ||
+	   (p->getName().find("_P") != std::string::npos) ||
+	   (p->getName().find("I1") != std::string::npos) ||
+	   (p->getName().find("I2") != std::string::npos) ){
+		return true;
+	}
+
 	if((p->getName().find("P") == std::string::npos) &&  (p->getName().find("I1") == std::string::npos) && (p->getName().find("I2") == std::string::npos) ){
 		return false;
 	}
