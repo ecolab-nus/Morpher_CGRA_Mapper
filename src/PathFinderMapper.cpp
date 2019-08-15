@@ -428,7 +428,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 	std::map<DFGNode*,Port*> alreadyMappedChildPorts;
 
 	bool detailedDebug=false;
-	if(node->idx==92)detailedDebug=true;
+	if(node->idx==16)detailedDebug=true;
 
 //	std::cout << "EstimateEouting begin...\n";
 
@@ -462,6 +462,8 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 			alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat()+ii);
 		}
 	}
+
+
 
 	std::vector<DataPath*> candidateDests;
 	int penalty=0;
@@ -530,7 +532,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 	int minLatSucc = 1000000000;
 	std::priority_queue<dest_with_cost> estimatedRoutesTemp;
 	//Route Estimation
-	for (int i = 0; i < 1; ++i) {
+	for (int i = 0; i < 3; ++i) {
 		bool pathFromParentExist=false;
 		bool pathExistMappedChild=false;
 
@@ -621,6 +623,13 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 			for(std::pair<DFGNode*,Port*> pair : alreadyMappedChildPorts){
 				DFGNode* child = pair.first;
 				Port* childDestPort = pair.second;
+
+				if(child == node){
+					childDestPort =	dest->getInPort(node->childrenOPType[child]);
+					childDestPort->setLat(dest->getLat()+ii);
+				}
+
+				
 				std::vector<LatPort> path;
 				int cost;
 

@@ -325,45 +325,19 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs) {
 		insertConnection(SOUTH_XBARI,p);
 	}
 
-	//connecting input registers to outputs :: STDNOC Property
-//	connectedTo[RF0->getOutPort("RDP0")].push_back(NORTH_O);
-//	connectedTo[RF0->getOutPort("RDP0")].push_back(EAST_O);
-//	connectedTo[RF0->getOutPort("RDP0")].push_back(WEST_O);
-//	connectedTo[RF0->getOutPort("RDP0")].push_back(SOUTH_O);
-//	connectedTo[RF1->getOutPort("RDP0")].push_back(NORTH_O);
-//	connectedTo[RF1->getOutPort("RDP0")].push_back(EAST_O);
-//	connectedTo[RF1->getOutPort("RDP0")].push_back(WEST_O);
-//	connectedTo[RF1->getOutPort("RDP0")].push_back(SOUTH_O);
-//	connectedTo[RF2->getOutPort("RDP0")].push_back(NORTH_O);
-//	connectedTo[RF2->getOutPort("RDP0")].push_back(EAST_O);
-//	connectedTo[RF2->getOutPort("RDP0")].push_back(WEST_O);
-//	connectedTo[RF2->getOutPort("RDP0")].push_back(SOUTH_O);
-//	connectedTo[RF3->getOutPort("RDP0")].push_back(NORTH_O);
-//	connectedTo[RF3->getOutPort("RDP0")].push_back(EAST_O);
-//	connectedTo[RF3->getOutPort("RDP0")].push_back(WEST_O);
-//	connectedTo[RF3->getOutPort("RDP0")].push_back(SOUTH_O);
-
 	CGRA* currCGRA = getCGRA();
 
-	currCGRA->insertConflictPort(RF0->getOutPort("RDP0"),NORTH_PRE_XBARI);
-	currCGRA->insertConflictPort(RF1->getOutPort("RDP0"),EAST_PRE_XBARI);
-	currCGRA->insertConflictPort(RF2->getOutPort("RDP0"),WEST_PRE_XBARI);
-	currCGRA->insertConflictPort(RF3->getOutPort("RDP0"),SOUTH_PRE_XBARI);
+	// currCGRA->insertConflictPort(RF0->getOutPort("RDP0"),NORTH_PRE_XBARI);
+	// currCGRA->insertConflictPort(RF1->getOutPort("RDP0"),EAST_PRE_XBARI);
+	// currCGRA->insertConflictPort(RF2->getOutPort("RDP0"),WEST_PRE_XBARI);
+	// currCGRA->insertConflictPort(RF3->getOutPort("RDP0"),SOUTH_PRE_XBARI);
 
-//	conflictPorts[RF0->getOutPort("RDP0")].push_back(NORTH_I);
-//	conflictPorts[RF1->getOutPort("RDP0")].push_back(EAST_I);
-//	conflictPorts[RF2->getOutPort("RDP0")].push_back(WEST_I);
-//	conflictPorts[RF3->getOutPort("RDP0")].push_back(SOUTH_I);
 
-	currCGRA->insertConflictPort(NORTH_PRE_XBARI,RF0->getOutPort("RDP0"));
-	currCGRA->insertConflictPort(EAST_PRE_XBARI,RF1->getOutPort("RDP0"));
-	currCGRA->insertConflictPort(WEST_PRE_XBARI,RF2->getOutPort("RDP0"));
-	currCGRA->insertConflictPort(SOUTH_PRE_XBARI,RF3->getOutPort("RDP0"));
+	// currCGRA->insertConflictPort(NORTH_PRE_XBARI,RF0->getOutPort("RDP0"));
+	// currCGRA->insertConflictPort(EAST_PRE_XBARI,RF1->getOutPort("RDP0"));
+	// currCGRA->insertConflictPort(WEST_PRE_XBARI,RF2->getOutPort("RDP0"));
+	// currCGRA->insertConflictPort(SOUTH_PRE_XBARI,RF3->getOutPort("RDP0"));
 
-//	conflictPorts[NORTH_I].push_back(RF0->getOutPort("RDP0"));
-//	conflictPorts[EAST_I].push_back(RF1->getOutPort("RDP0"));
-//	conflictPorts[WEST_I].push_back(RF2->getOutPort("RDP0"));
-//	conflictPorts[SOUTH_I].push_back(RF3->getOutPort("RDP0"));
 
 	insertConnection(RF0->getOutPort("RDP0"),NORTH_O);
 	insertConnection(RF0->getOutPort("RDP0"),EAST_O);
