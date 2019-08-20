@@ -1,0 +1,92 @@
+<MutexBB>
+</MutexBB>
+<DFG count="7">
+<Node idx="11" ASAP="0" ALAP="1"BB="for.body.lr.ph"CONST="4094">
+<OP>LOADB</OP>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="1" nextiter="0" type="P"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="1" ASAP="1" ALAP="2"BB="for.body"CONST="1">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="1"/>
+	<Input idx="11"/>
+</Inputs>
+<Outputs>
+	<Output idx="2" nextiter="0" type="I1"/>
+	<Output idx="1" nextiter="1" type="I1"/>
+	<Output idx="5" nextiter="1" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="2" ASAP="2" ALAP="3"BB="for.body">
+<OP>CMP</OP>
+<Inputs>
+	<Input idx="1"/>
+</Inputs>
+<Outputs>
+	<Output idx="5" nextiter="0" type="PS"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="5" ASAP="3" ALAP="4"BB="for.body"CONST="-1">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="1"/>
+	<Input idx="2"/>
+</Inputs>
+<Outputs>
+	<Output idx="7" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="7" ASAP="4" ALAP="5"BB="for.body">
+<OP>LOAD</OP>
+<Inputs>
+	<Input idx="5"/>
+</Inputs>
+<Outputs>
+	<Output idx="8" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="8" ASAP="5" ALAP="6"BB="for.body">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="7"/>
+	<Input idx="8"/>
+</Inputs>
+<Outputs>
+	<Output idx="9" nextiter="0" type="I1"/>
+	<Output idx="8" nextiter="1" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="9" ASAP="6" ALAP="7"BB="for.body"CONST="-1">
+<OP>OSTORE</OP>
+<Inputs>
+	<Input idx="8"/>
+</Inputs>
+<Outputs>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+</DFG>

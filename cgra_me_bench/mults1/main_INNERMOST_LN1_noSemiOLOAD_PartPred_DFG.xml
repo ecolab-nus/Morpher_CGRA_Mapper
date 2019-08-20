@@ -1,0 +1,206 @@
+<MutexBB>
+</MutexBB>
+<DFG count="15">
+<Node idx="22" ASAP="0" ALAP="1"BB="for.body.lr.ph"CONST="4094">
+<OP>LOADB</OP>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="18" nextiter="0" type="P"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="18" ASAP="1" ALAP="2"BB="for.body"CONST="1">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="18"/>
+	<Input idx="22"/>
+</Inputs>
+<Outputs>
+	<Output idx="19" nextiter="0" type="I1"/>
+	<Output idx="13" nextiter="1" type="I1"/>
+	<Output idx="18" nextiter="1" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="19" ASAP="2" ALAP="3"BB="for.body">
+<OP>CMP</OP>
+<Inputs>
+	<Input idx="18"/>
+</Inputs>
+<Outputs>
+	<Output idx="13" nextiter="0" type="PS"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="13" ASAP="3" ALAP="4"BB="for.body"CONST="3">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="18"/>
+	<Input idx="19"/>
+</Inputs>
+<Outputs>
+	<Output idx="14" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="14" ASAP="4" ALAP="5"BB="for.body"CONST="-1">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="13"/>
+</Inputs>
+<Outputs>
+	<Output idx="16" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="16" ASAP="5" ALAP="6"BB="for.body">
+<OP>LOAD</OP>
+<Inputs>
+	<Input idx="14"/>
+</Inputs>
+<Outputs>
+	<Output idx="17" nextiter="0" type="I1"/>
+	<Output idx="1" nextiter="1" type="I1"/>
+	<Output idx="6" nextiter="1" type="I1"/>
+	<Output idx="9" nextiter="1" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="17" ASAP="6" ALAP="7"BB="for.body"CONST="15">
+<OP>MUL</OP>
+<Inputs>
+	<Input idx="16"/>
+</Inputs>
+<Outputs>
+	<Output idx="3" nextiter="0" type="I2"/>
+	<Output idx="1" nextiter="0" type="PS"/>
+	<Output idx="6" nextiter="0" type="PS"/>
+	<Output idx="9" nextiter="0" type="PS"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="1" ASAP="7" ALAP="8"BB="for.body"CONST="39">
+<OP>MUL</OP>
+<Inputs>
+	<Input idx="16"/>
+	<Input idx="17"/>
+</Inputs>
+<Outputs>
+	<Output idx="2" nextiter="0" type="I2"/>
+	<Output idx="6" nextiter="0" type="PS"/>
+	<Output idx="9" nextiter="0" type="PS"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="6" ASAP="8" ALAP="9"BB="for.body"CONST="20">
+<OP>MUL</OP>
+<Inputs>
+	<Input idx="1"/>
+	<Input idx="16"/>
+	<Input idx="17"/>
+</Inputs>
+<Outputs>
+	<Output idx="7" nextiter="0" type="I2"/>
+	<Output idx="9" nextiter="0" type="PS"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="9" ASAP="9" ALAP="10"BB="for.body"CONST="10">
+<OP>MUL</OP>
+<Inputs>
+	<Input idx="6"/>
+	<Input idx="1"/>
+	<Input idx="16"/>
+	<Input idx="17"/>
+</Inputs>
+<Outputs>
+	<Output idx="10" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="10" ASAP="10" ALAP="11"BB="for.body">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="9"/>
+	<Input idx="3"/>
+</Inputs>
+<Outputs>
+	<Output idx="7" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="7" ASAP="11" ALAP="12"BB="for.body">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="6"/>
+	<Input idx="10"/>
+</Inputs>
+<Outputs>
+	<Output idx="2" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="2" ASAP="12" ALAP="13"BB="for.body">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="1"/>
+	<Input idx="7"/>
+</Inputs>
+<Outputs>
+	<Output idx="3" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="3" ASAP="13" ALAP="14"BB="for.body">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="2"/>
+	<Input idx="17"/>
+</Inputs>
+<Outputs>
+	<Output idx="4" nextiter="0" type="I1"/>
+	<Output idx="10" nextiter="1" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="4" ASAP="14" ALAP="15"BB="for.body"CONST="-1">
+<OP>OSTORE</OP>
+<Inputs>
+	<Input idx="3"/>
+</Inputs>
+<Outputs>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+</DFG>
