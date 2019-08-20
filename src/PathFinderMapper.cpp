@@ -41,7 +41,7 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 		mutexPaths.clear();
 
 		bool detailedDebug=false;
-//		if(currNode->idx==29)detailedDebug=true;
+		// if(currNode->idx==14)detailedDebug=true;
 
 		bool lessthanII=false;
 		CGRA* cgra = endDP->getCGRA();
@@ -148,7 +148,8 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 				}
 			}
 
-	if(detailedDebug) std::cout << "currPort=" << currPort.second->getFullName() << "\n";
+	if(detailedDebug) std::cout << "currPort=" << currPort.second->getFullName() << ",";
+	if(detailedDebug)				std::cout << "latency = " << currPort.first << "\n";
 
 			if(currPort == end){
 				continue;
@@ -231,8 +232,25 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 //					}
 //				}
 
+				if(currPort.second->getMod()->regCons[std::make_pair(currPort.second,nextLatPort.second)]){
+					assert(nextLatPort.first != currPort.first);
+				}
+
+				bool isRegConType1 = currPort.second->getName().find("REG_O") != std::string::npos && 
+				                     nextLatPort.second->getName().find("REG_I") != std::string::npos;
+				bool isRegConType2 = currPort.second->getName().find("_RO") != std::string::npos && 
+				                     nextLatPort.second->getName().find("_RI") != std::string::npos; 
+
+				if(isRegConType1 || isRegConType2){
+					// std::cout << "src=" << currPort.second->getFullName() << ",dest=" << nextLatPort.second->getFullName() << "\n";
+					if(nextLatPort.first == currPort.first){
+						nextLatPort.first = nextLatPort.first + 1;
+					}
+				}
+
 				if(true){ // unmapped port
 	if(detailedDebug)				std::cout << "\tnextPort=" << nextPort->getFullName() << ",";
+	if(detailedDebug)				std::cout << "latency = " << nextLatPort.first << ",";
 					int nextPortCost = cost_to_port[currPort] + calculateCost(currPort,nextLatPort,end);
 
 					if(nextPort->getNode() == node){
@@ -428,7 +446,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 	std::map<DFGNode*,Port*> alreadyMappedChildPorts;
 
 	bool detailedDebug=false;
-	if(node->idx==16)detailedDebug=true;
+	// if(node->idx==5)detailedDebug=true;
 
 //	std::cout << "EstimateEouting begin...\n";
 
@@ -531,8 +549,12 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode* node,
 
 	int minLatSucc = 1000000000;
 	std::priority_queue<dest_with_cost> estimatedRoutesTemp;
+
+	int allowed_time_steps_for_connection = 30;
+	int iterations = allowed_time_steps_for_connection/ii;
+
 	//Route Estimation
-	for (int i = 0; i < 3; ++i) {
+	for (int i = 0; i < iterations; ++i) {
 		bool pathFromParentExist=false;
 		bool pathExistMappedChild=false;
 

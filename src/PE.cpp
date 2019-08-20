@@ -2389,7 +2389,7 @@ std::pair<CGRAXMLCompile::Port*,CGRAXMLCompile::Port*> CGRAXMLCompile::PE::getRe
 //	std::string riName = pName + "_RI";
 //	std::string roName = pName + "_RO";
 
-	for(std::pair<Port*,Port*>& pair : allRegConPorts){
+	for(const std::pair<Port*,Port*>& pair : allRegConPorts){
 		if(pair.first->getName() == pName || pair.second->getName() == pName){
 			return pair;
 		}

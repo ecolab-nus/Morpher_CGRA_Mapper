@@ -11,6 +11,7 @@
 #include "Module.h"
 #include "RegFile.h"
 #include <assert.h>
+#include <unordered_set>
 
 namespace CGRAXMLCompile {
 
@@ -108,15 +109,16 @@ public:
 	void getMemOnlyIns(std::map<std::string,int>& supportedOPs);
 	void getOutMemOnlyIns(std::map<std::string,int>& supportedOPs);
 
-	void insertRegConPort(std::pair<Port*,Port*> portPair){allRegConPorts.push_back(portPair);}
+	void insertRegConPort(std::pair<Port*,Port*> portPair){allRegConPorts.insert(portPair);}
 	std::pair<Port*,Port*> getRegConPort(std::string pName);
 
-	std::vector<std::pair<Port*,Port*>> getRegConPorts(){return allRegConPorts;}
+	std::set<std::pair<Port*,Port*>> getRegConPorts(){return allRegConPorts;}
 
 private:
 	bool alreadyInit=false;
 
-	std::vector<std::pair<Port*,Port*>> allRegConPorts;
+	std::set<std::pair<Port*,Port*>> allRegConPorts;
+
 
 
 };

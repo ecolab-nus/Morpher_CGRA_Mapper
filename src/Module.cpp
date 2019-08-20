@@ -90,7 +90,25 @@ std::vector<LatPort> Module::getNextPorts(LatPort currPort, HeuristicMapper* hm)
 
 		assert(tdiff <= 1);
 
+		if(nextPE->getCGRA()->get_t_max() == 1){
+			//special case for ii = 1
+			if(regCons[std::make_pair(currP,p)]){
+				// std::cout << "tdiff = " << tdiff << "\n";
+				// assert(false);
+				if(tdiff == 0) {
+					tdiff = 1;
+					// std::cout << "tdiff with src=" << currP->getFullName() << ",dest=" << p->getFullName() << "\n";
+				}
+			}
+		}
+
 		if(!conflicted){
+			if(regCons[std::make_pair(currP,p)]){
+				// assert(false);
+				assert(tdiff == 1);
+				assert(currPort.first < lat+tdiff);
+			}
+
 			nextPorts.push_back(std::make_pair(lat+tdiff,p));
 		}
 	}
@@ -123,8 +141,21 @@ std::vector<LatPort> Module::getNextPorts(LatPort currPort, HeuristicMapper* hm)
 					assert(tdiff > 0);
 				}
 
+				if(nextPE->getCGRA()->get_t_max() == 1){
+					//special case for ii = 1
+					if(regCons[std::make_pair(currP,p)]){
+						// std::cout << "tdiff = " << tdiff << "\n";
+						// assert(false);
+						if(tdiff == 0) tdiff = 1;
+					}
+				}
+
 
 				if(!conflicted){
+					if(regCons[std::make_pair(currP,p)]){
+						// assert(false);
+						assert(tdiff == 1);
+					}
 					nextPorts.push_back(std::make_pair(lat+tdiff,p));
 				}
 

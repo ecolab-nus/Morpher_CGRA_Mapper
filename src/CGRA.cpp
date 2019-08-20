@@ -101,6 +101,7 @@ void CGRAXMLCompile::CGRA::createGenericCGRA(int x_max, int y_max, int t_max, st
 
 //						connectedTo[reg_o].push_back(reg_i);
 						insertConnection(reg_o,reg_i);
+						regCons[std::make_pair(reg_o,reg_i)]=true;
 					}
 				}
 
@@ -127,6 +128,7 @@ void CGRAXMLCompile::CGRA::createGenericCGRA(int x_max, int y_max, int t_max, st
 					std::pair<Port*,Port*> next_portpair = nextCyclePE->getRegConPort(curr_portpair.first->getName());
 					Module* mod = curr_portpair.first->getMod();
 					mod->insertConnection(curr_portpair.second,next_portpair.first);
+					mod->regCons[std::make_pair(curr_portpair.second,next_portpair.first)]=true;
 				}
 
 			}

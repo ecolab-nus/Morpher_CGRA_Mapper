@@ -58,7 +58,7 @@ public:
 
 	void insertConnection(Port* src, Port* dest);
 
-
+	std::map<std::pair<Port*,Port*>,bool> regCons;
 
 protected:
 //private:
