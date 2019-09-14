@@ -14,109 +14,134 @@
 #include <stack>
 #include <iostream>
 
-namespace CGRAXMLCompile {
+namespace CGRAXMLCompile
+{
 
-Port::Port(std::string name, PortType pType, Module* mod) {
+Port::Port(std::string name, PortType pType, Module *mod)
+{
 	// TODO Auto-generated constructor stub
 	this->name = name;
 	this->pType = pType;
 	this->mod = mod;
 }
 
-void Port::increaseUse(HeuristicMapper* hm) {
+void Port::increaseUse(HeuristicMapper *hm)
+{
 
-	if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
-		number_signals=1;
+	if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
+	{
+		number_signals = 1;
 
-		for(DFGNode* node : (*pfm->getcongestedPortsPtr())[this]){
-			if(this->node == node) continue;
-			if(pfm->dfg->isMutexNodes(this->node,node,this)) continue;
+		for (DFGNode *node : (*pfm->getcongestedPortsPtr())[this])
+		{
+			if (this->node == node)
+				continue;
+			if (pfm->dfg->isMutexNodes(this->node, node, this))
+				continue;
 			number_signals++;
-//			break;
+			//			break;
 		}
 
-		for(DFGNode* node : (*pfm->getconflictedPortsPtr())[this]){
-			if(this->node == node) continue;
-			if(pfm->dfg->isMutexNodes(this->node,node,this)) continue;
+		for (DFGNode *node : (*pfm->getconflictedPortsPtr())[this])
+		{
+			if (this->node == node)
+				continue;
+			if (pfm->dfg->isMutexNodes(this->node, node, this))
+				continue;
 			number_signals++;
 			break;
 		}
 
 		int timeStep = this->getMod()->getPE()->T;
 		int alreadyConflicts = pfm->getTimeStepConflicts(timeStep);
-		pfm->updateConflictedTimeSteps(timeStep,number_signals-1);
+		pfm->updateConflictedTimeSteps(timeStep, number_signals - 1);
 		number_signals = number_signals - alreadyConflicts;
-
 	}
-	else{
+	else
+	{
 		number_signals++;
 	}
-
-
 }
 
-void Port::decreaseUse(DFGNode* extnode, HeuristicMapper* hm) {
-	if(number_signals>0){
-		if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
-			for(DFGNode* con_node : (*pfm->getcongestedPortsPtr())[this]){
-				if(extnode == con_node) continue;
-				if(pfm->dfg->isMutexNodes(extnode,con_node,this)) continue;
+void Port::decreaseUse(DFGNode *extnode, HeuristicMapper *hm)
+{
+	if (number_signals > 0)
+	{
+		if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
+		{
+			for (DFGNode *con_node : (*pfm->getcongestedPortsPtr())[this])
+			{
+				if (extnode == con_node)
+					continue;
+				if (pfm->dfg->isMutexNodes(extnode, con_node, this))
+					continue;
 				number_signals--;
 				break;
 			}
 		}
-		else{
+		else
+		{
 			number_signals--;
 		}
 	}
 }
 
-void Port::setNode(DFGNode* node, int latency, HeuristicMapper* hm){
-	this->node=node;
+void Port::setNode(DFGNode *node, int latency, HeuristicMapper *hm)
+{
+	this->node = node;
 	setLat(latency);
 
-	PE* pe = getMod()->getPE();
-	CGRA* cgra = getMod()->getCGRA();
-	assert(pe->T == latency%cgra->get_t_max());
+	PE *pe = getMod()->getPE();
+	CGRA *cgra = getMod()->getCGRA();
+	assert(pe->T == latency % cgra->get_t_max());
 
-	if(hm == NULL) return;
+	if (hm == NULL)
+		return;
 
-	if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
-//		for(Port* p : getMod()->getConflictPorts(this)){
-//			(*pfm->getcongestedPortsPtr())[p].insert(node);
-//		}
+	if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
+	{
+		//		for(Port* p : getMod()->getConflictPorts(this)){
+		//			(*pfm->getcongestedPortsPtr())[p].insert(node);
+		//		}
 	}
 }
 
-void Port::increaseConflictedUse(DFGNode* node, HeuristicMapper* hm) {
+void Port::increaseConflictedUse(DFGNode *node, HeuristicMapper *hm)
+{
 	increaseUse();
 
-	if(!getMod()->isConflictPortsEmpty(this)){
-		for(Port* p : getMod()->getConflictPorts(this)){
-			assert(p!=NULL);
+	if (!getMod()->isConflictPortsEmpty(this))
+	{
+		for (Port *p : getMod()->getConflictPorts(this))
+		{
+			assert(p != NULL);
 
-			if(PathFinderMapper* pfm = dynamic_cast<PathFinderMapper*>(hm)){
+			if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
+			{
 				(*pfm->getconflictedPortsPtr())[p].insert(node);
 			}
 			p->increaseUse();
 		}
 	}
 
-//	if(this->getType()==OUT){
-//		for(Port* p : getMod()->getParent()->getConflictPorts(this)){
-//			p->increaseUse();
-//		}
-//	}
+	//	if(this->getType()==OUT){
+	//		for(Port* p : getMod()->getParent()->getConflictPorts(this)){
+	//			p->increaseUse();
+	//		}
+	//	}
 }
 
 } /* namespace CGRAXMLCompile */
 
-CGRAXMLCompile::PE* CGRAXMLCompile::Port::findParentPE() {
+CGRAXMLCompile::PE *CGRAXMLCompile::Port::findParentPE()
+{
 
-	Module* m = mod;
+	Module *m = mod;
 
-	while(m){
-		if(PE* ret = dynamic_cast<PE*>(m)){
+	while (m)
+	{
+		if (PE *ret = dynamic_cast<PE *>(m))
+		{
 			return ret;
 		}
 		m = m->getParent();
@@ -124,17 +149,20 @@ CGRAXMLCompile::PE* CGRAXMLCompile::Port::findParentPE() {
 	return NULL;
 }
 
-std::string CGRAXMLCompile::Port::getFullName() {
-	Module* mod = this->mod;
+std::string CGRAXMLCompile::Port::getFullName()
+{
+	Module *mod = this->mod;
 	std::stack<std::string> fullNameSt;
 
-	while(mod){
+	while (mod)
+	{
 		fullNameSt.push(mod->getName());
 		mod = mod->getParent();
 	}
 
 	std::string fullName;
-	while(!fullNameSt.empty()){
+	while (!fullNameSt.empty())
+	{
 		fullName = fullName + fullNameSt.top() + ".";
 		fullNameSt.pop();
 	}
@@ -142,57 +170,66 @@ std::string CGRAXMLCompile::Port::getFullName() {
 	return fullName;
 }
 
-void CGRAXMLCompile::Port::increastCongCost() {
-	if(history_cost == 0){
-		history_cost = INIT_CONG_COST/10;
+void CGRAXMLCompile::Port::increastCongCost()
+{
+	if (history_cost == 0)
+	{
+		history_cost = INIT_CONG_COST / 10;
 	}
-	else{
-		history_cost = history_cost + history_cost/10;
+	else
+	{
+		history_cost = history_cost + history_cost / 10;
 	}
 }
 
-int CGRAXMLCompile::Port::getCongCost() {
+int CGRAXMLCompile::Port::getCongCost()
+{
 
-//	if()
+	//	if()
 
-	int cost = base_cost*number_signals + history_cost*(number_signals+1);
+	int cost = base_cost * number_signals + history_cost * (number_signals + 1);
 	return cost;
 }
 
-
-void CGRAXMLCompile::Port::clear() {
-	if(node!=NULL){
+void CGRAXMLCompile::Port::clear()
+{
+	if (node != NULL)
+	{
 		(*this->mod->getCGRA()->getCongestedPortPtr())[this].erase(node);
 	}
 
-
-	for(Port* p : getMod()->getConflictPorts(this)){
+	for (Port *p : getMod()->getConflictPorts(this))
+	{
 		p->decreaseUse(node);
 		(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(node);
 	}
 
-	if(this->getType()==OUT){
-		for(Port* p : getMod()->getParent()->getConflictPorts(this)){
+	if (this->getType() == OUT)
+	{
+		for (Port *p : getMod()->getParent()->getConflictPorts(this))
+		{
 			p->decreaseUse(node);
 			(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(node);
 		}
 	}
 
-	node=NULL;
-	number_signals=0;
-	latency=-1;
+	node = NULL;
+	number_signals = 0;
+	latency = -1;
 }
 
-void CGRAXMLCompile::Port::setLat(int lat){
-		CGRA* cgra = this->getMod()->getCGRA();
-		int ii = cgra->get_t_max();
-		assert(lat%ii == this->getMod()->getPE()->T);
-		latency=lat;
-}
-
-int CGRAXMLCompile::Port::getLat() {
-	CGRA* cgra = this->getMod()->getCGRA();
+void CGRAXMLCompile::Port::setLat(int lat)
+{
+	CGRA *cgra = this->getMod()->getCGRA();
 	int ii = cgra->get_t_max();
-	assert(latency%ii == this->getMod()->getPE()->T);
+	assert(lat % ii == this->getMod()->getPE()->T);
+	latency = lat;
+}
+
+int CGRAXMLCompile::Port::getLat()
+{
+	CGRA *cgra = this->getMod()->getCGRA();
+	int ii = cgra->get_t_max();
+	assert(latency % ii == this->getMod()->getPE()->T);
 	return latency;
 }

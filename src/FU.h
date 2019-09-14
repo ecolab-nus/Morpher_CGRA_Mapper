@@ -11,32 +11,32 @@
 #include "Module.h"
 #include <set>
 
-namespace CGRAXMLCompile {
+namespace CGRAXMLCompile
+{
 
-
-class FU : public Module {
+class FU : public Module
+{
 public:
-//	using Module::Module;
-	FU(const Module* Parent, std::string name, int numberDPs, std::map<std::string,int> supportedOPs) : Module(Parent,name){
+	//	using Module::Module;
+	FU(const Module *Parent, std::string name, int numberDPs, std::map<std::string, int> supportedOPs) : Module(Parent, name)
+	{
 		this->numberDPs = numberDPs;
 		createFU(numberDPs);
 		this->supportedOPs = supportedOPs;
 	}
 	void createFU(int numberDPs);
-	int getNumberDPs(){return numberDPs;}
-
+	int getNumberDPs() { return numberDPs; }
 
 	void createFUInputRegConnections();
 	void createFUInputRegCreate();
 
-	std::map<std::string,int> supportedOPs;
-	std::string currOP="NOP";
+	std::map<std::string, int> supportedOPs;
+	std::string currOP = "NOP";
 
 	bool isMEMFU();
 
 private:
 	int numberDPs;
-
 };
 
 } /* namespace CGRAXMLCompile */

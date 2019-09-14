@@ -10,20 +10,23 @@
 
 #include "Module.h"
 
-namespace CGRAXMLCompile {
+namespace CGRAXMLCompile
+{
 
-class RegFile : public Module {
+class RegFile : public Module
+{
 public:
-	RegFile(const Module* Parent, std::string name, int nWRPs, int nRegs, int nRDPs) : Module(Parent,name){
-		createRegFile(nWRPs,nRegs,nRDPs);
+	RegFile(const Module *Parent, std::string name, int nWRPs, int nRegs, int nRDPs) : Module(Parent, name)
+	{
+		createRegFile(nWRPs, nRegs, nRDPs);
 
-		this->nWRPs=nWRPs;
-		this->nRegs=nRegs;
-		this->nRDPs=nRDPs;
+		this->nWRPs = nWRPs;
+		this->nRegs = nRegs;
+		this->nRDPs = nRDPs;
 	}
-	int get_nWRPs(){return nWRPs;}
-	int get_nRDPs(){return nRDPs;}
-	int get_nRegs(){return nRegs;}
+	int get_nWRPs() { return nWRPs; }
+	int get_nRDPs() { return nRDPs; }
+	int get_nRegs() { return nRegs; }
 
 private:
 	void createRegFile(int nWRPs, int nRegs, int nRDPs);

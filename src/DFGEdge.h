@@ -8,9 +8,11 @@
 #ifndef DFGEDGE_H_
 #define DFGEDGE_H_
 
-namespace CGRAXMLCompile {
+namespace CGRAXMLCompile
+{
 
-class DFGEdge {
+class DFGEdge
+{
 public:
 	DFGEdge();
 };

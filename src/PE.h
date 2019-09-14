@@ -13,65 +13,85 @@
 #include <assert.h>
 #include <unordered_set>
 
-namespace CGRAXMLCompile {
+namespace CGRAXMLCompile
+{
 
-class PE : public Module{
+class PE : public Module
+{
 public:
-//	using Module::Module;
-	PE(const Module* Parent,
+	//	using Module::Module;
+	PE(const Module *Parent,
 	   std::string name,
 	   int x, int y, int t,
 	   std::string peType = "GENERIC_8REGF",
-	   bool isMEMpe = false, int numDPs = 1) : Module(Parent,name){
-		if(peType=="GENERIC_8REGF"){
-			createGenericPE(isMEMpe,numDPs,8);
+	   bool isMEMpe = false, int numDPs = 1) : Module(Parent, name)
+	{
+		if (peType == "GENERIC_8REGF")
+		{
+			createGenericPE(isMEMpe, numDPs, 8);
 		}
-		else if(peType=="GENERIC_4REGF"){
-			createGenericPE(isMEMpe,numDPs,4);
+		else if (peType == "GENERIC_4REGF")
+		{
+			createGenericPE(isMEMpe, numDPs, 4);
 		}
-		else if(peType == "HyCUBE_8REGF"){
-			createHyCUBEPE_RegFile(isMEMpe,numDPs,8);
+		else if (peType == "HyCUBE_8REGF")
+		{
+			createHyCUBEPE_RegFile(isMEMpe, numDPs, 8);
 		}
-		else if(peType == "HyCUBE_4REGF"){
-			createHyCUBEPE_RegFile(isMEMpe,numDPs,4);
+		else if (peType == "HyCUBE_4REGF")
+		{
+			createHyCUBEPE_RegFile(isMEMpe, numDPs, 4);
 		}
-		else if(peType == "HyCUBE_4REG"){
-			createOriginalHyCUBEPE(isMEMpe,numDPs);
+		else if (peType == "HyCUBE_4REG")
+		{
+			createOriginalHyCUBEPE(isMEMpe, numDPs);
 		}
-		else if(peType == "N2N_8REGF"){
-			createN2NPE(isMEMpe,numDPs,8);
+		else if (peType == "N2N_8REGF")
+		{
+			createN2NPE(isMEMpe, numDPs, 8);
 		}
-		else if(peType == "N2N_4REGF"){
-			createN2NPE(isMEMpe,numDPs,4);
+		else if (peType == "N2N_4REGF")
+		{
+			createN2NPE(isMEMpe, numDPs, 4);
 		}
-		else if(peType == "STDNOC_8REGF"){
-			createStdNoCPE_RegFile(isMEMpe,numDPs,8);
+		else if (peType == "STDNOC_8REGF")
+		{
+			createStdNoCPE_RegFile(isMEMpe, numDPs, 8);
 		}
-		else if(peType == "STDNOC_4REGF"){
-			createStdNoCPE_RegFile(isMEMpe,numDPs,4);
+		else if (peType == "STDNOC_4REGF")
+		{
+			createStdNoCPE_RegFile(isMEMpe, numDPs, 4);
 		}
-		else if(peType == "STDNOC_4REG"){
-			createStdNoCPE(isMEMpe,numDPs);
+		else if (peType == "STDNOC_4REG")
+		{
+			createStdNoCPE(isMEMpe, numDPs);
 		}
-		else if(peType == "STDNOC_4REGF_1P"){
-			createStdNoCPE_RegFile(isMEMpe,numDPs,4,1,1);
+		else if (peType == "STDNOC_4REGF_1P")
+		{
+			createStdNoCPE_RegFile(isMEMpe, numDPs, 4, 1, 1);
 		}
-		else if(peType == "MFU_HyCUBE_4REG"){
-			createMultiFU_HyCUBEPE(isMEMpe,numDPs);
+		else if (peType == "MFU_HyCUBE_4REG")
+		{
+			createMultiFU_HyCUBEPE(isMEMpe, numDPs);
 		}
-		else if(peType == "MFU_HyCUBE_4REGF"){
-			createMultiFU_HyCUBEPE_RegFile(isMEMpe,numDPs,4,4,4);
+		else if (peType == "MFU_HyCUBE_4REGF")
+		{
+			createMultiFU_HyCUBEPE_RegFile(isMEMpe, numDPs, 4, 4, 4);
 		}
-		else if(peType == "MFU_HyCUBE_4REGF2P"){
-			createMultiFU_HyCUBEPE_RegFile(isMEMpe,numDPs,4,2,2);
+		else if (peType == "MFU_HyCUBE_4REGF2P")
+		{
+			createMultiFU_HyCUBEPE_RegFile(isMEMpe, numDPs, 4, 2, 2);
 		}
-		else if(peType == "MFU_STDNOC_4REG"){
-			createMultiFU_StdNoCPE(isMEMpe,numDPs);
+		else if (peType == "MFU_STDNOC_4REG")
+		{
+			createMultiFU_StdNoCPE(isMEMpe, numDPs);
 		}
-		else if(peType == "MFU_STDNOC_4REGF"){
-			createMultiFU_StdNoCPE_RegFile(isMEMpe,numDPs,4,4,4);
+		else if (peType == "MFU_STDNOC_4REGF")
+		{
+			createMultiFU_StdNoCPE_RegFile(isMEMpe, numDPs, 4, 4, 4);
 		}
-		else{
+		else
+		{
 			assert(false);
 		}
 		this->X = x;
@@ -81,46 +101,42 @@ public:
 	int X;
 	int Y;
 	int T;
-	std::vector<RegFile*> allRegs;
-	std::vector<FU*> allFUs;
-	bool isMemPE=false;
+	std::vector<RegFile *> allRegs;
+	std::vector<FU *> allFUs;
+	bool isMemPE = false;
 
-	void createGenericPE(bool isMEMpe, int numberofDPs=1, int regs=8);
-	void createStdNoCPE(bool isMEMpe, int numberofDPs=1);
-	void createStdNoCPE_noConflict(bool isMEMpe, int numberofDPs=1);
-	void createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=2, int nRDP=2);
-	void createN2NPE(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=2, int nRDP=2);
-	void createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs=1, int regs=8, int nWRP=2, int nRDP=2);
-	void createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs=1);
+	void createGenericPE(bool isMEMpe, int numberofDPs = 1, int regs = 8);
+	void createStdNoCPE(bool isMEMpe, int numberofDPs = 1);
+	void createStdNoCPE_noConflict(bool isMEMpe, int numberofDPs = 1);
+	void createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs = 1, int regs = 8, int nWRP = 2, int nRDP = 2);
+	void createN2NPE(bool isMEMpe, int numberofDPs = 1, int regs = 8, int nWRP = 2, int nRDP = 2);
+	void createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs = 1, int regs = 8, int nWRP = 2, int nRDP = 2);
+	void createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs = 1);
 
 	void createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
-			int numberofDPs, int regs, int nWRP, int nRDP);
+										int numberofDPs, int regs, int nWRP, int nRDP);
 	void createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs);
 	void createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
-			int numberofDPs, int regs, int nWRP, int nRDP);
+										int numberofDPs, int regs, int nWRP, int nRDP);
 	void createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs);
 
+	void getNonMEMIns(std::map<std::string, int> &supportedOPs);
+	void getMEMIns(std::map<std::string, int> &supportedOPs);
 
-	void getNonMEMIns(std::map<std::string,int>& supportedOPs);
-	void getMEMIns(std::map<std::string,int>& supportedOPs);
+	void getLogicalIns(std::map<std::string, int> &supportedOPs);
+	void getArithmeticIns(std::map<std::string, int> &supportedOPs);
+	void getMemOnlyIns(std::map<std::string, int> &supportedOPs);
+	void getOutMemOnlyIns(std::map<std::string, int> &supportedOPs);
 
-	void getLogicalIns(std::map<std::string,int>& supportedOPs);
-	void getArithmeticIns(std::map<std::string,int>& supportedOPs);
-	void getMemOnlyIns(std::map<std::string,int>& supportedOPs);
-	void getOutMemOnlyIns(std::map<std::string,int>& supportedOPs);
+	void insertRegConPort(std::pair<Port *, Port *> portPair) { allRegConPorts.insert(portPair); }
+	std::pair<Port *, Port *> getRegConPort(std::string pName);
 
-	void insertRegConPort(std::pair<Port*,Port*> portPair){allRegConPorts.insert(portPair);}
-	std::pair<Port*,Port*> getRegConPort(std::string pName);
-
-	std::set<std::pair<Port*,Port*>> getRegConPorts(){return allRegConPorts;}
+	std::set<std::pair<Port *, Port *>> getRegConPorts() { return allRegConPorts; }
 
 private:
-	bool alreadyInit=false;
+	bool alreadyInit = false;
 
-	std::set<std::pair<Port*,Port*>> allRegConPorts;
-
-
-
+	std::set<std::pair<Port *, Port *>> allRegConPorts;
 };
 
 } /* namespace CGRAXMLCompile */
