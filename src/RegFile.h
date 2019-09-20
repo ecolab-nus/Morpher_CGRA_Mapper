@@ -16,7 +16,7 @@ namespace CGRAXMLCompile
 class RegFile : public Module
 {
 public:
-	RegFile(const Module *Parent, std::string name, int nWRPs, int nRegs, int nRDPs) : Module(Parent, name)
+	RegFile(const Module *Parent, std::string name, int nWRPs, int nRegs, int nRDPs, int t) : Module(Parent, name, t)
 	{
 		createRegFile(nWRPs, nRegs, nRDPs);
 

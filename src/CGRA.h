@@ -12,6 +12,12 @@
 #include "PE.h"
 #include "FU.h"
 #include "DataPath.h"
+#include <memory>
+#include <nlohmann/json.hpp>
+
+using namespace std;
+using json = nlohmann::json;
+
 
 namespace CGRAXMLCompile
 {
@@ -21,7 +27,7 @@ class DFG;
 class CGRA : public Module
 {
 public:
-	CGRA(const Module *Parent, std::string name, int t, int y, int x, DFG *dfg, std::string peType = "GENERIC_8REGF", int numberofDPs = 1, std::map<Port *, std::set<DFGNode *>> *_congestedPortPtr = NULL) : Module(Parent, name)
+	CGRA(const Module *Parent, std::string name, int t, int y, int x, DFG *dfg, std::string peType = "GENERIC_8REGF", int numberofDPs = 1, std::map<Port *, std::set<DFGNode *>> *_congestedPortPtr = NULL) : Module(Parent, name, t)
 	{
 		createGenericCGRA(x, y, t, peType, numberofDPs);
 		this->peType = peType;
@@ -60,6 +66,12 @@ public:
 		}
 		currDFG = dfg;
 	}
+
+	CGRA(const Module *Parent, std::string name, int t) : Module(Parent,name,t){}
+	CGRA(std::string json_filename, int II) : Module(NULL,"CGRA_Ins",0){
+		ParseJSONArch(json_filename,II);
+	}
+
 	void createGenericCGRA(int x, int y, int t, std::string peType = "GENERIC_8REGF", int numberofDPs = 1);
 
 	std::map<int, std::map<int, std::map<int, PE *>>> PEArr;
@@ -84,12 +96,24 @@ public:
 
 	int minLatBetweenPEs = 1;
 
+	Module* ParseModule(json& module_desc, Module* parent, string module_name, string type, int t);
+	void ParseCGRA(json& cgra_desc, int II);
+	unordered_map<int,std::vector<Module*>> subModArr;
+
+	bool ParseJSONArch(string fileName, int II);
+	bool PreprocessPattern(json& top);
+	json top_desc;
+
+
 private:
 	int x_max;
 	int y_max;
 	int t_max;
 	std::map<Port *, std::set<Port *>> conflictPorts;
 	std::map<Port *, std::set<DFGNode *>> *congestedPortPtr;
+
+
+
 };
 
 } /* namespace CGRAXMLCompile */

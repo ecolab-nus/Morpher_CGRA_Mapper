@@ -6,6 +6,7 @@
  */
 
 #include "FU.h"
+#include "PE.h"
 #include "DataPath.h"
 #include <sstream>
 #include <iostream>
@@ -81,7 +82,7 @@ void CGRAXMLCompile::FU::createFU(int numberDPs)
 		std::string dataPathName;
 		dataPathName.clear();
 		dataPathName += "DP" + std::to_string(i);
-		DataPath *newDP = new DataPath(this, dataPathName);
+		DataPath *newDP = new DataPath(this, dataPathName, getPE()->T);
 		subModules.push_back(newDP);
 		assert(newDP == static_cast<DataPath *>(subModules.back()));
 		//		std::cout << "Submodule size = "<< subModules.size() << "\n";

@@ -14,11 +14,12 @@
 namespace CGRAXMLCompile
 {
 
-Module::Module(const Module *Parent, std::string name)
+Module::Module(const Module *Parent, std::string name, int t)
 {
 	// TODO Auto-generated constructor stub
 	this->Parent = Parent;
 	this->name = name;
+	this->t = t;
 }
 
 Module::~Module()
@@ -331,6 +332,7 @@ std::pair<Port *, Port *> Module::getRegPort(std::string Pname)
 
 void Module::insertRegPort(std::string pName)
 {
+	// cout << "INSERT REGPORT = " << pName << ",to module = " << this->getFullName() << ",parent = " << getParent()->getName() << "\n";
 	Port *ri = new Port(pName + "_RI", REGI, this);
 	Port *ro = new Port(pName + "_RO", REGO, this);
 	insertConnection(ri, ro);
@@ -351,6 +353,7 @@ void Module::insertConnection(Port *src, Port *dest)
 		std::cout << "ILLEGAL CONNECTION!\n";
 		std::cout << src_pe->getFullName() << "\n";
 		std::cout << dest_pe->getFullName() << "\n";
+		cout << "src_pe->T = " << src_pe->T << ",dest_pe->T = " << dest_pe->T << "\n";
 	}
 	assert(src_pe->T <= dest_pe->T || dest_pe->T == 0);
 	//	}
@@ -358,6 +361,48 @@ void Module::insertConnection(Port *src, Port *dest)
 	connectedTo[src].push_back(dest);
 	connectedFrom[dest].push_back(src);
 }
+
+void Module::insertConnection(std::pair<Port*,Port*> regSrc, Port *dest)
+{
+
+	PE *src_pe = regSrc.first->getMod()->getPE();
+	PE *dest_pe = dest->getMod()->getPE();
+
+	//	if(src_pe && dest_pe){
+	if (src_pe->T > dest_pe->T && dest_pe->T != 0)
+	{
+		std::cout << "ILLEGAL CONNECTION!\n";
+		std::cout << src_pe->getFullName() << "\n";
+		std::cout << dest_pe->getFullName() << "\n";
+	}
+	assert(src_pe->T <= dest_pe->T || dest_pe->T == 0);
+	//	}
+
+	connectedTo[regSrc.first].push_back(dest);
+	connectedFrom[dest].push_back(regSrc.first);
+}
+
+void Module::insertConnection(Port *src, std::pair<Port*,Port*> regDest)
+{
+
+	PE *src_pe = src->getMod()->getPE();
+	PE *dest_pe = regDest.first->getMod()->getPE();
+
+	//	if(src_pe && dest_pe){
+	if (src_pe->T > dest_pe->T && dest_pe->T != 0)
+	{
+		std::cout << "ILLEGAL CONNECTION!\n";
+		std::cout << src_pe->getFullName() << "\n";
+		std::cout << dest_pe->getFullName() << "\n";
+	}
+	assert(src_pe->T <= dest_pe->T || dest_pe->T == 0);
+	//	}
+
+	connectedTo[src].push_back(regDest.second);
+	connectedFrom[regDest.second].push_back(src);
+}
+
+
 
 } /* namespace CGRAXMLCompile */
 

@@ -24,7 +24,7 @@ public:
 	   std::string name,
 	   int x, int y, int t,
 	   std::string peType = "GENERIC_8REGF",
-	   bool isMEMpe = false, int numDPs = 1) : Module(Parent, name)
+	   bool isMEMpe = false, int numDPs = 1) : Module(Parent, name, t)
 	{
 		if (peType == "GENERIC_8REGF")
 		{
@@ -98,6 +98,11 @@ public:
 		this->Y = y;
 		this->T = t;
 	}
+
+	PE(const Module *Parent, std::string name, int t) : Module(Parent,name,t){
+		this->T = t;
+	};
+
 	int X;
 	int Y;
 	int T;
@@ -130,13 +135,13 @@ public:
 
 	void insertRegConPort(std::pair<Port *, Port *> portPair) { allRegConPorts.insert(portPair); }
 	std::pair<Port *, Port *> getRegConPort(std::string pName);
-
 	std::set<std::pair<Port *, Port *>> getRegConPorts() { return allRegConPorts; }
 
 private:
 	bool alreadyInit = false;
-
 	std::set<std::pair<Port *, Port *>> allRegConPorts;
+
+
 };
 
 } /* namespace CGRAXMLCompile */

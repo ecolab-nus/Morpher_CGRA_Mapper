@@ -18,12 +18,15 @@ class FU : public Module
 {
 public:
 	//	using Module::Module;
-	FU(const Module *Parent, std::string name, int numberDPs, std::map<std::string, int> supportedOPs) : Module(Parent, name)
+	FU(const Module *Parent, std::string name, int numberDPs, std::map<std::string, int> supportedOPs, int t) : Module(Parent, name, t)
 	{
 		this->numberDPs = numberDPs;
 		createFU(numberDPs);
 		this->supportedOPs = supportedOPs;
 	}
+
+	FU(const Module *Parent, std::string name, int t) : Module(Parent,name,t){}
+
 	void createFU(int numberDPs);
 	int getNumberDPs() { return numberDPs; }
 

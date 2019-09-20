@@ -21,7 +21,7 @@ class CGRA;
 class DataPath : public Module
 {
 public:
-	DataPath(const Module *Parent, std::string name) : Module(Parent, name)
+	DataPath(const Module *Parent, std::string name, int t) : Module(Parent, name, t)
 	{
 		//create inputPorts
 		inputPorts.push_back(new Port("P", IN, this));

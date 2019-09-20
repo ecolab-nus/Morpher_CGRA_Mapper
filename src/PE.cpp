@@ -43,11 +43,11 @@ void CGRAXMLCompile::PE::createGenericPE(bool isMEMpe, int numberofDPs, int regs
 	}
 
 	//create FU
-	FU *nonMemFU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs);
+	FU *nonMemFU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(nonMemFU0);
 
 	//create R0
-	RegFile *RF0 = new RegFile(this, "RF0", regs, regs, regs);
+	RegFile *RF0 = new RegFile(this, "RF0", regs, regs, regs, getPE()->T);
 	subModules.push_back(RF0);
 	allRegs.push_back(RF0);
 	//	RegFile* R1 = new RegFile(this,"R1",1,1,1); subModules.push_back(R1); allRegs.push_back(R1);
@@ -209,23 +209,23 @@ void CGRAXMLCompile::PE::createStdNoCPE(bool isMEMpe, int numberofDPs)
 	}
 
 	//create FU
-	FU *nonMemFU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs);
+	FU *nonMemFU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(nonMemFU0);
 
 	//create R0
-	RegFile *RF0 = new RegFile(this, "RF0", 1, 1, 1);
+	RegFile *RF0 = new RegFile(this, "RF0", 1, 1, 1, this->T);
 	subModules.push_back(RF0);
 	allRegs.push_back(RF0);
-	RegFile *RF1 = new RegFile(this, "RF1", 1, 1, 1);
+	RegFile *RF1 = new RegFile(this, "RF1", 1, 1, 1, this->T);
 	subModules.push_back(RF1);
 	allRegs.push_back(RF1);
-	RegFile *RF2 = new RegFile(this, "RF2", 1, 1, 1);
+	RegFile *RF2 = new RegFile(this, "RF2", 1, 1, 1, this->T);
 	subModules.push_back(RF2);
 	allRegs.push_back(RF2);
-	RegFile *RF3 = new RegFile(this, "RF3", 1, 1, 1);
+	RegFile *RF3 = new RegFile(this, "RF3", 1, 1, 1, this->T);
 	subModules.push_back(RF3);
 	allRegs.push_back(RF3);
-	RegFile *RFT = new RegFile(this, "RFT", numberofDPs, numberofDPs, numberofDPs);
+	RegFile *RFT = new RegFile(this, "RFT", numberofDPs, numberofDPs, numberofDPs, this->T);
 	subModules.push_back(RFT);
 	allRegs.push_back(RFT);
 
@@ -455,11 +455,11 @@ void CGRAXMLCompile::PE::createStdNoCPE_RegFile(bool isMEMpe, int numberofDPs,
 	}
 
 	//create FU
-	FU *nonMemFU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs);
+	FU *nonMemFU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(nonMemFU0);
 
 	//create R0
-	RegFile *RF0 = new RegFile(this, "RF0", nWRP, regs, nRDP);
+	RegFile *RF0 = new RegFile(this, "RF0", nWRP, regs, nRDP, this->T);
 	subModules.push_back(RF0);
 	allRegs.push_back(RF0);
 	//	RegFile* R1 = new RegFile(this,"R1",1,1,1); subModules.push_back(R1); allRegs.push_back(R1);
@@ -639,11 +639,11 @@ void CGRAXMLCompile::PE::createHyCUBEPE_RegFile(bool isMEMpe, int numberofDPs, i
 	}
 
 	//create FU
-	FU *nonMemFU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs);
+	FU *nonMemFU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(nonMemFU0);
 
 	//create R0
-	RegFile *RF0 = new RegFile(this, "RF0", nWRP, regs, nRDP);
+	RegFile *RF0 = new RegFile(this, "RF0", nWRP, regs, nRDP, this->T);
 	subModules.push_back(RF0);
 	allRegs.push_back(RF0);
 	//	RegFile* R1 = new RegFile(this,"R1",1,1,1); subModules.push_back(R1); allRegs.push_back(R1);
@@ -843,23 +843,23 @@ void CGRAXMLCompile::PE::createOriginalHyCUBEPE(bool isMEMpe, int numberofDPs)
 	}
 
 	//create FU
-	FU *nonMemFU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs);
+	FU *nonMemFU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(nonMemFU0);
 
 	//create R0
-	RegFile *RF0 = new RegFile(this, "RF0", 1, 1, 1);
+	RegFile *RF0 = new RegFile(this, "RF0", 1, 1, 1, this->T);
 	subModules.push_back(RF0);
 	allRegs.push_back(RF0);
-	RegFile *RF1 = new RegFile(this, "RF1", 1, 1, 1);
+	RegFile *RF1 = new RegFile(this, "RF1", 1, 1, 1, this->T);
 	subModules.push_back(RF1);
 	allRegs.push_back(RF1);
-	RegFile *RF2 = new RegFile(this, "RF2", 1, 1, 1);
+	RegFile *RF2 = new RegFile(this, "RF2", 1, 1, 1, this->T);
 	subModules.push_back(RF2);
 	allRegs.push_back(RF2);
-	RegFile *RF3 = new RegFile(this, "RF3", 1, 1, 1);
+	RegFile *RF3 = new RegFile(this, "RF3", 1, 1, 1, this->T);
 	subModules.push_back(RF3);
 	allRegs.push_back(RF3);
-	RegFile *RFT = new RegFile(this, "RFT", numberofDPs, numberofDPs, numberofDPs);
+	RegFile *RFT = new RegFile(this, "RFT", numberofDPs, numberofDPs, numberofDPs, this->T);
 	subModules.push_back(RFT);
 	allRegs.push_back(RFT);
 
@@ -1083,11 +1083,11 @@ void CGRAXMLCompile::PE::createN2NPE(bool isMEMpe, int numberofDPs, int regs,
 	}
 
 	//create FU
-	FU *FU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs);
+	FU *FU0 = new FU(this, "NMEM_FU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(FU0);
 
 	//create R0
-	RegFile *RF0 = new RegFile(this, "RF0", nWRP, regs, nRDP);
+	RegFile *RF0 = new RegFile(this, "RF0", nWRP, regs, nRDP, this->T);
 	subModules.push_back(RF0);
 	allRegs.push_back(RF0);
 	//	RegFile* R1 = new RegFile(this,"R1",1,1,1); subModules.push_back(R1); allRegs.push_back(R1);
@@ -1537,7 +1537,7 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 	{
 		supportedOPs.clear();
 		getMemOnlyIns(supportedOPs);
-		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs);
+		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs, this->T);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
@@ -1545,20 +1545,20 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 	{
 		supportedOPs.clear();
 		getOutMemOnlyIns(supportedOPs);
-		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs);
+		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs, this->T);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
 
 	supportedOPs.clear();
 	getArithmeticIns(supportedOPs);
-	arithFU = new FU(this, "arithFU0", numberofDPs, supportedOPs);
+	arithFU = new FU(this, "arithFU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(arithFU);
 	allFUs.push_back(arithFU);
 
 	supportedOPs.clear();
 	getLogicalIns(supportedOPs);
-	logicFU = new FU(this, "logicFU0", numberofDPs, supportedOPs);
+	logicFU = new FU(this, "logicFU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(logicFU);
 	allFUs.push_back(logicFU);
 
@@ -1567,7 +1567,7 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE_RegFile(bool isMEMpe,
 	//	subModules.push_back(nonMemFU0);
 
 	//create R0
-	RegFile *RF0 = new RegFile(this, "RF0", nWRP, regs, nRDP);
+	RegFile *RF0 = new RegFile(this, "RF0", nWRP, regs, nRDP, this->T);
 	subModules.push_back(RF0);
 	allRegs.push_back(RF0);
 	//	RegFile* R1 = new RegFile(this,"R1",1,1,1); subModules.push_back(R1); allRegs.push_back(R1);
@@ -1774,7 +1774,7 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs)
 	{
 		supportedOPs.clear();
 		getMemOnlyIns(supportedOPs);
-		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs);
+		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs, this->T);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
@@ -1782,20 +1782,20 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs)
 	{
 		supportedOPs.clear();
 		getOutMemOnlyIns(supportedOPs);
-		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs);
+		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs, this->T);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
 
 	supportedOPs.clear();
 	getArithmeticIns(supportedOPs);
-	arithFU = new FU(this, "arithFU0", numberofDPs, supportedOPs);
+	arithFU = new FU(this, "arithFU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(arithFU);
 	allFUs.push_back(arithFU);
 
 	supportedOPs.clear();
 	getLogicalIns(supportedOPs);
-	logicFU = new FU(this, "logicFU0", numberofDPs, supportedOPs);
+	logicFU = new FU(this, "logicFU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(logicFU);
 	allFUs.push_back(logicFU);
 
@@ -1804,19 +1804,19 @@ void CGRAXMLCompile::PE::createMultiFU_HyCUBEPE(bool isMEMpe, int numberofDPs)
 	//	subModules.push_back(nonMemFU0);
 
 	//create R0
-	RegFile *RF0 = new RegFile(this, "RF0", 1, 1, 1);
+	RegFile *RF0 = new RegFile(this, "RF0", 1, 1, 1, this->T);
 	subModules.push_back(RF0);
 	allRegs.push_back(RF0);
-	RegFile *RF1 = new RegFile(this, "RF1", 1, 1, 1);
+	RegFile *RF1 = new RegFile(this, "RF1", 1, 1, 1, this->T);
 	subModules.push_back(RF1);
 	allRegs.push_back(RF1);
-	RegFile *RF2 = new RegFile(this, "RF2", 1, 1, 1);
+	RegFile *RF2 = new RegFile(this, "RF2", 1, 1, 1, this->T);
 	subModules.push_back(RF2);
 	allRegs.push_back(RF2);
-	RegFile *RF3 = new RegFile(this, "RF3", 1, 1, 1);
+	RegFile *RF3 = new RegFile(this, "RF3", 1, 1, 1, this->T);
 	subModules.push_back(RF3);
 	allRegs.push_back(RF3);
-	RegFile *RFT = new RegFile(this, "RFT", numberofDPs, numberofDPs, numberofDPs);
+	RegFile *RFT = new RegFile(this, "RFT", numberofDPs, numberofDPs, numberofDPs, this->T);
 	subModules.push_back(RFT);
 	allRegs.push_back(RFT);
 
@@ -2049,7 +2049,7 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
 	{
 		supportedOPs.clear();
 		getMemOnlyIns(supportedOPs);
-		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs);
+		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs, this->T);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
@@ -2057,20 +2057,20 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
 	{
 		supportedOPs.clear();
 		getOutMemOnlyIns(supportedOPs);
-		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs);
+		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs, this->T);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
 
 	supportedOPs.clear();
 	getArithmeticIns(supportedOPs);
-	arithFU = new FU(this, "arithFU0", numberofDPs, supportedOPs);
+	arithFU = new FU(this, "arithFU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(arithFU);
 	allFUs.push_back(arithFU);
 
 	supportedOPs.clear();
 	getLogicalIns(supportedOPs);
-	logicFU = new FU(this, "logicFU0", numberofDPs, supportedOPs);
+	logicFU = new FU(this, "logicFU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(logicFU);
 	allFUs.push_back(logicFU);
 
@@ -2079,7 +2079,7 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE_RegFile(bool isMEMpe,
 	//	subModules.push_back(nonMemFU0);
 
 	//create R0
-	RegFile *RF0 = new RegFile(this, "RF0", nWRP, regs, nRDP);
+	RegFile *RF0 = new RegFile(this, "RF0", nWRP, regs, nRDP, this->T);
 	subModules.push_back(RF0);
 	allRegs.push_back(RF0);
 	//	RegFile* R1 = new RegFile(this,"R1",1,1,1); subModules.push_back(R1); allRegs.push_back(R1);
@@ -2266,7 +2266,7 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs)
 	{
 		supportedOPs.clear();
 		getMemOnlyIns(supportedOPs);
-		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs);
+		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs, this->T);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
@@ -2274,20 +2274,20 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs)
 	{
 		supportedOPs.clear();
 		getOutMemOnlyIns(supportedOPs);
-		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs);
+		memFU = new FU(this, "memFU0", numberofDPs, supportedOPs, this->T);
 		subModules.push_back(memFU);
 		allFUs.push_back(memFU);
 	}
 
 	supportedOPs.clear();
 	getArithmeticIns(supportedOPs);
-	arithFU = new FU(this, "arithFU0", numberofDPs, supportedOPs);
+	arithFU = new FU(this, "arithFU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(arithFU);
 	allFUs.push_back(arithFU);
 
 	supportedOPs.clear();
 	getLogicalIns(supportedOPs);
-	logicFU = new FU(this, "logicFU0", numberofDPs, supportedOPs);
+	logicFU = new FU(this, "logicFU0", numberofDPs, supportedOPs, this->T);
 	subModules.push_back(logicFU);
 	allFUs.push_back(logicFU);
 
@@ -2296,19 +2296,19 @@ void CGRAXMLCompile::PE::createMultiFU_StdNoCPE(bool isMEMpe, int numberofDPs)
 	//	subModules.push_back(nonMemFU0);
 
 	//create R0
-	RegFile *RF0 = new RegFile(this, "RF0", 1, 1, 1);
+	RegFile *RF0 = new RegFile(this, "RF0", 1, 1, 1, this->T);
 	subModules.push_back(RF0);
 	allRegs.push_back(RF0);
-	RegFile *RF1 = new RegFile(this, "RF1", 1, 1, 1);
+	RegFile *RF1 = new RegFile(this, "RF1", 1, 1, 1, this->T);
 	subModules.push_back(RF1);
 	allRegs.push_back(RF1);
-	RegFile *RF2 = new RegFile(this, "RF2", 1, 1, 1);
+	RegFile *RF2 = new RegFile(this, "RF2", 1, 1, 1, this->T);
 	subModules.push_back(RF2);
 	allRegs.push_back(RF2);
-	RegFile *RF3 = new RegFile(this, "RF3", 1, 1, 1);
+	RegFile *RF3 = new RegFile(this, "RF3", 1, 1, 1, this->T);
 	subModules.push_back(RF3);
 	allRegs.push_back(RF3);
-	RegFile *RFT = new RegFile(this, "RFT", numberofDPs, numberofDPs, numberofDPs);
+	RegFile *RFT = new RegFile(this, "RFT", numberofDPs, numberofDPs, numberofDPs, this->T);
 	subModules.push_back(RFT);
 	allRegs.push_back(RFT);
 
@@ -2552,3 +2552,4 @@ std::pair<CGRAXMLCompile::Port *, CGRAXMLCompile::Port *> CGRAXMLCompile::PE::ge
 	}
 	assert(false);
 }
+

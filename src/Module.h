@@ -11,8 +11,11 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 #include "Port.h"
+
+using namespace std;
 
 namespace CGRAXMLCompile
 {
@@ -26,7 +29,7 @@ typedef std::pair<int, Port *> LatPort;
 class Module
 {
 public:
-	Module(const Module *Parent, std::string name);
+	Module(const Module *Parent, std::string name, int t);
 	virtual ~Module();
 	std::vector<Port *> inputPorts;
 	std::vector<Port *> outputPorts;
@@ -55,16 +58,25 @@ public:
 	bool isConflictPortsEmpty(Port *p);
 
 	void insertConnection(Port *src, Port *dest);
+	void insertConnection(Port *src, std::pair<Port*,Port*> regDest);
+	void insertConnection(std::pair<Port*,Port*> regSrc, Port* src);
 
 	std::map<std::pair<Port *, Port *>, bool> regCons;
+	void insertRegPort(std::string pName);
+
+	unordered_map<string,Port*> Name2Port;
+	unordered_map<string,pair<Port*,Port*>> Name2RegPort;
+	unordered_map<string,Module*> Name2SubMod;
 
 protected:
 	//private:
-	void insertRegPort(std::string pName);
+
 	std::map<Port *, std::vector<Port *>> connectedTo;
 	std::map<Port *, std::vector<Port *>> connectedFrom;
 	const Module *Parent;
 	std::string name;
+
+	int t;
 
 private:
 	std::vector<std::pair<Port *, Port *>> regPorts;
