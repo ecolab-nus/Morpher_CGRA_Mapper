@@ -42,7 +42,7 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 	mutexPaths.clear();
 
 	bool detailedDebug = false;
-	// if(currNode->idx==14)detailedDebug=true;
+	// if(currNode->idx==53)detailedDebug=true;
 
 	bool lessthanII = false;
 	CGRA *cgra = endDP->getCGRA();
@@ -69,6 +69,7 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 			assert(currCGRA);
 
 			int dist_dest = std::abs(destPE->Y - srcPE->Y) + std::abs(destPE->X - srcPE->X) + std::abs(dest.first - src.first);
+			// int dist_dest = std::abs(dest.first - src.first);
 			return dist_dest;
 		}
 
@@ -153,8 +154,12 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 			}
 		}
 
-		if (detailedDebug)
+		if (detailedDebug){
 			std::cout << "currPort=" << currPort.second->getFullName() << ",";
+			if(currPort.second->getType() == IN) cout << "type=IN,";
+			if(currPort.second->getType() == OUT) cout << "type=OUT,";
+			if(currPort.second->getType() == INT) cout << "type=INT,";
+		}
 		if (detailedDebug)
 			std::cout << "latency = " << currPort.first << "\n";
 
@@ -481,7 +486,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::map<DFGNode *, Port *> alreadyMappedChildPorts;
 
 	bool detailedDebug = false;
-	// if(node->idx==5)detailedDebug=true;
+	// if(node->idx==53)detailedDebug=true;
 
 	//	std::cout << "EstimateEouting begin...\n";
 
@@ -525,60 +530,55 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::vector<DataPath *> candidateDests;
 	int penalty = 0;
 	std::map<DataPath *, int> dpPenaltyMap;
-	for (int t = 0; t < cgra->get_t_max(); ++t)
+
+	unordered_set<PE *> allPEs = cgra->getAllPEList();
+	for (PE *currPE : allPEs)
 	{
-		for (int y = 0; y < cgra->get_y_max(); ++y)
+		for (Module *submod : currPE->subModules)
 		{
-			for (int x = 0; x < cgra->get_x_max(); ++x)
+			if (FU *fu = dynamic_cast<FU *>(submod))
 			{
-				PE *currPE = cgra->PEArr[t][y][x];
-				for (Module *submod : currPE->subModules)
+
+				if (fu->supportedOPs.find(node->op) == fu->supportedOPs.end())
 				{
-					if (FU *fu = dynamic_cast<FU *>(submod))
+					continue;
+				}
+
+				if (fu->currOP.compare(node->op) == 0)
+				{
+					for (Module *submodFU : fu->subModules)
 					{
-
-						if (fu->supportedOPs.find(node->op) == fu->supportedOPs.end())
+						if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
 						{
-							continue;
-						}
-
-						if (fu->currOP.compare(node->op) == 0)
-						{
-							for (Module *submodFU : fu->subModules)
+							if (checkDPFree(dp, node, penalty))
 							{
-								if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
-								{
-									if (checkDPFree(dp, node, penalty))
-									{
-										//									if(dp->getMappedNode()==NULL){
-										//									if(dataPathCheck(dp,&node)){
+								//									if(dp->getMappedNode()==NULL){
+								//									if(dataPathCheck(dp,&node)){
 
-										if (node->blacklistDest.find(dp) == node->blacklistDest.end())
-										{
-											candidateDests.push_back(dp);
-											dpPenaltyMap[dp] = penalty;
-										}
-									}
+								if (node->blacklistDest.find(dp) == node->blacklistDest.end())
+								{
+									candidateDests.push_back(dp);
+									dpPenaltyMap[dp] = penalty;
 								}
 							}
 						}
-						else if (fu->currOP.compare("NOP") == 0)
+					}
+				}
+				else if (fu->currOP.compare("NOP") == 0)
+				{
+					for (Module *submodFU : fu->subModules)
+					{
+						if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
 						{
-							for (Module *submodFU : fu->subModules)
+							if (checkDPFree(dp, node, penalty))
 							{
-								if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
-								{
-									if (checkDPFree(dp, node, penalty))
-									{
-										//									if(dp->getMappedNode()==NULL){
-										//									if(dataPathCheck(dp,&node)){
+								//									if(dp->getMappedNode()==NULL){
+								//									if(dataPathCheck(dp,&node)){
 
-										if (node->blacklistDest.find(dp) == node->blacklistDest.end())
-										{
-											candidateDests.push_back(dp);
-											dpPenaltyMap[dp] = penalty;
-										}
-									}
+								if (node->blacklistDest.find(dp) == node->blacklistDest.end())
+								{
+									candidateDests.push_back(dp);
+									dpPenaltyMap[dp] = penalty;
 								}
 							}
 						}
@@ -1124,7 +1124,8 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(LatPort src,
 	PE *nextPE = next_to_src.second->findParentPE();
 	assert(nextPE);
 
-	int distance = abs(nextPE->Y - srcPE->Y) + abs(nextPE->X - srcPE->X) + regDiscourageFactor * ((nextPE->T - srcPE->T + cgra->get_t_max()) % cgra->get_t_max());
+	// int distance = abs(nextPE->Y - srcPE->Y) + abs(nextPE->X - srcPE->X) + regDiscourageFactor * ((nextPE->T - srcPE->T + cgra->get_t_max()) % cgra->get_t_max());
+	int distance = regDiscourageFactor * ((nextPE->T - srcPE->T + cgra->get_t_max()) % cgra->get_t_max());
 
 	distance = distance * PETransitionCostFactor + next_to_src.second->getCongCost() + PortTransitionCost;
 	assert(distance > 0);
@@ -1218,8 +1219,8 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 	sortBackEdgePriorityASAP();
 	//	sortBackEdgePriorityALAP();
 
-	std::string mappingLogFileName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs) + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths);  // + ".mapping.csv";
-	std::string mappingLog2FileName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs) + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths); // + ".routeInfo.log";
+	std::string mappingLogFileName = fNameLog1 + cgra->getCGRAName() + "_MTP=" + std::to_string(enableMutexPaths);  // + ".mapping.csv";
+	std::string mappingLog2FileName = fNameLog1 + cgra->getCGRAName() + "_MTP=" + std::to_string(enableMutexPaths); // + ".routeInfo.log";
 
 	bool mapSuccess = false;
 
@@ -1266,10 +1267,14 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 			MapHeader << ",unmappedMemNodes = " << dfg->unmappedMemOps;
 			MapHeader << ",II = " << cgra->get_t_max();
 			MapHeader << ",btCredits = " << backTrackCredits;
-			MapHeader << ",PEType = " << this->cgra->peType;
-			MapHeader << ",XDim = " << this->cgra->get_x_max();
-			MapHeader << ",YDim = " << this->cgra->get_y_max();
-			MapHeader << ",DPs = " << this->cgra->numberofDPs;
+
+			// MapHeader << ",PEType = " << this->cgra->peType;
+			// MapHeader << ",XDim = " << this->cgra->get_x_max();
+			// MapHeader << ",YDim = " << this->cgra->get_y_max();
+			// MapHeader << ",DPs = " << this->cgra->numberofDPs;
+
+			MapHeader << ",CGRA=" << this->cgra->getCGRAName();
+
 			MapHeader << ",BB = " << node->BB;
 			MapHeader << ",mutexPathEn = " << this->enableMutexPaths;
 			MapHeader << ",Iter = " << i;
@@ -1784,69 +1789,70 @@ bool CGRAXMLCompile::PathFinderMapper::checkRegALUConflicts()
 	for (int t = 0; t < this->cgra->get_t_max(); ++t)
 	{
 		int timeslice_count = 0;
-		for (int y = 0; y < this->cgra->get_y_max(); ++y)
+		vector<PE *> PEList = this->cgra->getSpatialPEList(t);
+		// for (int y = 0; y < this->cgra->get_y_max(); ++y)
+		// {
+		// 	for (int x = 0; x < this->cgra->get_x_max(); ++x)
+		// 	{
+		for (PE *currPE : PEList)
 		{
-			for (int x = 0; x < this->cgra->get_x_max(); ++x)
+
+			// PE *currPE = this->cgra->getPE(t, y, x);
+			int usage = 0;
+
+			for (Module *submod_fu : currPE->subModules)
 			{
-
-				PE *currPE = this->cgra->PEArr[t][y][x];
-				int usage = 0;
-
-				for (Module *submod_fu : currPE->subModules)
+				if (FU *fu = dynamic_cast<FU *>(submod_fu))
 				{
-					if (FU *fu = dynamic_cast<FU *>(submod_fu))
+					for (Module *submod_dp : fu->subModules)
 					{
-						for (Module *submod_dp : fu->subModules)
+						if (DataPath *dp = dynamic_cast<DataPath *>(submod_dp))
 						{
-							if (DataPath *dp = dynamic_cast<DataPath *>(submod_dp))
+							if (dp->getMappedNode() != NULL)
 							{
-								if (dp->getMappedNode() != NULL)
-								{
-									std::cout << dp->getFullName() << ":" << dp->getMappedNode()->idx << ",";
-									usage++;
-									break;
-								}
+								std::cout << dp->getFullName() << ":" << dp->getMappedNode()->idx << ",";
+								usage++;
+								break;
 							}
 						}
 					}
 				}
-
-				for (RegFile *RF : currPE->allRegs)
-				{
-					for (int i = 0; i < RF->get_nWRPs(); ++i)
-					{
-						std::string wrpName = "WRP" + std::to_string(i);
-						Port *wrp = RF->getInPort(wrpName);
-						if (wrp->getNode() != NULL)
-						{
-							std::cout << wrp->getFullName() << ":" << wrp->getNode()->idx << ",";
-							usage++;
-						}
-					}
-
-					for (int i = 0; i < RF->get_nRDPs(); ++i)
-					{
-						std::string rdpName = "RDP" + std::to_string(i);
-						Port *rdp = RF->getOutPort(rdpName);
-						if (rdp->getNode() != NULL)
-						{
-							std::cout << rdp->getFullName() << ":" << rdp->getNode()->idx << ",";
-							usage++;
-						}
-					}
-				}
-
-				if (timeslice_count <= usage - 1)
-				{
-					timeslice_count = usage - 1;
-				}
-
-				std::cout << "\n";
 			}
-		}
 
+			for (RegFile *RF : currPE->allRegs)
+			{
+				for (int i = 0; i < RF->get_nWRPs(); ++i)
+				{
+					std::string wrpName = "WRP" + std::to_string(i);
+					Port *wrp = RF->getInPort(wrpName);
+					if (wrp->getNode() != NULL)
+					{
+						std::cout << wrp->getFullName() << ":" << wrp->getNode()->idx << ",";
+						usage++;
+					}
+				}
+
+				for (int i = 0; i < RF->get_nRDPs(); ++i)
+				{
+					std::string rdpName = "RDP" + std::to_string(i);
+					Port *rdp = RF->getOutPort(rdpName);
+					if (rdp->getNode() != NULL)
+					{
+						std::cout << rdp->getFullName() << ":" << rdp->getNode()->idx << ",";
+						usage++;
+					}
+				}
+			}
+
+			if (timeslice_count <= usage - 1)
+			{
+				timeslice_count = usage - 1;
+			}
+
+			std::cout << "\n";
+		}
 		std::cout << "t=" << t << ","
-				  << "timeslice=" << timeslice_count << "\n";
+			  << "timeslice=" << timeslice_count << "\n";
 	}
 }
 
@@ -2532,10 +2538,7 @@ int CGRAXMLCompile::PathFinderMapper::getlatMinStartsPHI(const DFGNode *currNode
 	//	std::map<std::string,int> oplatencyMap;
 	//	cgra->PEArr[0][0][0]->getMEMIns(oplatencyMap);
 
-	PE *samplePE = cgra->PEArr[0][0][0];
-	std::map<std::string, int> oplatencyMap;
-	samplePE->getNonMEMIns(oplatencyMap);
-	samplePE->getMemOnlyIns(oplatencyMap);
+	std::unordered_map<std::string, int> oplatencyMap = cgra->getGlobalOPMinLatencyMap();
 
 	int recphi_lat = 0;
 	if (RecPHIs.find((DFGNode *)currNode) != RecPHIs.end())
@@ -2661,10 +2664,10 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 		}
 	}
 
-	PE *samplePE = cgra->PEArr[0][0][0];
-	std::map<std::string, int> OpLatency;
-	samplePE->getNonMEMIns(OpLatency);
-	samplePE->getMemOnlyIns(OpLatency);
+	// PE *samplePE = cgra->PEArr[0][0][0];
+	std::unordered_map<std::string, int> OpLatency = cgra->getGlobalOPMinLatencyMap();
+	// samplePE->getNonMEMIns(OpLatency);
+	// samplePE->getMemOnlyIns(OpLatency);
 
 	int maxLat = LARGE_VALUE;
 
@@ -2848,10 +2851,10 @@ std::vector<CGRAXMLCompile::DFGNode *> CGRAXMLCompile::PathFinderMapper::getLong
 	std::set<std::pair<DFGNode *, int>> q_init;
 	std::queue<std::set<std::pair<DFGNode *, int>>> q;
 
-	PE *samplePE = cgra->PEArr[0][0][0];
-	std::map<std::string, int> oplatencyMap;
-	samplePE->getNonMEMIns(oplatencyMap);
-	samplePE->getMemOnlyIns(oplatencyMap);
+	// PE *samplePE = cgra->PEArr[0][0][0];
+	std::unordered_map<std::string, int> oplatencyMap = cgra->getGlobalOPMinLatencyMap();
+	// samplePE->getNonMEMIns(oplatencyMap);
+	// samplePE->getMemOnlyIns(oplatencyMap);
 
 	q_init.insert(std::make_pair(src, oplatencyMap[src->op]));
 	std::map<DFGNode *, std::map<int, DFGNode *>> cameFrom;
@@ -2901,11 +2904,11 @@ int CGRAXMLCompile::PathFinderMapper::getFreeMEMPeDist(PE *currPE)
 {
 	int currT = currPE->T;
 
-	for (int y = 0; y < this->cgra->get_y_max(); ++y)
-	{
-		//		int tdiff = std::abs()
-		//		PE* destPE = this->cgra->PEArr
-	}
+	// for (int y = 0; y < this->cgra->get_y_max(); ++y)
+	// {
+	// 	//		int tdiff = std::abs()
+	// 	//		PE* destPE = this->cgra->PEArr
+	// }
 }
 
 std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modifyMaxLatCandDest(
@@ -2923,10 +2926,7 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 
 	changed = false;
 
-	std::map<std::string, int> memOps;
-	PE *samplePE = cgra->PEArr[0][0][0];
-	samplePE->getMemOnlyIns(memOps);
-	bool isMeMOp = memOps.find(node->op) != memOps.end();
+	bool isMeMOp = checkMEMOp(node->op);
 
 	std::cout << "MaxLat = " << maxLat << "\n";
 	std::cout << "IsMEMOp = " << isMeMOp << "\n";
@@ -2936,10 +2936,11 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 	{
 
 		DataPath *dp = pair.first;
+		FU* fu = dp->getFU();
 		PE *pe = dp->getPE();
 		int offset = 0;
 
-		if ((pe->X == 0) && (isMeMOp == false))
+		if ((fu->isMEMFU()) && (isMeMOp == false))
 		{
 			offset = 1;
 		}
@@ -3043,4 +3044,17 @@ bool CGRAXMLCompile::PathFinderMapper::canExitCurrPE(LatPort p)
 		}
 	}
 	return false;
+}
+
+bool CGRAXMLCompile::PathFinderMapper::checkMEMOp(string op)
+{
+	if (op.find("OLOAD") != string::npos || op.find("OSTORE") != string::npos)
+	{
+		return false;
+	}
+
+	if (op.find("LOAD") != string::npos || op.find("STORE") != string::npos)
+	{
+		return true;
+	}
 }

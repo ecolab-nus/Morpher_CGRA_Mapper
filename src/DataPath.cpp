@@ -69,7 +69,8 @@ CGRAXMLCompile::Port *CGRAXMLCompile::DataPath::getOutputPort(int latency)
 
 	//	std::cout << "nextPE_t = " << nextPE_t << "\n";
 
-	PE *outputPE = currCGRA->PEArr[nextPE_t][currPE->Y][currPE->X];
+	// PE *outputPE = currCGRA->PEArr[nextPE_t][currPE->Y][currPE->X];
+	PE *outputPE = currCGRA->getLatencyPE(currPE,latency);
 	FU *outputFU = static_cast<FU *>(outputPE->getSubMod(currFU->getName()));
 	DataPath *outputDP = static_cast<DataPath *>(outputFU->getSubMod(this->getName()));
 
@@ -107,7 +108,10 @@ void CGRAXMLCompile::DataPath::assignNode(DFGNode *node, int lat, DFG *dfg)
 	int next_t = (pe->T + oplatency) % cgra->get_t_max();
 	std::cout << "assigning node=" << node->idx << ",to=" << pe->getName() << ",starting t=" << next_t << "\n";
 
-	PE *nextPE = cgra->PEArr[next_t][pe->Y][pe->X];
+	// PE *nextPE = cgra->PEArr[next_t][pe->Y][pe->X];
+	PE* nextPE = cgra->getLatencyPE(pe,oplatency);
+	cout << "op_lat = " << oplatency << "," << "nextPE = " << nextPE->getName() << "\n";
+
 	FU *nextFU = static_cast<FU *>(nextPE->getSubMod(fu->getName()));
 	DataPath *nextDP = static_cast<DataPath *>(nextFU->getSubMod(this->getName()));
 

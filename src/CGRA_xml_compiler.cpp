@@ -46,16 +46,31 @@ int main(int argn, char *argc[])
 	std::string PEType(argc[2]);
 	int numberOfDPs = atoi(argc[4]);
 
-	CGRA testCGRA(NULL, "testCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
+	string json_file_name;
+	if(argn >= 8){
+		json_file_name = argc[7];
+	}
+
+	// CGRA testCGRA(NULL, "testCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
+
+	CGRA *testCGRA;
+	if(json_file_name.empty()){
+		testCGRA = new CGRA(NULL, "coreCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
+	}
+	else{
+		testCGRA = new CGRA(json_file_name,1);
+	}
 
 	//	HeuristicMapper hm(inputDFG_filename);
 	PathFinderMapper hm(inputDFG_filename);
 
-	int II = hm.getMinimumII(&testCGRA, &currDFG);
+	int II = hm.getMinimumII(testCGRA, &currDFG);
 	std::cout << "Minimum II = " << II << "\n";
 
 	int initUserII = atoi(argc[6]);
 	II = std::max(initUserII, II);
+
+	std::cout << "Using II = " << II << "\n";
 
 	hm.enableMutexPaths = true;
 	if (argn == 9)
@@ -69,10 +84,7 @@ int main(int argn, char *argc[])
 	hm.enableBackTracking = true;
 	hm.backTrackLimit = atoi(argc[5]);
 
-	string json_file_name;
-	if(argn >= 8){
-		json_file_name = argc[7];
-	}
+
 	cout << "json_file_name = " << json_file_name << "\n";
 	// exit(EXIT_SUCCESS);
 
@@ -88,7 +100,7 @@ int main(int argn, char *argc[])
 			tempCGRA = new CGRA(NULL, "coreCGRA", II, ydim, xdim, &tempDFG, PEType, numberOfDPs, hm.getcongestedPortsPtr());
 		}
 		else{
-			tempCGRA = new CGRA(json_file_name,II);
+			tempCGRA = new CGRA(json_file_name,II,hm.getcongestedPortsPtr());
 		}
 
 

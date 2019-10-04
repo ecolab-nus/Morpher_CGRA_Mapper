@@ -77,6 +77,7 @@ public:
 	int getFreeMEMPeDist(PE *currPE);
 
 	bool canExitCurrPE(LatPort p);
+	static bool checkMEMOp(string op);
 
 private:
 	std::map<Port *, std::set<DFGNode *>> congestedPorts;

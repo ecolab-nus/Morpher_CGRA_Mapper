@@ -193,6 +193,7 @@ int CGRAXMLCompile::Port::getCongCost()
 
 void CGRAXMLCompile::Port::clear()
 {
+	assert(this->mod->getCGRA());
 	if (node != NULL)
 	{
 		(*this->mod->getCGRA()->getCongestedPortPtr())[this].erase(node);

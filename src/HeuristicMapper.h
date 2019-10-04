@@ -146,6 +146,7 @@ struct dest_with_cost
 					}
 				}
 			}
+			//parse json branch temporally not using dx dy costs due to templates -- removed again
 			cost = cost + primaryCost * 100;
 
 			int secondaryCost = 0;

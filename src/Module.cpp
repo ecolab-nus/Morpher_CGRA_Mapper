@@ -347,6 +347,8 @@ void Module::insertConnection(Port *src, Port *dest)
 	PE *src_pe = src->getMod()->getPE();
 	PE *dest_pe = dest->getMod()->getPE();
 
+	// cout << "srcp = " << src->getFullName() << ",destp = " << dest->getFullName() << "\n";
+
 	//	if(src_pe && dest_pe){
 	if (src_pe->T > dest_pe->T && dest_pe->T != 0)
 	{

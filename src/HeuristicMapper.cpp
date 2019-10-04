@@ -325,7 +325,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 	for (DFGNode *child : node->children)
 	{
 		if (child->rootDP != NULL)
-		{   // already mapped
+		{ // already mapped
 			//			std::cout << "child="<< child->idx << ",childOpType=" << node.childrenOPType[child] << "\n";
 			assert(child->rootDP->getInPort(node->childrenOPType[child]));
 			alreadyMappedChildPorts[child] = child->rootDP->getInPort(node->childrenOPType[child]);
@@ -334,56 +334,51 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 	}
 
 	std::vector<DataPath *> candidateDests;
-	for (int t = 0; t < cgra->get_t_max(); ++t)
+
+	unordered_set<PE *> allPEs = cgra->getAllPEList();
+	for (PE *currPE : allPEs)
 	{
-		for (int y = 0; y < cgra->get_y_max(); ++y)
+		for (Module *submod : currPE->subModules)
 		{
-			for (int x = 0; x < cgra->get_x_max(); ++x)
+			if (FU *fu = dynamic_cast<FU *>(submod))
 			{
-				PE *currPE = cgra->PEArr[t][y][x];
-				for (Module *submod : currPE->subModules)
+
+				if (fu->supportedOPs.find(node->op) == fu->supportedOPs.end())
 				{
-					if (FU *fu = dynamic_cast<FU *>(submod))
+					continue;
+				}
+
+				if (fu->currOP.compare(node->op) == 0)
+				{
+					for (Module *submodFU : fu->subModules)
 					{
-
-						if (fu->supportedOPs.find(node->op) == fu->supportedOPs.end())
+						if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
 						{
-							continue;
-						}
-
-						if (fu->currOP.compare(node->op) == 0)
-						{
-							for (Module *submodFU : fu->subModules)
+							if (dp->getMappedNode() == NULL)
 							{
-								if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
-								{
-									if (dp->getMappedNode() == NULL)
-									{
-										//									if(dataPathCheck(dp,&node)){
+								//									if(dataPathCheck(dp,&node)){
 
-										if (node->blacklistDest.find(dp) == node->blacklistDest.end())
-										{
-											candidateDests.push_back(dp);
-										}
-									}
+								if (node->blacklistDest.find(dp) == node->blacklistDest.end())
+								{
+									candidateDests.push_back(dp);
 								}
 							}
 						}
-						else if (fu->currOP.compare("NOP") == 0)
+					}
+				}
+				else if (fu->currOP.compare("NOP") == 0)
+				{
+					for (Module *submodFU : fu->subModules)
+					{
+						if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
 						{
-							for (Module *submodFU : fu->subModules)
+							if (dp->getMappedNode() == NULL)
 							{
-								if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
-								{
-									if (dp->getMappedNode() == NULL)
-									{
-										//									if(dataPathCheck(dp,&node)){
+								//									if(dataPathCheck(dp,&node)){
 
-										if (node->blacklistDest.find(dp) == node->blacklistDest.end())
-										{
-											candidateDests.push_back(dp);
-										}
-									}
+								if (node->blacklistDest.find(dp) == node->blacklistDest.end())
+								{
+									candidateDests.push_back(dp);
 								}
 							}
 						}
@@ -843,25 +838,21 @@ int CGRAXMLCompile::HeuristicMapper::getMinimumII(CGRA *cgra, DFG *dfg)
 	std::map<std::string, std::set<DataPath *>> opFUs;
 
 	assert(cgra->get_t_max() > 0);
-	for (int y = 0; y < cgra->get_y_max(); ++y)
-	{
-		for (int x = 0; x < cgra->get_x_max(); ++x)
-		{
-			PE *currPE = cgra->PEArr[0][y][x];
 
-			for (Module *FU_mod : currPE->subModules)
+	for (PE *currPE : cgra->getSpatialPEList(0))
+	{
+		for (Module *FU_mod : currPE->subModules)
+		{
+			if (FU *fu = dynamic_cast<FU *>(FU_mod))
 			{
-				if (FU *fu = dynamic_cast<FU *>(FU_mod))
+				for (std::pair<std::string, int> pair : fu->supportedOPs)
 				{
-					for (std::pair<std::string, int> pair : fu->supportedOPs)
+					std::string suppOp = pair.first;
+					for (Module *DP_mod : fu->subModules)
 					{
-						std::string suppOp = pair.first;
-						for (Module *DP_mod : fu->subModules)
+						if (DataPath *dp = dynamic_cast<DataPath *>(DP_mod))
 						{
-							if (DataPath *dp = dynamic_cast<DataPath *>(DP_mod))
-							{
-								opFUs[suppOp].insert(dp);
-							}
+							opFUs[suppOp].insert(dp);
 						}
 					}
 				}
@@ -1069,6 +1060,7 @@ bool CGRAXMLCompile::HeuristicMapper::LeastCostPathAstar(LatPort start, LatPort 
 			assert(currCGRA);
 
 			int dist_dest = std::abs(destPE->Y - srcPE->Y) + std::abs(destPE->X - srcPE->X) + std::abs(dest.first - src.first);
+			// int dist_dest = std::abs(dest.first - src.first);
 			return dist_dest;
 		}
 
@@ -1266,6 +1258,7 @@ int CGRAXMLCompile::HeuristicMapper::calculateCost(LatPort src,
 	assert(nextPE);
 
 	int distance = abs(nextPE->Y - srcPE->Y) + abs(nextPE->X - srcPE->X) + regDiscourageFactor * ((nextPE->T - srcPE->T + cgra->get_t_max()) % cgra->get_t_max());
+	// int distance = regDiscourageFactor * ((nextPE->T - srcPE->T + cgra->get_t_max()) % cgra->get_t_max());
 
 	distance = distance * PETransitionCostFactor + PortTransitionCost;
 
@@ -1341,118 +1334,121 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog()
 		}
 	};
 
-	std::map<int, std::map<int, std::map<int, std::vector<std::string>>>> lineMatrix;
+	std::map<int, std::vector<std::vector<std::string>>> lineMatrix;
 
 	for (int t = 0; t < cgra->get_t_max(); ++t)
 	{
-		for (int y = 0; y < cgra->get_y_max(); ++y)
+
+		//				peHeader << "PE_" << t << y << x  << ",";
+		// peHeader << "X=" << x << ",";
+		vector<PE *> spatialPEs = cgra->getSpatialPEList(t);
+		for (PE *pe : spatialPEs)
 		{
-			for (int x = 0; x < cgra->get_x_max(); ++x)
+			// PE *pe = cgra->PEArr[t][y][x];
+
+			std::stringstream peHeader;
+			std::stringstream fuHeader;
+			std::stringstream dpHeader;
+			std::stringstream dpOp;
+
+			peHeader << "T=" << t << "," << pe->getName();
+
+			int fuCount = 0;
+			int dpCount = 0;
+			for (Module *mod : pe->subModules)
 			{
-
-				std::stringstream peHeader;
-				std::stringstream fuHeader;
-				std::stringstream dpHeader;
-				std::stringstream dpOp;
-
-				//				peHeader << "PE_" << t << y << x  << ",";
-				peHeader << "X=" << x << ",";
-				PE *pe = cgra->PEArr[t][y][x];
-
-				int fuCount = 0;
-				int dpCount = 0;
-				for (Module *mod : pe->subModules)
+				if (FU *fu = dynamic_cast<FU *>(mod))
 				{
-					if (FU *fu = dynamic_cast<FU *>(mod))
+					fuCount++;
+					for (Module *mod : fu->subModules)
 					{
-						fuCount++;
-						for (Module *mod : fu->subModules)
+						if (DataPath *dp = dynamic_cast<DataPath *>(mod))
 						{
-							if (DataPath *dp = dynamic_cast<DataPath *>(mod))
-							{
-								dpCount++;
-							}
+							dpCount++;
 						}
 					}
 				}
-
-				int inputPortCount = pe->inputPorts.size();
-				int outputPortCount = pe->outputPorts.size();
-				int totalColumns = dpCount + inputPortCount + outputPortCount;
-
-				for (Module *mod : pe->subModules)
-				{
-					if (FU *fu = dynamic_cast<FU *>(mod))
-					{
-						fuHeader << fu->getName() << ",";
-						for (Module *mod : fu->subModules)
-						{
-							if (DataPath *dp = dynamic_cast<DataPath *>(mod))
-							{
-								dpHeader << dp->getName() << ",";
-								if (dp->getMappedNode())
-								{
-									dpOp << dp->getMappedNode()->idx << ":" << dp->getMappedNode()->op;
-									if (dp->getMappedNode()->hasConst)
-									{
-										dpOp << "+C";
-									}
-									dpOp << "(";
-									for (DFGNode *parent : dp->getMappedNode()->parents)
-									{
-										dpOp << parent->idx << "-";
-									}
-									dpOp << "|";
-									for (DFGNode *child : dp->getMappedNode()->children)
-									{
-										dpOp << child->idx << "-";
-									}
-									dpOp << ")";
-									dpOp << ",";
-								}
-								else
-								{
-									dpOp << "---,";
-								}
-							}
-						}
-					}
-				}
-
-				for (Port *ip : pe->inputPorts)
-				{
-					dpHeader << ip->getName() << ",";
-					if (ip->getNode())
-					{
-						dpOp << ip->getNode()->idx /*<< ":" << ip.getNode()->op */ << ",";
-					}
-					else
-					{
-						dpOp << "---,";
-					}
-				}
-
-				for (Port *op : pe->outputPorts)
-				{
-					dpHeader << op->getName() << ",";
-					if (op->getNode())
-					{
-						dpOp << op->getNode()->idx /*<< ":" << op.getNode()->op */ << ",";
-					}
-					else
-					{
-						dpOp << "---,";
-					}
-				}
-
-				util::repeatedPush(peHeader, ",", totalColumns - 1);
-				util::repeatedPush(fuHeader, ",", totalColumns - fuCount);
-
-				lineMatrix[t][y][x].push_back(peHeader.str());
-				lineMatrix[t][y][x].push_back(fuHeader.str());
-				lineMatrix[t][y][x].push_back(dpHeader.str());
-				lineMatrix[t][y][x].push_back(dpOp.str());
 			}
+
+			int inputPortCount = pe->inputPorts.size();
+			int outputPortCount = pe->outputPorts.size();
+			int totalColumns = dpCount + inputPortCount + outputPortCount;
+
+			for (Module *mod : pe->subModules)
+			{
+				if (FU *fu = dynamic_cast<FU *>(mod))
+				{
+					fuHeader << fu->getName() << ",";
+					for (Module *mod : fu->subModules)
+					{
+						if (DataPath *dp = dynamic_cast<DataPath *>(mod))
+						{
+							dpHeader << dp->getName() << ",";
+							if (dp->getMappedNode())
+							{
+								dpOp << dp->getMappedNode()->idx << ":" << dp->getMappedNode()->op;
+								if (dp->getMappedNode()->hasConst)
+								{
+									dpOp << "+C";
+								}
+								dpOp << "(";
+								for (DFGNode *parent : dp->getMappedNode()->parents)
+								{
+									dpOp << parent->idx << "-";
+								}
+								dpOp << "|";
+								for (DFGNode *child : dp->getMappedNode()->children)
+								{
+									dpOp << child->idx << "-";
+								}
+								dpOp << ")";
+								dpOp << ",";
+							}
+							else
+							{
+								dpOp << "---,";
+							}
+						}
+					}
+				}
+			}
+
+			for (Port *ip : pe->inputPorts)
+			{
+				dpHeader << ip->getName() << ",";
+				if (ip->getNode())
+				{
+					dpOp << ip->getNode()->idx /*<< ":" << ip.getNode()->op */ << ",";
+				}
+				else
+				{
+					dpOp << "---,";
+				}
+			}
+
+			for (Port *op : pe->outputPorts)
+			{
+				dpHeader << op->getName() << ",";
+				if (op->getNode())
+				{
+					dpOp << op->getNode()->idx /*<< ":" << op.getNode()->op */ << ",";
+				}
+				else
+				{
+					dpOp << "---,";
+				}
+			}
+
+			util::repeatedPush(peHeader, ",", totalColumns - 1);
+			util::repeatedPush(fuHeader, ",", totalColumns - fuCount);
+
+			std::vector<string> lineWord;
+			lineWord.push_back(peHeader.str());
+			lineWord.push_back(fuHeader.str());
+			lineWord.push_back(dpHeader.str());
+			lineWord.push_back(dpOp.str());
+
+			lineMatrix[t].push_back(lineWord);
 		}
 	}
 
@@ -1461,45 +1457,18 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog()
 	//print line matrix
 	for (int t = 0; t < cgra->get_t_max(); ++t)
 	{
-		for (int y = 0; y < cgra->get_y_max(); ++y)
+		mappingLog << "T=" << t << ",";
+		for (vector<string> linewords : lineMatrix[t])
 		{
 			for (int l = 0; l < lineCount; ++l)
 			{
-				if (t > 0 || y > 0)
-				{
-					if (l != 3)
-						continue;
-				}
-				for (int x = 0; x < cgra->get_x_max(); ++x)
-				{
-					assert(lineMatrix[t][y][x].size() == lineCount);
-
-					if (y == 0)
-					{
-						mappingLog << "T=" << t << ",";
-					}
-					else
-					{
-						mappingLog << ",";
-					}
-
-					if (x == 0)
-					{
-						mappingLog << "Y=" << y << ",";
-					}
-					else
-					{
-						mappingLog << ",";
-					}
-
-					mappingLog << lineMatrix[t][y][x][l] << ",";
-				}
-				mappingLog << "\n";
+				mappingLog << linewords[l] << ",";
 			}
-			//			mappingLog << "\n";
+			mappingLog << "\n";
 		}
-		mappingLog << "************************************\n";
+		//			mappingLog << "\n";
 	}
+	mappingLog << "************************************\n";
 }
 
 bool CGRAXMLCompile::HeuristicMapper::LeastCostPathDjk(Port *start, Port *end,
@@ -1688,7 +1657,11 @@ bool CGRAXMLCompile::HeuristicMapper::dataPathCheck(DataPath *dp,
 
 	int latency = fu->supportedOPs[node->op];
 	int next_t = (pe->T + latency) % cgra->get_t_max();
-	PE *nextPE = cgra->PEArr[next_t][pe->Y][pe->X];
+
+	// PE *nextPE = cgra->PEArr[next_t][pe->Y][pe->X];
+	PE* nextPE = cgra->getLatencyPE(pe,latency);
+
+
 	FU *nextFU = static_cast<FU *>(nextPE->getSubMod(fu->getName()));
 	DataPath *nextDP = static_cast<DataPath *>(nextFU->getSubMod(dp->getName()));
 

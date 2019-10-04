@@ -8,6 +8,7 @@
 #include "FU.h"
 #include "PE.h"
 #include "DataPath.h"
+#include "CGRA.h"
 #include <sstream>
 #include <iostream>
 #include <assert.h>
@@ -21,6 +22,19 @@ namespace CGRAXMLCompile
 //}
 
 } /* namespace CGRAXMLCompile */
+
+CGRAXMLCompile::FU::FU(const Module *Parent, std::string name, int numberDPs, std::map<std::string, int> supportedOPs, int t) : Module(Parent, name, t) {
+	this->numberDPs = numberDPs;
+	createFU(numberDPs);
+	this->supportedOPs = supportedOPs;
+
+	for(auto it = supportedOPs.begin(); it != supportedOPs.end(); it++){
+		string OP = it->first;
+		int lat = it->second;
+		CGRA* cgra = this->getCGRA();
+		cgra->insertGlobalOP(OP,lat);
+	}
+}
 
 void CGRAXMLCompile::FU::createFU(int numberDPs)
 {

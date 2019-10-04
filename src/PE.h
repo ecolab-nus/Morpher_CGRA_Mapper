@@ -23,7 +23,7 @@ public:
 	PE(const Module *Parent,
 	   std::string name,
 	   int x, int y, int t,
-	   std::string peType = "GENERIC_8REGF",
+	   std::string peType,
 	   bool isMEMpe = false, int numDPs = 1) : Module(Parent, name, t)
 	{
 		if (peType == "GENERIC_8REGF")
@@ -94,13 +94,23 @@ public:
 		{
 			assert(false);
 		}
+
+		assert(y != -1);
+		assert(x != -1);
 		this->X = x;
 		this->Y = y;
+		
 		this->T = t;
 	}
 
-	PE(const Module *Parent, std::string name, int t) : Module(Parent,name,t){
+	PE(const Module *Parent, std::string name, int t, int y, int x) : Module(Parent,name,t){
 		this->T = t;
+
+		assert(y != -1);
+		assert(x != -1);
+
+		this->Y = y;
+		this->X = x;
 	};
 
 	int X;
