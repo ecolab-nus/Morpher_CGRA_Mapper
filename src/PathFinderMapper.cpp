@@ -486,7 +486,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::map<DFGNode *, Port *> alreadyMappedChildPorts;
 
 	bool detailedDebug = false;
-	// if(node->idx==53)detailedDebug=true;
+	if(node->idx==1)detailedDebug=true;
 
 	//	std::cout << "EstimateEouting begin...\n";
 
@@ -3057,4 +3057,6 @@ bool CGRAXMLCompile::PathFinderMapper::checkMEMOp(string op)
 	{
 		return true;
 	}
+
+	return false;
 }
