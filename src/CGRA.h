@@ -115,6 +115,10 @@ public:
 	unordered_map<string,int> getGlobalOPMinLatencyMap(){return GlobalOPMinLatencyMap;}
 	string getCGRAName();
 
+	void analyzeTimeDist();
+	int getTimeClosestMEMPE(PE* currPE);
+	int getQuickTimeDistBetweenPEs(PE* srcPE, PE* destPE);
+
 
 private:
 	int x_max;
@@ -127,6 +131,15 @@ private:
 	unordered_map<PE*,PE*> NextCyclePEMap;
 	unordered_map<string,int> GlobalOPMinLatencyMap;
 	string json_file;
+
+	unordered_map<PE*,unordered_map<PE*,int>> TimeDistBetweenPEMap;
+	unordered_map<PE*,int> TimeDistBetweenClosestMEMPEMap;
+	unordered_map<PE*,PE*> MapTzeroPE;
+
+	void traverseUntil(PE* srcPE, PE* destPE, Port* currPort, int time_dist, unordered_map<Port*,int>& already_traversed, int& result);
+	int getTimeDistBetweenPEs(PE* srcPE, PE* destPE);
+	bool IntraPETimeDistAnalysisDone = false;
+
 
 
 };

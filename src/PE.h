@@ -99,7 +99,7 @@ public:
 		assert(x != -1);
 		this->X = x;
 		this->Y = y;
-		
+
 		this->T = t;
 	}
 

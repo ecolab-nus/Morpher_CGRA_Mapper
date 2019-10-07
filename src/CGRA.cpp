@@ -10,6 +10,7 @@
 #include "Port.h"
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <iomanip>
@@ -345,6 +346,8 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 		if(ret_fu->isMEMFU()){
 			freeMemNodes++;
 			freeMemNodeSet.insert((DataPath*)ret);
+			PE* ret_pe = ret->getPE();
+			ret_pe->isMemPE = true;
 		}
 		return ret;
 	}
@@ -772,6 +775,139 @@ string CGRAXMLCompile::CGRA::getCGRAName()
 	}
 	else
 	{
-		return json_file;
+		std::stringstream ss(json_file);
+		std::string token;
+		vector<string> cont;
+		while (std::getline(ss, token, '/')) {
+			cont.push_back(token);
+		}
+		return *cont.rbegin();
+	}
+}
+
+void CGRAXMLCompile::CGRA::analyzeTimeDist(){
+
+	for(Module* m1 : subModArr[0]){
+		PE* pe1 = static_cast<PE*>(m1);
+		TimeDistBetweenClosestMEMPEMap[pe1] = INT32_MAX;
+		for(Module* m2 : subModArr[0]){
+			PE* pe2 = static_cast<PE*>(m2);
+			if(pe1 == pe2) continue;
+			TimeDistBetweenPEMap[pe1][pe2] = getTimeDistBetweenPEs(pe1,pe2);
+		}
+	}
+
+	if(get_t_max() > 1){
+		for(Module* m1 : subModArr[0]){
+			PE* zeroth_pe = static_cast<PE*>(m1);
+			PE* currPE = NextCyclePEMap[zeroth_pe];
+			for(int i=1; i<get_t_max(); i++){
+				MapTzeroPE[currPE]=zeroth_pe;
+				currPE = NextCyclePEMap[currPE];
+			}
+		}
+	}
+
+	cout << "Timing analysis between PEs done.!\n";
+	for(auto it1 = TimeDistBetweenPEMap.begin(); it1 != TimeDistBetweenPEMap.end(); it1++){
+		PE* pe1 = it1->first;
+		for(auto it2 = TimeDistBetweenPEMap[pe1].begin(); it2 != TimeDistBetweenPEMap[pe1].end(); it2++){
+			PE* pe2 = it2->first;
+			int time_dist = it2->second;
+			cout << "PE1=" << pe1->getFullName() << "\tPE2=" << pe2->getFullName() << "\ttime_dist=" << time_dist << "\n";
+		}
+	}
+
+	cout << "Timing analysis between PE and closest memPE :: \n";
+	for(auto it = TimeDistBetweenClosestMEMPEMap.begin(); it != TimeDistBetweenClosestMEMPEMap.end(); it++){
+		PE* pe = it->first;
+		int time_dist = it->second;
+		cout << "PE=" << pe->getFullName() << "\ttime_dist=" << time_dist << "\n";
+	}
+
+	IntraPETimeDistAnalysisDone = true;
+
+}
+
+
+void CGRAXMLCompile::CGRA::traverseUntil(PE* srcPE, PE* destPE, Port* currPort, int time_dist, unordered_map<Port*,int>& already_traversed, int& result){
+	// cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
+	if(already_traversed.find(currPort) != already_traversed.end()){
+		if(time_dist < already_traversed[currPort]){
+			already_traversed[currPort] = time_dist;
+		}
+		else{
+			return;
+		}
+	}
+	else{
+		already_traversed[currPort] = time_dist;
+	}
+
+	PE* currPE = currPort->getMod()->getPE();
+	FU* currFU = currPort->getMod()->getFU();
+
+	if(currFU != NULL && currFU->isMEMFU() ){
+		if(time_dist < TimeDistBetweenClosestMEMPEMap[srcPE]){
+			    // cout << "fu = " << currFU->getFullName() << ",";
+				// cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
+			TimeDistBetweenClosestMEMPEMap[srcPE] = time_dist;
+		}
+	}
+
+	if(currFU != NULL && currPE == destPE){
+		result = time_dist;
+		return;
+	}
+
+	vector<Port*> nextPorts = currPort->getMod()->getNextPorts(currPort);
+	for(Port* p : nextPorts){
+		int time_delta = 0;
+		if(p->getMod()->get_t() != currPort->getMod()->get_t()){
+			time_delta = 1;
+		}
+		if(currPort->getType() == REGI && p->getType() == REGO){
+			time_delta = 1;
+		}
+		assert(p != currPort);
+		traverseUntil(srcPE, destPE,p,time_dist+time_delta,already_traversed,result);
+	}
+}
+
+int CGRAXMLCompile::CGRA::getTimeDistBetweenPEs(PE* srcPE, PE* destPE){
+	int ret_val = INT32_MAX;
+	for(Port* op : srcPE->outputPorts){
+		unordered_map<Port*,int> already_traversed;
+		int tmp = -1;
+		traverseUntil(srcPE, destPE,op,0,already_traversed,tmp);
+		if(tmp != -1 && tmp < ret_val) ret_val = tmp;
+	}
+	assert(ret_val != INT32_MAX);
+	return ret_val;
+}
+
+int CGRAXMLCompile::CGRA::getTimeClosestMEMPE(PE* currPE){
+	assert(IntraPETimeDistAnalysisDone);
+	PE* zeroth_currPE = MapTzeroPE[currPE];
+	assert(TimeDistBetweenClosestMEMPEMap.find(zeroth_currPE) != TimeDistBetweenClosestMEMPEMap.end());
+
+	return TimeDistBetweenClosestMEMPEMap[zeroth_currPE];
+}
+
+int CGRAXMLCompile::CGRA::getQuickTimeDistBetweenPEs(PE* srcPE, PE* destPE){
+	assert(IntraPETimeDistAnalysisDone);
+
+	PE* zeroth_srcPE = MapTzeroPE[srcPE];
+	PE* zeroth_destPE = MapTzeroPE[destPE];
+
+	assert(TimeDistBetweenPEMap.find(zeroth_srcPE) != TimeDistBetweenPEMap.end());
+	assert(TimeDistBetweenPEMap[zeroth_srcPE].find(zeroth_destPE) != TimeDistBetweenPEMap[zeroth_srcPE].end());
+
+	//Hack to make the zeroth_srcPE == zeroth_destPE more closer
+	if(zeroth_srcPE != zeroth_destPE){
+		return TimeDistBetweenPEMap[zeroth_srcPE][zeroth_destPE];
+	}
+	else{
+		return TimeDistBetweenPEMap[zeroth_srcPE][zeroth_destPE] + 1;
 	}
 }

@@ -102,6 +102,7 @@ int main(int argn, char *argc[])
 		else{
 			tempCGRA = new CGRA(json_file_name,II,hm.getcongestedPortsPtr());
 		}
+		tempCGRA->analyzeTimeDist();
 
 
 		hm.getcongestedPortsPtr()->clear();

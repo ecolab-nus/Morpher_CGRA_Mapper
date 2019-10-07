@@ -68,6 +68,8 @@ public:
 	unordered_map<string,pair<Port*,Port*>> Name2RegPort;
 	unordered_map<string,Module*> Name2SubMod;
 
+	int get_t(){return t;}
+
 protected:
 	//private:
 

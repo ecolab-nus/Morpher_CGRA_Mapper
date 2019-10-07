@@ -1225,7 +1225,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 	bool mapSuccess = false;
 
 	std::string congestionInfoFileName = mappingLogFileName + ".congestion.info";
+	cout << "Opening congestion file : " << congestionInfoFileName << "!\n";
 	congestionInfoFile.open(congestionInfoFileName.c_str());
+	assert(congestionInfoFile.is_open());
 
 	for (int i = 0; i < this->maxIter; ++i)
 	{
@@ -1235,6 +1237,12 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 		mappingLog.open(mappingLogFileName_withIter.c_str());
 		mappingLog2.open(mappingLog2FileName_withIter.c_str());
+
+		cout << "Opening mapping csv file : " << mappingLogFileName_withIter << "\n";
+		cout << "Opening routeInfo log file : " << mappingLog2FileName_withIter << "\n";
+
+		assert(mappingLog.is_open());
+		assert(mappingLog2.is_open());
 
 		while (!mappedNodes.empty())
 		{
@@ -2953,9 +2961,10 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 			{
 				//				if(pair.second.isLDST == false){
 				PE *bePE = pair.first->getPE();
-				int dx = std::abs(bePE->X - pe->X);
-				int dy = std::abs(bePE->Y - pe->Y);
-				int dist = dx + dy;
+				// int dx = std::abs(bePE->X - pe->X);
+				// int dy = std::abs(bePE->Y - pe->Y);
+				// int dist = dx + dy;
+				int dist = cgra->getQuickTimeDistBetweenPEs(bePE,pe);
 
 				if (pair.second.isLDST == true)
 				{
@@ -2965,8 +2974,8 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 				int dsOps = pair.second.downStreamOps;
 				if (pair.second.dsMEMfound)
 				{
-
-					dist = pe->X;
+					// dist = pe->X;
+					dist = cgra->getTimeClosestMEMPE(pe);
 					dsOps = pair.second.uptoMEMops;
 					std::cout << "**MEM FOUND DOWN**\n";
 				}

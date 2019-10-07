@@ -1334,6 +1334,80 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog()
 		}
 	};
 
+	vector<string> lineHeaders;
+
+	vector<PE *> zeroth_spatialPEs = cgra->getSpatialPEList(0);
+	std::stringstream peHeader;
+	std::stringstream fuHeader;
+	std::stringstream dpHeader;
+	for (PE *pe : zeroth_spatialPEs)
+	{
+		peHeader << pe->getName();
+
+		int fuCount = 0;
+		int dpCount = 0;
+		for (Module *mod : pe->subModules)
+		{
+			if (FU *fu = dynamic_cast<FU *>(mod))
+			{
+				fuCount++;
+				for (Module *mod : fu->subModules)
+				{
+					if (DataPath *dp = dynamic_cast<DataPath *>(mod))
+					{
+						dpCount++;
+					}
+				}
+			}
+		}
+
+		int inputPortCount = pe->inputPorts.size();
+		int outputPortCount = pe->outputPorts.size();
+		int regConPortCount = pe->getRegConPorts().size()*2;
+		int totalColumns = dpCount + inputPortCount + outputPortCount + regConPortCount;
+
+		for (Module *mod : pe->subModules)
+		{
+			if (FU *fu = dynamic_cast<FU *>(mod))
+			{
+				fuHeader << fu->getName() << ",";
+				for (Module *mod : fu->subModules)
+				{
+					if (DataPath *dp = dynamic_cast<DataPath *>(mod))
+					{
+						dpHeader << dp->getName() << ",";
+					}
+				}
+			}
+		}
+
+		for (Port *ip : pe->inputPorts)
+		{
+			dpHeader << ip->getName() << ",";
+		}
+
+		for (Port *op : pe->outputPorts)
+		{
+			dpHeader << op->getName() << ",";
+		}
+
+		for (pair<Port*,Port*> pp : pe->getRegConPorts())
+		{
+			Port* ri = pp.first;
+			Port* ro = pp.second;
+
+			dpHeader << ri->getName() << ",";
+			dpHeader << ro->getName() << ",";
+		}
+
+		util::repeatedPush(peHeader, ",", totalColumns);
+		util::repeatedPush(fuHeader, ",", totalColumns - fuCount);
+	}
+
+	mappingLog << "," << peHeader.str() << "\n";
+	mappingLog << "," << fuHeader.str() << "\n";
+	mappingLog << "," << dpHeader.str() << "\n";
+
 	std::map<int, std::vector<std::vector<std::string>>> lineMatrix;
 
 	for (int t = 0; t < cgra->get_t_max(); ++t)
@@ -1372,7 +1446,8 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog()
 
 			int inputPortCount = pe->inputPorts.size();
 			int outputPortCount = pe->outputPorts.size();
-			int totalColumns = dpCount + inputPortCount + outputPortCount;
+			int regConPortCount = pe->getRegConPorts().size()*2;
+			int totalColumns = dpCount + inputPortCount + outputPortCount + regConPortCount;
 
 			for (Module *mod : pe->subModules)
 			{
@@ -1439,20 +1514,44 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog()
 				}
 			}
 
-			util::repeatedPush(peHeader, ",", totalColumns - 1);
-			util::repeatedPush(fuHeader, ",", totalColumns - fuCount);
+			for (pair<Port*,Port*> pp : pe->getRegConPorts())
+			{
+				Port* ri = pp.first;
+				Port* ro = pp.second;
+
+				dpHeader << ri->getName() << ",";
+				if (ri->getNode())
+				{
+					dpOp << ri->getNode()->idx /*<< ":" << op.getNode()->op */ << ",";
+				}
+				else
+				{
+					dpOp << "---,";
+				}
+
+				dpHeader << ro->getName() << ",";
+				if (ro->getNode())
+				{
+					dpOp << ro->getNode()->idx /*<< ":" << op.getNode()->op */ << ",";
+				}
+				else
+				{
+					dpOp << "---,";
+				}
+
+			}
 
 			std::vector<string> lineWord;
-			lineWord.push_back(peHeader.str());
-			lineWord.push_back(fuHeader.str());
-			lineWord.push_back(dpHeader.str());
+			// lineWord.push_back(peHeader.str());
+			// lineWord.push_back(fuHeader.str());
+			// lineWord.push_back(dpHeader.str());
 			lineWord.push_back(dpOp.str());
 
 			lineMatrix[t].push_back(lineWord);
 		}
 	}
 
-	int lineCount = 4;
+	int lineCount = 1;
 
 	//print line matrix
 	for (int t = 0; t < cgra->get_t_max(); ++t)
@@ -1462,11 +1561,11 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog()
 		{
 			for (int l = 0; l < lineCount; ++l)
 			{
-				mappingLog << linewords[l] << ",";
+				mappingLog << linewords[l];
 			}
-			mappingLog << "\n";
+			// mappingLog << "\n";
 		}
-		//			mappingLog << "\n";
+		mappingLog << "\n";
 	}
 	mappingLog << "************************************\n";
 }
@@ -1659,8 +1758,7 @@ bool CGRAXMLCompile::HeuristicMapper::dataPathCheck(DataPath *dp,
 	int next_t = (pe->T + latency) % cgra->get_t_max();
 
 	// PE *nextPE = cgra->PEArr[next_t][pe->Y][pe->X];
-	PE* nextPE = cgra->getLatencyPE(pe,latency);
-
+	PE *nextPE = cgra->getLatencyPE(pe, latency);
 
 	FU *nextFU = static_cast<FU *>(nextPE->getSubMod(fu->getName()));
 	DataPath *nextDP = static_cast<DataPath *>(nextFU->getSubMod(dp->getName()));

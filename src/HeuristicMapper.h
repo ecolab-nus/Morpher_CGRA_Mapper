@@ -139,8 +139,8 @@ struct dest_with_cost
 						PE *destPE = dest->getPE();
 						CGRA *cgra = destPE->getCGRA();
 
-						int dx = std::abs(parentilPE->X - destPE->X);
-						int dy = std::abs(parentilPE->Y - destPE->Y);
+						// int dx = std::abs(parentilPE->X - destPE->X);
+						// int dy = std::abs(parentilPE->Y - destPE->Y);
 						int dt = (destPE->T - parentilPE->T + cgra->get_t_max()) % cgra->get_t_max();
 						primaryCost = primaryCost + dt;
 					}
@@ -166,10 +166,10 @@ struct dest_with_cost
 									PE *destPE = dest->getPE();
 									CGRA *cgra = destPE->getCGRA();
 
-									int dx = std::abs(parentilPE->X - destPE->X);
-									int dy = std::abs(parentilPE->Y - destPE->Y);
-									int dt = (destPE->T - parentilPE->T + cgra->get_t_max()) % cgra->get_t_max();
-									secondaryCost = secondaryCost + dx + dy + dt;
+									// int dx = std::abs(parentilPE->X - destPE->X);
+									// int dy = std::abs(parentilPE->Y - destPE->Y);
+									// int dt = (destPE->T - parentilPE->T + cgra->get_t_max()) % cgra->get_t_max();
+									// secondaryCost = secondaryCost + dx + dy + dt;
 								}
 							}
 						}
