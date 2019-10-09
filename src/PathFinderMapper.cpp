@@ -1471,6 +1471,8 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		this->printMappingLog();
 		this->printMappingLog2();
 
+		cgra->PrintMappedJSON(fNameLog1 + cgra->getCGRAName() + "mapping.json");
+
 		std::cout << "Map Success!.\n";
 		mappingLog.close();
 		mappingLog2.close();

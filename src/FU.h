@@ -20,7 +20,7 @@ public:
 	//	using Module::Module;
 	FU(const Module *Parent, std::string name, int numberDPs, std::map<std::string, int> supportedOPs, int t);
 
-	FU(const Module *Parent, std::string name, int t) : Module(Parent,name,t){}
+	FU(const Module *Parent, std::string name, int t) : Module(Parent,name, "FU", t){}
 
 	void createFU(int numberDPs);
 	int getNumberDPs() { return numberDPs; }

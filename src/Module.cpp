@@ -14,12 +14,13 @@
 namespace CGRAXMLCompile
 {
 
-Module::Module(const Module *Parent, std::string name, int t)
+Module::Module(const Module *Parent, std::string name, string type, int t)
 {
 	// TODO Auto-generated constructor stub
 	this->Parent = Parent;
 	this->name = name;
 	this->t = t;
+	this->type = type;
 }
 
 Module::~Module()
@@ -364,7 +365,7 @@ void Module::insertConnection(Port *src, Port *dest)
 	connectedFrom[dest].push_back(src);
 }
 
-void Module::insertConnection(std::pair<Port*,Port*> regSrc, Port *dest)
+void Module::insertConnection(std::pair<Port *, Port *> regSrc, Port *dest)
 {
 
 	PE *src_pe = regSrc.first->getMod()->getPE();
@@ -384,7 +385,7 @@ void Module::insertConnection(std::pair<Port*,Port*> regSrc, Port *dest)
 	connectedFrom[dest].push_back(regSrc.first);
 }
 
-void Module::insertConnection(Port *src, std::pair<Port*,Port*> regDest)
+void Module::insertConnection(Port *src, std::pair<Port *, Port *> regDest)
 {
 
 	PE *src_pe = src->getMod()->getPE();
@@ -403,8 +404,6 @@ void Module::insertConnection(Port *src, std::pair<Port*,Port*> regDest)
 	connectedTo[src].push_back(regDest.second);
 	connectedFrom[regDest.second].push_back(src);
 }
-
-
 
 } /* namespace CGRAXMLCompile */
 
@@ -453,6 +452,7 @@ CGRAXMLCompile::Module *CGRAXMLCompile::Module::getSubMod(std::string Mname)
 			return m;
 		}
 	}
+	return NULL;
 }
 
 CGRAXMLCompile::CGRA *CGRAXMLCompile::Module::getCGRA()
@@ -485,4 +485,137 @@ CGRAXMLCompile::PE *CGRAXMLCompile::Module::getPE()
 		mod = mod->getParent();
 	}
 	return NULL;
+}
+
+void CGRAXMLCompile::Module::UpdateMappedConnectionsJSON(json &output_json)
+{
+	Module *mod = this;
+	CGRA *cgra = getCGRA();
+	do
+	{
+		int t = mod->get_t();
+		for (auto it = mod->connectedTo.begin(); it != mod->connectedTo.end(); it++)
+		{
+			Port *src_port = it->first;
+			Module *src_module = src_port->getMod();
+			string src_port_name;
+			if (src_module == mod)
+			{
+				src_port_name = "THIS." + src_port->getName();
+			}
+			else
+			{
+				src_port_name = src_module->getName() + "." + src_port->getName();
+			}
+
+			//if source port is not mapped no need to explore
+			if (src_port->getNode() == NULL)
+			{
+				// cout << "src_port = " << src_port->getFullName() << "is not used!\n";
+				continue;
+			}
+
+			for (Port *dest_port : it->second)
+			{
+				Module *dest_module = dest_port->getMod();
+				string dest_port_name;
+				if (dest_module == mod)
+				{
+					dest_port_name = "THIS." + dest_port->getName();
+				}
+				else
+				{
+					dest_port_name = dest_module->getName() + "." + dest_port->getName();
+				}
+
+				//the dest port is not in use
+				if (dest_port->getNode() == NULL)
+					continue;
+
+				int LatencyDiff = dest_port->getLat() - src_port->getLat();
+				bool isTemproalRegConnection = src_port->getType() == REGO && dest_port->getType() == REGI;
+				bool isBothRegPorts = (src_port->getType() == REGO && dest_port->getType() == REGI) || (src_port->getType() == REGI && dest_port->getType() == REGO);
+				bool hasSameNode = dest_port->getNode() == src_port->getNode();
+				bool valid_connection = false;
+
+				// if (isTemproalRegConnection)
+				// {
+				// 	if (LatencyDiff == 1 && hasSameNode)
+				// 	{
+				// 		output_json["CONNECTIONS"][to_string(t)][src_port_name] = dest_port_name;
+				// 		output_json["MAPPED_NODES"][to_string(t)][src_port_name] = src_port->getNode()->idx;
+				// 		output_json["MAPPED_NODES"][to_string(t)][dest_port_name] = dest_port->getNode()->idx;
+				// 		valid_connection = true;
+				// 	}
+				// }
+				// else
+				// {
+				// 	if (LatencyDiff == 0 && hasSameNode)
+				// 	{
+				// 		output_json["CONNECTIONS"][to_string(t)][src_port_name] = dest_port_name;
+				// 		output_json["MAPPED_NODES"][to_string(t)][src_port_name] = src_port->getNode()->idx;
+				// 		output_json["MAPPED_NODES"][to_string(t)][dest_port_name] = dest_port->getNode()->idx;
+				// 		valid_connection = true;
+				// 	}
+				// }
+
+				if (!isBothRegPorts)
+				{
+					if (LatencyDiff == 0 && hasSameNode)
+					{
+						output_json["CONNECTIONS"][to_string(t)][src_port_name] = dest_port_name;
+						output_json["MAPPED_NODES"][to_string(t)][src_port_name] = src_port->getNode()->idx;
+						output_json["MAPPED_NODES"][to_string(t)][dest_port_name] = dest_port->getNode()->idx;
+						valid_connection = true;
+					}
+				}
+
+				if (src_port->getName().find("WP") != string::npos)
+				{
+					assert(false);
+					if (!valid_connection)
+					{
+						cout << "src_port=" << src_port->getFullName() << "\n";
+						cout << "dest_port=" << dest_port->getFullName() << "\n";
+						cout << "src_node = " << src_port->getNode()->idx << "\n";
+						cout << "dest_node = " << dest_port->getNode()->idx << "\n";
+					}
+					assert(valid_connection);
+				}
+			}
+		}
+		mod = mod->getNextTimeIns();
+	} while (mod != this);
+
+	//If this is a funcional unit explore children for datapath submodule
+	if (FU *this_fu = dynamic_cast<FU *>(this))
+	{
+		for (Module *sub_module : this_fu->subModules)
+		{
+			if (DataPath *dp = dynamic_cast<DataPath *>(sub_module))
+			{
+				Module *mod = dp;
+				do
+				{
+					int t = mod->get_t();
+					DataPath *mod_dp = static_cast<DataPath *>(mod);
+					if (mod_dp->getMappedNode())
+					{
+						output_json["OPS"][to_string(t)] = mod_dp->getMappedNode()->op;
+						output_json["OP_ID"][to_string(t)] = mod_dp->getMappedNode()->idx;
+
+						if(mod_dp->getMappedNode()->hasConst){
+							//if there are constants they are always fed to I2 port.
+							output_json["CONNECTIONS"][to_string(t)]["CONST." + to_string(mod_dp->getMappedNode()->constant)] = mod_dp->getName() + ".I2";
+						}
+
+					}
+					mod = mod->getNextTimeIns();
+				} while (mod != dp);
+
+				//Assumption :: only 1 datapath module is found inside FU
+				break;
+			}
+		}
+	}
 }

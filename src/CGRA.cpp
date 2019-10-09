@@ -342,11 +342,12 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 		ret->Name2Port["T"] = ret->getOutPort("T");
 		//Datapath has a fixed design for now, so no need to modify just return
 
-		FU* ret_fu = ret->getFU();
-		if(ret_fu->isMEMFU()){
+		FU *ret_fu = ret->getFU();
+		if (ret_fu->isMEMFU())
+		{
 			freeMemNodes++;
-			freeMemNodeSet.insert((DataPath*)ret);
-			PE* ret_pe = ret->getPE();
+			freeMemNodeSet.insert((DataPath *)ret);
+			PE *ret_pe = ret->getPE();
 			ret_pe->isMemPE = true;
 		}
 		return ret;
@@ -370,7 +371,7 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 	else
 	{
 		// cout << "No special module for type = " << type << ", implementing geneic module.\n";
-		ret = new Module(parent, module_name, t);
+		ret = new Module(parent, module_name, type, t);
 	}
 
 	for (auto &p : module_desc["INPUTS"])
@@ -527,6 +528,10 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 {
 	this->t_max = II;
 
+	string filename_extention = fileName.substr(fileName.find("."));
+	assert(filename_extention == "json");
+	string filename_withoutext = fileName.substr(0,fileName.size()-5);
+
 	ifstream json_file(fileName.c_str());
 	assert(json_file.is_open());
 	json json;
@@ -535,6 +540,11 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 	// cout << json;
 
 	PreprocessPattern(json["ARCH"]["CGRA"]);
+	string verbose_json_filename = filename_withoutext + "_verbose.json";
+	ofstream verbose_json_file(verbose_json_filename.c_str()); 
+	verbose_json_file << setw(4) << json << std::endl;
+	verbose_json_file.close();
+	
 
 	top_desc = json;
 
@@ -778,136 +788,236 @@ string CGRAXMLCompile::CGRA::getCGRAName()
 		std::stringstream ss(json_file);
 		std::string token;
 		vector<string> cont;
-		while (std::getline(ss, token, '/')) {
+		while (std::getline(ss, token, '/'))
+		{
 			cont.push_back(token);
 		}
 		return *cont.rbegin();
 	}
 }
 
-void CGRAXMLCompile::CGRA::analyzeTimeDist(){
+void CGRAXMLCompile::CGRA::analyzeTimeDist()
+{
 
-	for(Module* m1 : subModArr[0]){
-		PE* pe1 = static_cast<PE*>(m1);
+	for (Module *m1 : subModArr[0])
+	{
+		PE *pe1 = static_cast<PE *>(m1);
 		TimeDistBetweenClosestMEMPEMap[pe1] = INT32_MAX;
-		for(Module* m2 : subModArr[0]){
-			PE* pe2 = static_cast<PE*>(m2);
-			if(pe1 == pe2) continue;
-			TimeDistBetweenPEMap[pe1][pe2] = getTimeDistBetweenPEs(pe1,pe2);
+		for (Module *m2 : subModArr[0])
+		{
+			PE *pe2 = static_cast<PE *>(m2);
+			if (pe1 == pe2)
+				continue;
+			TimeDistBetweenPEMap[pe1][pe2] = getTimeDistBetweenPEs(pe1, pe2);
 		}
 	}
 
-	if(get_t_max() > 1){
-		for(Module* m1 : subModArr[0]){
-			PE* zeroth_pe = static_cast<PE*>(m1);
-			PE* currPE = NextCyclePEMap[zeroth_pe];
-			for(int i=1; i<get_t_max(); i++){
-				MapTzeroPE[currPE]=zeroth_pe;
+	if (get_t_max() > 1)
+	{
+		for (Module *m1 : subModArr[0])
+		{
+			PE *zeroth_pe = static_cast<PE *>(m1);
+			PE *currPE = NextCyclePEMap[zeroth_pe];
+			for (int i = 1; i < get_t_max(); i++)
+			{
+				MapTzeroPE[currPE] = zeroth_pe;
 				currPE = NextCyclePEMap[currPE];
 			}
 		}
 	}
 
 	cout << "Timing analysis between PEs done.!\n";
-	for(auto it1 = TimeDistBetweenPEMap.begin(); it1 != TimeDistBetweenPEMap.end(); it1++){
-		PE* pe1 = it1->first;
-		for(auto it2 = TimeDistBetweenPEMap[pe1].begin(); it2 != TimeDistBetweenPEMap[pe1].end(); it2++){
-			PE* pe2 = it2->first;
+	for (auto it1 = TimeDistBetweenPEMap.begin(); it1 != TimeDistBetweenPEMap.end(); it1++)
+	{
+		PE *pe1 = it1->first;
+		for (auto it2 = TimeDistBetweenPEMap[pe1].begin(); it2 != TimeDistBetweenPEMap[pe1].end(); it2++)
+		{
+			PE *pe2 = it2->first;
 			int time_dist = it2->second;
 			cout << "PE1=" << pe1->getFullName() << "\tPE2=" << pe2->getFullName() << "\ttime_dist=" << time_dist << "\n";
 		}
 	}
 
 	cout << "Timing analysis between PE and closest memPE :: \n";
-	for(auto it = TimeDistBetweenClosestMEMPEMap.begin(); it != TimeDistBetweenClosestMEMPEMap.end(); it++){
-		PE* pe = it->first;
+	for (auto it = TimeDistBetweenClosestMEMPEMap.begin(); it != TimeDistBetweenClosestMEMPEMap.end(); it++)
+	{
+		PE *pe = it->first;
 		int time_dist = it->second;
 		cout << "PE=" << pe->getFullName() << "\ttime_dist=" << time_dist << "\n";
 	}
 
 	IntraPETimeDistAnalysisDone = true;
-
 }
 
-
-void CGRAXMLCompile::CGRA::traverseUntil(PE* srcPE, PE* destPE, Port* currPort, int time_dist, unordered_map<Port*,int>& already_traversed, int& result){
+void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, int time_dist, unordered_map<Port *, int> &already_traversed, int &result)
+{
 	// cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
-	if(already_traversed.find(currPort) != already_traversed.end()){
-		if(time_dist < already_traversed[currPort]){
+	if (already_traversed.find(currPort) != already_traversed.end())
+	{
+		if (time_dist < already_traversed[currPort])
+		{
 			already_traversed[currPort] = time_dist;
 		}
-		else{
+		else
+		{
 			return;
 		}
 	}
-	else{
+	else
+	{
 		already_traversed[currPort] = time_dist;
 	}
 
-	PE* currPE = currPort->getMod()->getPE();
-	FU* currFU = currPort->getMod()->getFU();
+	PE *currPE = currPort->getMod()->getPE();
+	FU *currFU = currPort->getMod()->getFU();
 
-	if(currFU != NULL && currFU->isMEMFU() ){
-		if(time_dist < TimeDistBetweenClosestMEMPEMap[srcPE]){
-			    // cout << "fu = " << currFU->getFullName() << ",";
-				// cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
+	if (currFU != NULL && currFU->isMEMFU())
+	{
+		if (time_dist < TimeDistBetweenClosestMEMPEMap[srcPE])
+		{
+			// cout << "fu = " << currFU->getFullName() << ",";
+			// cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
 			TimeDistBetweenClosestMEMPEMap[srcPE] = time_dist;
 		}
 	}
 
-	if(currFU != NULL && currPE == destPE){
+	if (currFU != NULL && currPE == destPE)
+	{
 		result = time_dist;
 		return;
 	}
 
-	vector<Port*> nextPorts = currPort->getMod()->getNextPorts(currPort);
-	for(Port* p : nextPorts){
+	vector<Port *> nextPorts = currPort->getMod()->getNextPorts(currPort);
+	for (Port *p : nextPorts)
+	{
 		int time_delta = 0;
-		if(p->getMod()->get_t() != currPort->getMod()->get_t()){
+		if (p->getMod()->get_t() != currPort->getMod()->get_t())
+		{
 			time_delta = 1;
 		}
-		if(currPort->getType() == REGI && p->getType() == REGO){
+		if (currPort->getType() == REGI && p->getType() == REGO)
+		{
 			time_delta = 1;
 		}
 		assert(p != currPort);
-		traverseUntil(srcPE, destPE,p,time_dist+time_delta,already_traversed,result);
+		traverseUntil(srcPE, destPE, p, time_dist + time_delta, already_traversed, result);
 	}
 }
 
-int CGRAXMLCompile::CGRA::getTimeDistBetweenPEs(PE* srcPE, PE* destPE){
+int CGRAXMLCompile::CGRA::getTimeDistBetweenPEs(PE *srcPE, PE *destPE)
+{
 	int ret_val = INT32_MAX;
-	for(Port* op : srcPE->outputPorts){
-		unordered_map<Port*,int> already_traversed;
+	for (Port *op : srcPE->outputPorts)
+	{
+		unordered_map<Port *, int> already_traversed;
 		int tmp = -1;
-		traverseUntil(srcPE, destPE,op,0,already_traversed,tmp);
-		if(tmp != -1 && tmp < ret_val) ret_val = tmp;
+		traverseUntil(srcPE, destPE, op, 0, already_traversed, tmp);
+		if (tmp != -1 && tmp < ret_val)
+			ret_val = tmp;
 	}
 	assert(ret_val != INT32_MAX);
 	return ret_val;
 }
 
-int CGRAXMLCompile::CGRA::getTimeClosestMEMPE(PE* currPE){
+int CGRAXMLCompile::CGRA::getTimeClosestMEMPE(PE *currPE)
+{
 	assert(IntraPETimeDistAnalysisDone);
-	PE* zeroth_currPE = MapTzeroPE[currPE];
+	PE *zeroth_currPE = MapTzeroPE[currPE];
 	assert(TimeDistBetweenClosestMEMPEMap.find(zeroth_currPE) != TimeDistBetweenClosestMEMPEMap.end());
 
 	return TimeDistBetweenClosestMEMPEMap[zeroth_currPE];
 }
 
-int CGRAXMLCompile::CGRA::getQuickTimeDistBetweenPEs(PE* srcPE, PE* destPE){
+int CGRAXMLCompile::CGRA::getQuickTimeDistBetweenPEs(PE *srcPE, PE *destPE)
+{
 	assert(IntraPETimeDistAnalysisDone);
 
-	PE* zeroth_srcPE = MapTzeroPE[srcPE];
-	PE* zeroth_destPE = MapTzeroPE[destPE];
+	PE *zeroth_srcPE = MapTzeroPE[srcPE];
+	PE *zeroth_destPE = MapTzeroPE[destPE];
 
 	assert(TimeDistBetweenPEMap.find(zeroth_srcPE) != TimeDistBetweenPEMap.end());
 	assert(TimeDistBetweenPEMap[zeroth_srcPE].find(zeroth_destPE) != TimeDistBetweenPEMap[zeroth_srcPE].end());
 
 	//Hack to make the zeroth_srcPE == zeroth_destPE more closer
-	if(zeroth_srcPE != zeroth_destPE){
+	if (zeroth_srcPE != zeroth_destPE)
+	{
 		return TimeDistBetweenPEMap[zeroth_srcPE][zeroth_destPE];
 	}
-	else{
+	else
+	{
 		return TimeDistBetweenPEMap[zeroth_srcPE][zeroth_destPE] + 1;
+	}
+}
+
+
+void CGRAXMLCompile::CGRA::EstablishTemporalLinkageModule(Module* curr_cycle_module, Module* next_cycle_module){
+	curr_cycle_module->attachNextTimeIns(next_cycle_module);
+	// cout << "Attaching :: curr_cycle_module = " << curr_cycle_module->getFullName() << "\t\t next_cycle_module = " << next_cycle_module->getFullName() << "\n";
+	for(Module* curr_cycle_sub_module : curr_cycle_module->subModules){
+		Module* next_cycle_sub_module = next_cycle_module->getSubMod(curr_cycle_sub_module->getName()); assert(next_cycle_sub_module);
+		EstablishTemporalLinkageModule(curr_cycle_sub_module,next_cycle_sub_module);
+	}
+}
+
+void CGRAXMLCompile::CGRA::EstablishTemporalLinkage()
+{
+	cout << "EstablishTemporalLinkage started!.\n";
+	if (!subModArr.empty())
+	{
+		//through parsed json
+		for(int t=0; t<t_max; t++){
+			for(Module* curr_cycle_pe_mod : subModArr[t]){
+				PE* curr_cycle_pe = static_cast<PE*>(curr_cycle_pe_mod);
+				PE* next_cycle_pe = NextCyclePEMap[curr_cycle_pe];
+				EstablishTemporalLinkageModule(curr_cycle_pe,next_cycle_pe);
+			}
+		}
+	}
+	else
+	{
+		//classic cpp defintion of architectures
+		assert(!PEArr.empty());
+		for(int t=0; t<t_max; t++){
+			for(int y=0; y<y_max; y++){
+				for(int x=0; x<x_max; x++){
+					PE* curr_cycle_pe = PEArr[t][y][x];
+					PE* next_cycle_pe = PEArr[(t+1)%t_max][y][x];
+					EstablishTemporalLinkageModule(curr_cycle_pe,next_cycle_pe);
+				}
+			}
+		}
+	}
+
+	cout << "EstablishTemporalLinkage done!.\n";
+}
+
+
+void CGRAXMLCompile::CGRA::PrintMappedJSON(string fileName){
+
+	json output_json;
+	ofstream outFile(fileName);
+	assert(outFile.is_open());
+
+	vector<PE*> zeroth_spatial_pe_list = getSpatialPEList(0);
+
+	output_json["II"] = get_t_max();
+
+	for(PE* pe : zeroth_spatial_pe_list){
+		output_json["CGRA_INS"]["TYPE"] = "CGRA";
+		string pe_name = pe->getName();
+		string spatial_pe_name = pe_name.substr(0,pe_name.size()-3); //remove the last "-T0" component;
+		PrintMappedJSONModule(pe,output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name]);
+	}
+
+	outFile <<  setw(4) << output_json << std::endl;
+	outFile.close();
+}
+
+void CGRAXMLCompile::CGRA::PrintMappedJSONModule(Module* curr_module, json& output_json){
+	output_json["TYPE"] = curr_module->get_type();
+	curr_module->UpdateMappedConnectionsJSON(output_json);
+
+	for(Module* sub_module : curr_module->subModules){
+		PrintMappedJSONModule(sub_module,output_json["SUBMODS"][sub_module->getName()]);
 	}
 }

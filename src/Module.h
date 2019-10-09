@@ -15,7 +15,10 @@
 
 #include "Port.h"
 
+#include <nlohmann/json.hpp>
+
 using namespace std;
+using json = nlohmann::json;
 
 namespace CGRAXMLCompile
 {
@@ -29,7 +32,7 @@ typedef std::pair<int, Port *> LatPort;
 class Module
 {
 public:
-	Module(const Module *Parent, std::string name, int t);
+	Module(const Module *Parent, std::string name, string type, int t);
 	virtual ~Module();
 	std::vector<Port *> inputPorts;
 	std::vector<Port *> outputPorts;
@@ -67,8 +70,12 @@ public:
 	unordered_map<string,Port*> Name2Port;
 	unordered_map<string,pair<Port*,Port*>> Name2RegPort;
 	unordered_map<string,Module*> Name2SubMod;
-
 	int get_t(){return t;}
+
+	void attachNextTimeIns(Module* nt){nextTimeIns = nt;}
+	Module* getNextTimeIns(){return nextTimeIns;}
+	string get_type(){return type;}
+	void UpdateMappedConnectionsJSON(json& output_json);
 
 protected:
 	//private:
@@ -77,6 +84,8 @@ protected:
 	std::map<Port *, std::vector<Port *>> connectedFrom;
 	const Module *Parent;
 	std::string name;
+	Module* nextTimeIns;
+	string type;
 
 	int t;
 

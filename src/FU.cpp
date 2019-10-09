@@ -23,7 +23,7 @@ namespace CGRAXMLCompile
 
 } /* namespace CGRAXMLCompile */
 
-CGRAXMLCompile::FU::FU(const Module *Parent, std::string name, int numberDPs, std::map<std::string, int> supportedOPs, int t) : Module(Parent, name, t) {
+CGRAXMLCompile::FU::FU(const Module *Parent, std::string name, int numberDPs, std::map<std::string, int> supportedOPs, int t) : Module(Parent, name,"FU", t) {
 	this->numberDPs = numberDPs;
 	createFU(numberDPs);
 	this->supportedOPs = supportedOPs;

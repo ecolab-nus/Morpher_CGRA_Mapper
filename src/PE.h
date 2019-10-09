@@ -24,7 +24,7 @@ public:
 	   std::string name,
 	   int x, int y, int t,
 	   std::string peType,
-	   bool isMEMpe = false, int numDPs = 1) : Module(Parent, name, t)
+	   bool isMEMpe = false, int numDPs = 1) : Module(Parent, name, "PE", t)
 	{
 		if (peType == "GENERIC_8REGF")
 		{
@@ -103,7 +103,7 @@ public:
 		this->T = t;
 	}
 
-	PE(const Module *Parent, std::string name, int t, int y, int x) : Module(Parent,name,t){
+	PE(const Module *Parent, std::string name, int t, int y, int x) : Module(Parent,name,"PE",t){
 		this->T = t;
 
 		assert(y != -1);

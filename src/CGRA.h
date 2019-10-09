@@ -27,7 +27,7 @@ class DFG;
 class CGRA : public Module
 {
 public:
-	CGRA(const Module *Parent, std::string name, int t, int y, int x, DFG *dfg, std::string peType = "GENERIC_8REGF", int numberofDPs = 1, std::map<Port *, std::set<DFGNode *>> *_congestedPortPtr = NULL) : Module(Parent, name, t)
+	CGRA(const Module *Parent, std::string name, int t, int y, int x, DFG *dfg, std::string peType = "GENERIC_8REGF", int numberofDPs = 1, std::map<Port *, std::set<DFGNode *>> *_congestedPortPtr = NULL) : Module(Parent, name, "CGRA", t)
 	{
 		createGenericCGRA(x, y, t, peType, numberofDPs);
 		this->peType = peType;
@@ -64,14 +64,17 @@ public:
 				}
 			}
 		}
+		EstablishTemporalLinkage();
 		currDFG = dfg;
 	}
 
-	CGRA(const Module *Parent, std::string name, int t) : Module(Parent,name,t){}
-	CGRA(std::string json_filename, int II,  std::map<Port *, std::set<DFGNode *>> *_congestedPortPtr = NULL) : Module(NULL,"CGRA_Ins",0){
+	CGRA(const Module *Parent, std::string name, int t) : Module(Parent,name,"CGRA",t){}
+	CGRA(std::string json_filename, int II,  std::map<Port *, std::set<DFGNode *>> *_congestedPortPtr = NULL) : Module(NULL,"CGRA_Ins","CGRA",0){
 		json_file = json_filename;
 		this->congestedPortPtr = _congestedPortPtr;
+		t_max = II;
 		ParseJSONArch(json_filename,II);
+		EstablishTemporalLinkage();
 	}
 
 	void createGenericCGRA(int x, int y, int t, std::string peType = "GENERIC_8REGF", int numberofDPs = 1);
@@ -119,6 +122,9 @@ public:
 	int getTimeClosestMEMPE(PE* currPE);
 	int getQuickTimeDistBetweenPEs(PE* srcPE, PE* destPE);
 
+	void EstablishTemporalLinkage();
+	void PrintMappedJSON(string fileName);
+
 
 private:
 	int x_max;
@@ -139,6 +145,9 @@ private:
 	void traverseUntil(PE* srcPE, PE* destPE, Port* currPort, int time_dist, unordered_map<Port*,int>& already_traversed, int& result);
 	int getTimeDistBetweenPEs(PE* srcPE, PE* destPE);
 	bool IntraPETimeDistAnalysisDone = false;
+
+	void EstablishTemporalLinkageModule(Module* curr_cycle_module, Module* next_cycle_module);
+	void PrintMappedJSONModule(Module* curr_module, json& output_json);
 
 
 
