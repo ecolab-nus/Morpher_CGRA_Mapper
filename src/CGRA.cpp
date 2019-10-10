@@ -777,8 +777,8 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist()
 		for (Module *m2 : subModArr[0])
 		{
 			PE *pe2 = static_cast<PE *>(m2);
-			if (pe1 == pe2)
-				continue;
+			// if (pe1 == pe2)
+				// continue;
 			TimeDistBetweenPEMap[pe1][pe2] = getTimeDistBetweenPEs(pe1, pe2);
 		}
 	}
@@ -788,6 +788,7 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist()
 		for (Module *m1 : subModArr[0])
 		{
 			PE *zeroth_pe = static_cast<PE *>(m1);
+			MapTzeroPE[zeroth_pe] = zeroth_pe;
 			PE *currPE = NextCyclePEMap[zeroth_pe];
 			for (int i = 1; i < get_t_max(); i++)
 			{
@@ -909,6 +910,12 @@ int CGRAXMLCompile::CGRA::getQuickTimeDistBetweenPEs(PE *srcPE, PE *destPE)
 
 	PE *zeroth_srcPE = MapTzeroPE[srcPE];
 	PE *zeroth_destPE = MapTzeroPE[destPE];
+
+	assert(zeroth_srcPE);
+	assert(zeroth_destPE);
+
+	// cout << "zeroth_srcPE = " << zeroth_srcPE->getFullName() << "\n";
+	// cout << "zeroth_destPE = " << zeroth_destPE->getFullName() << "\n";
 
 	assert(TimeDistBetweenPEMap.find(zeroth_srcPE) != TimeDistBetweenPEMap.end());
 	assert(TimeDistBetweenPEMap[zeroth_srcPE].find(zeroth_destPE) != TimeDistBetweenPEMap[zeroth_srcPE].end());

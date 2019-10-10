@@ -623,6 +623,7 @@ void CGRAXMLCompile::Module::UpdateMappedConnectionsJSON(json &output_json)
 CGRAXMLCompile::Port* CGRAXMLCompile::Module::getJSONPort(string pname, bool isSrc){
 	Port* src_p;
 	string src = pname;
+
 	string src_mod_str = src.substr(0, src.find("."));
 	string src_port_str = src.erase(0, src.find(".") + 1);
 
@@ -636,6 +637,7 @@ CGRAXMLCompile::Port* CGRAXMLCompile::Module::getJSONPort(string pname, bool isS
 		src_mod = this->Name2SubMod[src_mod_str];
 	}
 	assert(src_mod);
+
 
 	if (!src_mod->Name2RegPort.empty() && src_mod->Name2RegPort.find(src_port_str) != src_mod->Name2RegPort.end())
 	{
