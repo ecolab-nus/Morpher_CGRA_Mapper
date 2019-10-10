@@ -76,6 +76,7 @@ public:
 	Module* getNextTimeIns(){return nextTimeIns;}
 	string get_type(){return type;}
 	void UpdateMappedConnectionsJSON(json& output_json);
+	Port* getJSONPort(string pname, bool isSrc);
 
 protected:
 	//private:

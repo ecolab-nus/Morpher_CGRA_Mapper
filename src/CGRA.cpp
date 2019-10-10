@@ -454,65 +454,26 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 	for (auto &el : module_desc["CONNECTIONS"].items())
 	{
 		string src = el.key();
-		string src_mod_str = src.substr(0, src.find("."));
-		string src_port_str = src.erase(0, src.find(".") + 1);
-
-		Module *src_mod;
-		if (src_mod_str == "THIS")
-		{
-			src_mod = ret;
-		}
-		else
-		{
-			src_mod = ret->Name2SubMod[src_mod_str];
-		}
-		assert(src_mod);
+		Port *src_p = ret->getJSONPort(src,true);
 
 		for (string dest : el.value())
 		{
-			string dest_mod_str = dest.substr(0, dest.find("."));
-			string dest_port_str = dest.erase(0, dest.find(".") + 1);
-
-			Module *dest_mod;
-			if (dest_mod_str == "THIS")
-			{
-				dest_mod = ret;
-			}
-			else
-			{
-				dest_mod = ret->Name2SubMod[dest_mod_str];
-			}
-			assert(dest_mod);
-
-			Port *src_p;
-			// cout << "src_mod_str = " << src_mod_str << "\n";
-			// cout << "src_port_str = " << src_port_str << "\n";
-			// cout << "src_mod->Name2RegPort.empty()  = " << src_mod->Name2RegPort.empty() << "\n";
-			// cout << "src_mod real = " << src_mod->getName() << "\n";
-			if (!src_mod->Name2RegPort.empty() && src_mod->Name2RegPort.find(src_port_str) != src_mod->Name2RegPort.end())
-			{
-				//in a regport second is used for outgoing connections
-				src_p = src_mod->Name2RegPort[src_port_str].second;
-			}
-			else
-			{
-				src_p = src_mod->Name2Port[src_port_str];
-			}
-			assert(src_p);
-
-			Port *dest_p;
-			// cout << "dest_port_str = " << dest_port_str << "\n";
-			if (!dest_mod->Name2RegPort.empty() && dest_mod->Name2RegPort.find(dest_port_str) != dest_mod->Name2RegPort.end())
-			{
-				//in a regport first is used for incoming connections
-				dest_p = dest_mod->Name2RegPort[dest_port_str].first;
-			}
-			else
-			{
-				dest_p = dest_mod->Name2Port[dest_port_str];
-			}
-			assert(dest_p);
+			Port* dest_p = ret->getJSONPort(dest,false);
 			ret->insertConnection(src_p, dest_p);
+		}
+	}
+
+	for (auto &el : module_desc["CONFLICTS"].items())
+	{
+
+		string src = el.key();
+		Port *src_p = ret->getJSONPort(src,true);
+
+		for (string dest : el.value())
+		{
+			Port* dest_p = ret->getJSONPort(dest,false);
+			this->insertConflictPort(src_p, dest_p);
+			this->insertConflictPort(dest_p, src_p);
 		}
 	}
 
@@ -528,9 +489,20 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 {
 	this->t_max = II;
 
-	string filename_extention = fileName.substr(fileName.find("."));
-	assert(filename_extention == "json");
-	string filename_withoutext = fileName.substr(0,fileName.size()-5);
+	std::stringstream ss(fileName);
+	std::string token;
+	vector<string> cont;
+	while (std::getline(ss, token, '/'))
+	{
+		cont.push_back(token);
+	}
+	string cgra_json_name = *cont.rbegin();
+	cout << "cgra_json_name = " << cgra_json_name << "\n";
+
+	string filename_extention = cgra_json_name.substr(cgra_json_name.find("."));
+	cout << "filename_extention = " << filename_extention << "\n";
+	assert(filename_extention == ".json");
+	string filename_withoutext = cgra_json_name.substr(0, cgra_json_name.size() - 5);
 
 	ifstream json_file(fileName.c_str());
 	assert(json_file.is_open());
@@ -541,10 +513,9 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 
 	PreprocessPattern(json["ARCH"]["CGRA"]);
 	string verbose_json_filename = filename_withoutext + "_verbose.json";
-	ofstream verbose_json_file(verbose_json_filename.c_str()); 
+	ofstream verbose_json_file(verbose_json_filename.c_str());
 	verbose_json_file << setw(4) << json << std::endl;
 	verbose_json_file.close();
-	
 
 	top_desc = json;
 
@@ -847,15 +818,17 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist()
 	}
 
 	IntraPETimeDistAnalysisDone = true;
+	// exit(EXIT_SUCCESS);
 }
 
 void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, int time_dist, unordered_map<Port *, int> &already_traversed, int &result)
 {
-	// cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
+	
 	if (already_traversed.find(currPort) != already_traversed.end())
 	{
 		if (time_dist < already_traversed[currPort])
 		{
+			// cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
 			already_traversed[currPort] = time_dist;
 		}
 		else
@@ -865,6 +838,7 @@ void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, 
 	}
 	else
 	{
+		// cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
 		already_traversed[currPort] = time_dist;
 	}
 
@@ -883,6 +857,7 @@ void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, 
 
 	if (currFU != NULL && currPE == destPE)
 	{
+		// cout << "found destPE, srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
 		result = time_dist;
 		return;
 	}
@@ -895,7 +870,7 @@ void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, 
 		{
 			time_delta = 1;
 		}
-		if (currPort->getType() == REGI && p->getType() == REGO)
+		if (currPort->getType() == REGO && p->getType() == REGI)
 		{
 			time_delta = 1;
 		}
@@ -949,13 +924,15 @@ int CGRAXMLCompile::CGRA::getQuickTimeDistBetweenPEs(PE *srcPE, PE *destPE)
 	}
 }
 
-
-void CGRAXMLCompile::CGRA::EstablishTemporalLinkageModule(Module* curr_cycle_module, Module* next_cycle_module){
+void CGRAXMLCompile::CGRA::EstablishTemporalLinkageModule(Module *curr_cycle_module, Module *next_cycle_module)
+{
 	curr_cycle_module->attachNextTimeIns(next_cycle_module);
 	// cout << "Attaching :: curr_cycle_module = " << curr_cycle_module->getFullName() << "\t\t next_cycle_module = " << next_cycle_module->getFullName() << "\n";
-	for(Module* curr_cycle_sub_module : curr_cycle_module->subModules){
-		Module* next_cycle_sub_module = next_cycle_module->getSubMod(curr_cycle_sub_module->getName()); assert(next_cycle_sub_module);
-		EstablishTemporalLinkageModule(curr_cycle_sub_module,next_cycle_sub_module);
+	for (Module *curr_cycle_sub_module : curr_cycle_module->subModules)
+	{
+		Module *next_cycle_sub_module = next_cycle_module->getSubMod(curr_cycle_sub_module->getName());
+		assert(next_cycle_sub_module);
+		EstablishTemporalLinkageModule(curr_cycle_sub_module, next_cycle_sub_module);
 	}
 }
 
@@ -965,11 +942,13 @@ void CGRAXMLCompile::CGRA::EstablishTemporalLinkage()
 	if (!subModArr.empty())
 	{
 		//through parsed json
-		for(int t=0; t<t_max; t++){
-			for(Module* curr_cycle_pe_mod : subModArr[t]){
-				PE* curr_cycle_pe = static_cast<PE*>(curr_cycle_pe_mod);
-				PE* next_cycle_pe = NextCyclePEMap[curr_cycle_pe];
-				EstablishTemporalLinkageModule(curr_cycle_pe,next_cycle_pe);
+		for (int t = 0; t < t_max; t++)
+		{
+			for (Module *curr_cycle_pe_mod : subModArr[t])
+			{
+				PE *curr_cycle_pe = static_cast<PE *>(curr_cycle_pe_mod);
+				PE *next_cycle_pe = NextCyclePEMap[curr_cycle_pe];
+				EstablishTemporalLinkageModule(curr_cycle_pe, next_cycle_pe);
 			}
 		}
 	}
@@ -977,12 +956,15 @@ void CGRAXMLCompile::CGRA::EstablishTemporalLinkage()
 	{
 		//classic cpp defintion of architectures
 		assert(!PEArr.empty());
-		for(int t=0; t<t_max; t++){
-			for(int y=0; y<y_max; y++){
-				for(int x=0; x<x_max; x++){
-					PE* curr_cycle_pe = PEArr[t][y][x];
-					PE* next_cycle_pe = PEArr[(t+1)%t_max][y][x];
-					EstablishTemporalLinkageModule(curr_cycle_pe,next_cycle_pe);
+		for (int t = 0; t < t_max; t++)
+		{
+			for (int y = 0; y < y_max; y++)
+			{
+				for (int x = 0; x < x_max; x++)
+				{
+					PE *curr_cycle_pe = PEArr[t][y][x];
+					PE *next_cycle_pe = PEArr[(t + 1) % t_max][y][x];
+					EstablishTemporalLinkageModule(curr_cycle_pe, next_cycle_pe);
 				}
 			}
 		}
@@ -991,33 +973,38 @@ void CGRAXMLCompile::CGRA::EstablishTemporalLinkage()
 	cout << "EstablishTemporalLinkage done!.\n";
 }
 
-
-void CGRAXMLCompile::CGRA::PrintMappedJSON(string fileName){
+void CGRAXMLCompile::CGRA::PrintMappedJSON(string fileName)
+{
 
 	json output_json;
 	ofstream outFile(fileName);
 	assert(outFile.is_open());
 
-	vector<PE*> zeroth_spatial_pe_list = getSpatialPEList(0);
+	vector<PE *> zeroth_spatial_pe_list = getSpatialPEList(0);
 
 	output_json["II"] = get_t_max();
 
-	for(PE* pe : zeroth_spatial_pe_list){
+	for (PE *pe : zeroth_spatial_pe_list)
+	{
 		output_json["CGRA_INS"]["TYPE"] = "CGRA";
 		string pe_name = pe->getName();
-		string spatial_pe_name = pe_name.substr(0,pe_name.size()-3); //remove the last "-T0" component;
-		PrintMappedJSONModule(pe,output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name]);
+		string spatial_pe_name = pe_name.substr(0, pe_name.size() - 3); //remove the last "-T0" component;
+		PrintMappedJSONModule(pe, output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name]);
 	}
 
-	outFile <<  setw(4) << output_json << std::endl;
+	outFile << setw(4) << output_json << std::endl;
 	outFile.close();
 }
 
-void CGRAXMLCompile::CGRA::PrintMappedJSONModule(Module* curr_module, json& output_json){
+void CGRAXMLCompile::CGRA::PrintMappedJSONModule(Module *curr_module, json &output_json)
+{
 	output_json["TYPE"] = curr_module->get_type();
 	curr_module->UpdateMappedConnectionsJSON(output_json);
 
-	for(Module* sub_module : curr_module->subModules){
-		PrintMappedJSONModule(sub_module,output_json["SUBMODS"][sub_module->getName()]);
+	for (Module *sub_module : curr_module->subModules)
+	{
+		PrintMappedJSONModule(sub_module, output_json["SUBMODS"][sub_module->getName()]);
 	}
 }
+
+

@@ -619,3 +619,39 @@ void CGRAXMLCompile::Module::UpdateMappedConnectionsJSON(json &output_json)
 		}
 	}
 }
+
+CGRAXMLCompile::Port* CGRAXMLCompile::Module::getJSONPort(string pname, bool isSrc){
+	Port* src_p;
+	string src = pname;
+	string src_mod_str = src.substr(0, src.find("."));
+	string src_port_str = src.erase(0, src.find(".") + 1);
+
+	Module *src_mod;
+	if (src_mod_str == "THIS")
+	{
+		src_mod = this;
+	}
+	else
+	{
+		src_mod = this->Name2SubMod[src_mod_str];
+	}
+	assert(src_mod);
+
+	if (!src_mod->Name2RegPort.empty() && src_mod->Name2RegPort.find(src_port_str) != src_mod->Name2RegPort.end())
+	{
+		if(isSrc){
+			//in a regport first is used for outgoing connections
+			src_p = src_mod->Name2RegPort[src_port_str].first;
+		}
+		else{
+			//in a regport second is used for incoming connections
+			src_p = src_mod->Name2RegPort[src_port_str].second;	
+		}
+	}
+	else
+	{
+		src_p = src_mod->Name2Port[src_port_str];
+	}
+	assert(src_p);
+	return src_p;
+}
