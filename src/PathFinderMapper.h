@@ -78,6 +78,7 @@ public:
 
 	bool canExitCurrPE(LatPort p);
 	static bool checkMEMOp(string op);
+	void setMaxIter(int m){maxIter = m;}
 
 private:
 	std::map<Port *, std::set<DFGNode *>> congestedPorts;

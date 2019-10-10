@@ -16,8 +16,89 @@
 #include "PathFinderMapper.h"
 #include <math.h>
 
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 using namespace std;
 using namespace CGRAXMLCompile;
+
+struct arguments
+{
+	string dfg_filename;
+	int xdim = -1;
+	int ydim = -1;
+	string PEType;
+	string json_file_name;
+	int userII = 0;
+	bool noMutexPaths=false;
+	int backtracklimit = 0;
+	bool use_json = false;
+	int ndps = 1;
+	int maxiter = 30;
+};
+
+arguments parse_arguments(int argn, char *argc[])
+{
+	arguments ret;
+
+	int aflag = 0;
+	int bflag = 0;
+	char *cvalue = NULL;
+	int index;
+	int c;
+
+	opterr = 0;
+
+	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:")) != -1)
+		switch (c)
+		{
+		case 'd':
+			ret.dfg_filename = string(optarg);
+			break;
+		case 'x':
+			ret.xdim = atoi(optarg);
+			break;
+		case 'y':
+			ret.ydim = atoi(optarg);
+			break;
+		case 't':
+			ret.PEType = string(optarg);
+			break;
+		case 'n':
+			ret.ndps = atoi(optarg);
+			break;
+		case 'j':
+			ret.json_file_name = string(optarg);
+			ret.use_json = true;
+			break;
+		case 'i':
+			ret.userII = atoi(optarg);
+			break;
+		case 'e':
+			ret.noMutexPaths = true;
+			break;
+		case 'b':
+			ret.backtracklimit = atoi(optarg);
+			break;
+		case 'm':
+			ret.maxiter = atoi(optarg);
+			break;
+		case '?':
+			if (optopt == 'c')
+				fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+			else if (isprint(optopt))
+				fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+			else
+				fprintf(stderr,
+						"Unknown option character `\\x%x'.\n",
+						optopt);
+		default:
+			abort();
+		}
+		return ret;
+}
 
 int main(int argn, char *argc[])
 {
@@ -27,63 +108,53 @@ int main(int argn, char *argc[])
 	{
 		std::cout << "arguments : <DFG.xml> <peType::\nGENERIC_8REGF,\nHyCUBE_8REGF,\nHyCUBE_4REG,\nN2N_4REGF,\nN2N_8REGF,\nSTDNOC_8REGF,\nSTDNOC_4REGF,\nSTDNOC_4REG,\nSTDNOC_4REGF_1P\nMFU_HyCUBE_4REG\nMFU_HyCUBE_4REGF\nMFU_STDNOC_4REG\nMFU_STDNOC_4REGF> <XYDim> <numberofDPS> <backtracklimit> <initII> <-arch_json> <-noMTpath>\n";
 	}
-
 	assert(argn >= 7);
-	std::string inputDFG_filename(argc[1]);
 
-	//	int xdim=4;
-	//	int ydim=4;
-
-	int xydim = atoi(argc[3]);
-	int xdim = xydim / 10;
-	int ydim = xydim % 10;
-
+	arguments args = parse_arguments(argn,argc);
+	std::string inputDFG_filename = args.dfg_filename;\
+	int xdim = args.xdim;
+	int ydim = args.ydim;
+	string PEType = args.PEType;
+	int numberOfDPs = args.ndps;
+	string json_file_name = args.json_file_name;
+	int initUserII = args.userII;
+	
 	DFG currDFG;
 	currDFG.parseXML(inputDFG_filename);
 	currDFG.printDFG();
 
 	bool isGenericPE;
-	std::string PEType(argc[2]);
-	int numberOfDPs = atoi(argc[4]);
-
-	string json_file_name;
-	if(argn >= 8){
-		json_file_name = argc[7];
-	}
 
 	// CGRA testCGRA(NULL, "testCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
 
 	CGRA *testCGRA;
-	if(json_file_name.empty()){
+	if (!args.use_json)
+	{
 		testCGRA = new CGRA(NULL, "coreCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
 	}
-	else{
-		testCGRA = new CGRA(json_file_name,1);
+	else
+	{
+		testCGRA = new CGRA(json_file_name, 1);
 	}
 
 	//	HeuristicMapper hm(inputDFG_filename);
 	PathFinderMapper hm(inputDFG_filename);
+	hm.setMaxIter(args.maxiter);
 
 	int II = hm.getMinimumII(testCGRA, &currDFG);
 	std::cout << "Minimum II = " << II << "\n";
 
-	int initUserII = atoi(argc[6]);
 	II = std::max(initUserII, II);
 
 	std::cout << "Using II = " << II << "\n";
 
 	hm.enableMutexPaths = true;
-	if (argn == 9)
+	if (args.noMutexPaths)
 	{
-		std::string noMutexPathStr(argc[8]);
-		if (noMutexPathStr == "-noMTpath")
-		{
-			hm.enableMutexPaths = false;
-		}
+		hm.enableMutexPaths = false;
 	}
 	hm.enableBackTracking = true;
-	hm.backTrackLimit = atoi(argc[5]);
-
+	hm.backTrackLimit = args.backtracklimit;
 
 	cout << "json_file_name = " << json_file_name << "\n";
 	// exit(EXIT_SUCCESS);
@@ -96,14 +167,15 @@ int main(int argn, char *argc[])
 		tempDFG.printDFG();
 
 		CGRA *tempCGRA;
-		if(json_file_name.empty()){
+		if (json_file_name.empty())
+		{
 			tempCGRA = new CGRA(NULL, "coreCGRA", II, ydim, xdim, &tempDFG, PEType, numberOfDPs, hm.getcongestedPortsPtr());
 		}
-		else{
-			tempCGRA = new CGRA(json_file_name,II,hm.getcongestedPortsPtr());
+		else
+		{
+			tempCGRA = new CGRA(json_file_name, II, hm.getcongestedPortsPtr());
 		}
 		tempCGRA->analyzeTimeDist();
-
 
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();
