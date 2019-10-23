@@ -56,6 +56,8 @@ public:
 	Port *getPotOutputPort(DFGNode *node);
 	int getLat() { return latency; }
 
+	unordered_set<string> accesible_memvars;
+
 private:
 	DFGNode *mappedNode;
 	DataPath *outputDP;

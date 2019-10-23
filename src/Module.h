@@ -12,6 +12,8 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include <string>
+#include <unordered_set>
 
 #include "Port.h"
 
@@ -37,11 +39,13 @@ public:
 	std::vector<Port *> inputPorts;
 	std::vector<Port *> outputPorts;
 	std::vector<Port *> internalPorts;
+	std::vector<Port *> socketPorts;
 	std::vector<Module *> subModules;
 
 	Port *getInPort(std::string Pname);
 	Port *getOutPort(std::string Pname);
 	Port *getInternalPort(std::string Pname);
+	Port* getSocketPort(std::string Pname);
 	std::pair<Port *, Port *> getRegPort(std::string Pname);
 	Module *getSubMod(std::string Mname);
 
@@ -56,6 +60,7 @@ public:
 	std::vector<LatPort> getNextPorts(LatPort currPort, HeuristicMapper *hm);
 	std::vector<Port *> getNextPorts(Port *currPort);
 	std::vector<Port *> getFromPorts(Port *currPort, HeuristicMapper *hm);
+	std::vector<Port *> getFromPorts(Port *currPort);
 
 	std::set<Port *> getConflictPorts(Port *currPort);
 	bool isConflictPortsEmpty(Port *p);
@@ -77,6 +82,9 @@ public:
 	string get_type(){return type;}
 	void UpdateMappedConnectionsJSON(json& output_json);
 	Port* getJSONPort(string pname, bool isSrc);
+
+	bool isSPM = false;
+	std::unordered_set<std::string> data_layout;
 
 protected:
 	//private:

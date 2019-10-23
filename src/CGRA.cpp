@@ -266,6 +266,7 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 					dest_mod_str = dest_mod_str + "-T" + to_string(t);
 					dest_mod = Name2SubMod[dest_mod_str];
 				}
+				cout << "dest mod str = " << dest_mod_str << "\n";
 				assert(dest_mod);
 
 				Port *src_p;
@@ -305,6 +306,8 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 	{
 		for (int i = 0; i < subModArr[t].size(); i++)
 		{
+			if(!dynamic_cast<PE*>(subModArr[t][i])) continue;
+
 			PE *currPE = static_cast<PE *>(subModArr[t][i]);
 			int next_t = (t + 1) % II;
 			PE *nextCyclePE = static_cast<PE *>(subModArr[next_t][i]);
@@ -329,11 +332,11 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, string module_name, string type, int t, int x, int y)
 {
 	// module_name = module_name + "-T" + to_string(t);
-
+	cout << "Parsing module  :: module name = " << module_name << ", type = " << type << "\n";
 	assert(!top_desc.empty());
 	Module *ret;
 
-	if (type == "DP")
+	if (type == "DP" || type == "MDP")
 	{
 		ret = new DataPath(parent, module_name, t);
 		ret->Name2Port["I1"] = ret->getInPort("I1");
@@ -350,15 +353,39 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 			PE *ret_pe = ret->getPE();
 			ret_pe->isMemPE = true;
 		}
+
+		if (type == "MDP")
+		{
+			for (auto &p : module_desc["SOCKETS"])
+			{
+				Port *port_ptr = new Port(p, SOCKET, ret);
+				ret->Name2Port[p] = port_ptr;
+				ret->internalPorts.push_back(port_ptr);
+			}
+
+			for (auto &p : module_desc["TSOCKETS"])
+			{
+				Port *port_ptr = new Port(p, SOCKET, ret);
+				ret->Name2Port[p] = port_ptr;
+				ret->socketPorts.push_back(port_ptr);
+			}
+
+			for (auto &p : module_desc["ISOCKETS"])
+			{
+				Port *port_ptr = new Port(p, SOCKET, ret);
+				ret->Name2Port[p] = port_ptr;
+				ret->socketPorts.push_back(port_ptr);
+			}
+		}
+
 		return ret;
 	}
 	else if (type == "FU_MEM" || type == "FU")
 	{
 		ret = new FU(parent, module_name, t);
 	}
-	else if (CGRA *cgra = dynamic_cast<CGRA *>(parent))
+	else if ((type.find("PE_") != string::npos) || type == "PE")
 	{
-		//if parent is CGRA then child should be a PE.
 		assert(type.find("PE") != string::npos);
 		assert(x != -1);
 		assert(y != -1);
@@ -394,6 +421,27 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 		Port *port_ptr = new Port(p, INT, ret);
 		ret->Name2Port[p] = port_ptr;
 		ret->internalPorts.push_back(port_ptr);
+	}
+
+	for (auto &p : module_desc["SOCKETS"])
+	{
+		Port *port_ptr = new Port(p, SOCKET, ret);
+		ret->Name2Port[p] = port_ptr;
+		ret->socketPorts.push_back(port_ptr);
+	}
+
+	for (auto &p : module_desc["TSOCKETS"])
+	{
+		Port *port_ptr = new Port(p, SOCKET, ret);
+		ret->Name2Port[p] = port_ptr;
+		ret->socketPorts.push_back(port_ptr);
+	}
+
+	for (auto &p : module_desc["ISOCKETS"])
+	{
+		Port *port_ptr = new Port(p, SOCKET, ret);
+		ret->Name2Port[p] = port_ptr;
+		ret->socketPorts.push_back(port_ptr);
 	}
 
 	for (auto &p : module_desc["REGS"])
@@ -432,6 +480,19 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 			else
 			{
 				submod = ParseModule(top_desc["ARCH"][type], ret, name, type, t);
+				if (type == "SPM")
+				{
+					submod->isSPM = true;
+					if (module_desc.find("DATA_LAYOUT") != module_desc.end())
+					{
+						for (auto &el : module_desc["DATA_LAYOUT"])
+						{
+							cout << "Inserting to module = " << submod->getName() << ", data_layout entry = " << static_cast<std::string>(el) << "\n";
+							submod->data_layout.insert(static_cast<std::string>(el));
+							this->Variable2SPM[static_cast<std::string>(el)] = submod;
+						}
+					}
+				}
 			}
 
 			ret->Name2SubMod[name] = submod;
@@ -454,11 +515,11 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 	for (auto &el : module_desc["CONNECTIONS"].items())
 	{
 		string src = el.key();
-		Port *src_p = ret->getJSONPort(src,true);
+		Port *src_p = ret->getJSONPort(src, true);
 
 		for (string dest : el.value())
 		{
-			Port* dest_p = ret->getJSONPort(dest,false);
+			Port *dest_p = ret->getJSONPort(dest, false);
 			ret->insertConnection(src_p, dest_p);
 		}
 	}
@@ -467,11 +528,11 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 	{
 
 		string src = el.key();
-		Port *src_p = ret->getJSONPort(src,true);
+		Port *src_p = ret->getJSONPort(src, true);
 
 		for (string dest : el.value())
 		{
-			Port* dest_p = ret->getJSONPort(dest,false);
+			Port *dest_p = ret->getJSONPort(dest, false);
 			this->insertConflictPort(src_p, dest_p);
 			this->insertConflictPort(dest_p, src_p);
 		}
@@ -528,35 +589,40 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 
 	//TODO : remove hardcoding of II=2
 	ParseCGRA(json["ARCH"]["CGRA"], II);
-	cout << "Parsing JSON Success!!\n";
+	cout << "Parsing JSON Success!!!\n";
+
+	checkMDPVars();
 	// exit(EXIT_SUCCESS);
+	// assert(false);
 
 	return true;
 }
 
-bool CGRAXMLCompile::CGRA::PreprocessPattern(json &top)
+void ExpandPattern(json &input, json &connections, json &submods)
 {
 
-	json submods;
-	json connections;
+	assert(input["PATTERN"] == "GRID");
 
-	cout << "Before JSON Begin :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
-	std::cout << setw(4) << top << std::endl;
-	cout << "Before JSON End :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
-
-	assert(top["SUBMODS"][0]["PATTERN"] == "GRID");
-
-	int xdim = top["SUBMODS"][0]["DIMS"]["X"];
-	int ydim = top["SUBMODS"][0]["DIMS"]["Y"];
+	int xdim = input["DIMS"]["X"];
+	int ydim = input["DIMS"]["Y"];
 
 	unordered_map<int, unordered_map<int, pair<string, string>>> submod_grid;
 
-	for (auto &el : top["SUBMODS"][0]["MODS"])
+	for (auto &el : input["MODS"])
 	{
 		int x = el["X"];
 		int y = el["Y"];
 		string mod_type = el["MOD"];
-		string mod_name = mod_type + "_X" + to_string(x) + "|" + "_Y" + to_string(y) + "|";
+		string mod_name;
+
+		if (el.find("name") != el.end())
+		{
+			mod_name = el["name"];
+		}
+		else
+		{
+			mod_name = mod_type + "_X" + to_string(x) + "|" + "_Y" + to_string(y) + "|";
+		}
 
 		json mod;
 		mod["name"] = mod_name;
@@ -567,7 +633,7 @@ bool CGRAXMLCompile::CGRA::PreprocessPattern(json &top)
 		submod_grid[x][y] = make_pair(mod_type, mod_name);
 	}
 
-	for (auto &el : top["SUBMODS"][0]["CONNECTIONS"])
+	for (auto &el : input["CONNECTIONS"])
 	{
 		string fromx_str = el["FROM_X"];
 		int fromx = atoi(fromx_str.substr(1, fromx_str.size() - 1).c_str());
@@ -619,10 +685,45 @@ bool CGRAXMLCompile::CGRA::PreprocessPattern(json &top)
 			}
 		}
 	}
+}
+
+bool CGRAXMLCompile::CGRA::PreprocessPattern(json &top)
+{
+
+	json submods;
+	json connections;
+
+	cout << "Before JSON Begin :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+	std::cout << setw(4) << top << std::endl;
+	cout << "Before JSON End :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+
+	for (auto &el : top["SUBMODS"])
+	{
+		if (el.find("PATTERN") != el.end())
+		{
+			ExpandPattern(el, connections, submods);
+		}
+		else
+		{
+			for (auto &el2 : el.items())
+			{
+				auto key = el2.key();
+				auto value = el2.value();
+				submods[key] = value;
+			}
+		}
+	}
 
 	top.erase("SUBMODS");
 	top["SUBMODS"] = submods;
-	top["CONNECTIONS"] = connections;
+
+	// top["CONNECTIONS"] = connections;
+	for (auto &el : connections.items())
+	{
+		auto key = el.key();
+		auto value = el.value();
+		top["CONNECTIONS"][key] = value;
+	}
 
 	cout << "After JSON Begin :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
 	std::cout << setw(4) << top << std::endl;
@@ -772,13 +873,25 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist()
 
 	for (Module *m1 : subModArr[0])
 	{
+		cout << "m1 name = " << m1->getName() << ",";
+		if (!dynamic_cast<PE *>(m1))
+		{
+			cout << "\t not a PE skipping...\n";
+			continue;
+		}
 		PE *pe1 = static_cast<PE *>(m1);
 		TimeDistBetweenClosestMEMPEMap[pe1] = INT32_MAX;
 		for (Module *m2 : subModArr[0])
 		{
+			cout << "m2 name = " << m2->getName() << "\n";
+			if (!dynamic_cast<PE *>(m2))
+			{
+				cout << "\t not a PE skipping...\n";
+				continue;
+			}
 			PE *pe2 = static_cast<PE *>(m2);
 			// if (pe1 == pe2)
-				// continue;
+			// continue;
 			TimeDistBetweenPEMap[pe1][pe2] = getTimeDistBetweenPEs(pe1, pe2);
 		}
 	}
@@ -824,7 +937,7 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist()
 
 void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, int time_dist, unordered_map<Port *, int> &already_traversed, int &result)
 {
-	
+
 	if (already_traversed.find(currPort) != already_traversed.end())
 	{
 		if (time_dist < already_traversed[currPort])
@@ -953,6 +1066,7 @@ void CGRAXMLCompile::CGRA::EstablishTemporalLinkage()
 		{
 			for (Module *curr_cycle_pe_mod : subModArr[t])
 			{
+				if(!dynamic_cast<PE*>(curr_cycle_pe_mod)) continue;
 				PE *curr_cycle_pe = static_cast<PE *>(curr_cycle_pe_mod);
 				PE *next_cycle_pe = NextCyclePEMap[curr_cycle_pe];
 				EstablishTemporalLinkageModule(curr_cycle_pe, next_cycle_pe);
@@ -1014,4 +1128,123 @@ void CGRAXMLCompile::CGRA::PrintMappedJSONModule(Module *curr_module, json &outp
 	}
 }
 
+void SearchALLSPMs(Module *currModule, unordered_set<Module *> &spms)
+{
+	// cout << "SearchALLSPMs :: currmod = " << currModule->getFullName() << "\n";
+	if (currModule->get_type() == "SPM")
+	{
+		spms.insert(currModule);
+	}
 
+	if (CGRA *cgra_ins = dynamic_cast<CGRA *>(currModule))
+	{
+		for (Module *submod : cgra_ins->subModArr[0])
+		{
+			SearchALLSPMs(submod, spms);
+		}
+	}
+	else
+	{
+		for (Module *submod : currModule->subModules)
+		{
+			SearchALLSPMs(submod, spms);
+		}
+	}
+}
+
+void GetLastTSockets(Module *curr, Port *connecting_port, unordered_set<Port *> &last_tsockets)
+{
+	// cout << "GetLastTSockets :: currmod = " << curr->getFullName() << ", cp = " << connecting_port->getFullName() << "\n";
+	assert(connecting_port->getType() == SOCKET);
+
+	bool another_level_exist = false;
+	if (curr->getParent())
+	{
+		vector<Port *> nPorts = curr->getParent()->getNextPorts(connecting_port);
+		for (Port *np : nPorts)
+		{
+			assert(np->getType() == SOCKET);
+			if (np->getMod() && curr->getParent() && np->getMod() == curr->getParent())
+			{
+				another_level_exist = true;
+				GetLastTSockets(curr->getParent(), np, last_tsockets);
+			}
+		}
+	}
+
+	if(!another_level_exist){
+		last_tsockets.insert(connecting_port);
+		return;
+	}
+}
+
+void GetEndMPDs(Module *curr, Port *connecting_isocket, unordered_set<DataPath *> &end_datapaths)
+{
+	// cout << "GetEndMPDs :: currmod = " << curr->getFullName() << ", isocket = " << connecting_isocket->getFullName() << "\n";
+	assert(connecting_isocket->getType() == SOCKET);
+
+	if (DataPath *mdp = dynamic_cast<DataPath *>(curr))
+	{
+		end_datapaths.insert(mdp);
+	}
+	else
+	{
+		vector<Port *> fromPorts = curr->getFromPorts(connecting_isocket);
+		for (Port *fp : fromPorts)
+		{
+			assert(fp->getType() == SOCKET);
+			if (fp->getMod()->getParent() == curr)
+			{
+				GetEndMPDs(fp->getMod(), fp, end_datapaths);
+			}
+		}
+	}
+}
+
+void CGRAXMLCompile::CGRA::checkMDPVars()
+{
+	cout << "checkMDPVars started.\n";
+	unordered_set<Module *> spms;
+	SearchALLSPMs(this, spms);
+
+	assert(!spms.empty());
+
+	for (Module *spm : spms)
+	{
+		cout << "spm = " << spm->getFullName() << "\n";
+		unordered_set<Port *> last_tsockets;
+		for (Port *sp : spm->socketPorts)
+		{
+			GetLastTSockets(spm, sp, last_tsockets);
+		}
+
+		assert(!last_tsockets.empty());
+
+		unordered_set<DataPath *> end_datapaths;
+		for (Port *ts : last_tsockets)
+		{
+			cout << "last tsocket = " << ts->getFullName() << "\n";
+			vector<Port *> next_isockets = connectedFrom[ts];
+			for (Port *is : next_isockets)
+			{
+				cout << "\t next isocket = " << is->getFullName() << "\n";
+				assert(is->getType() == SOCKET);
+				GetEndMPDs(is->getMod(), is, end_datapaths);
+			}
+		}
+
+		assert(spm->isSPM);
+		for (string memvar : spm->data_layout)
+		{
+			cout << "memvar = " << memvar << "\n";
+			for (DataPath *dp : end_datapaths)
+			{
+				cout << "\t dp = " << dp->getFullName() << "\n";
+				dp->accesible_memvars.insert(memvar);
+			}
+		}
+	}
+
+	cout << "checkMDPVars done.\n";
+	// assert(false);
+}

@@ -124,7 +124,11 @@ public:
 
 	void EstablishTemporalLinkage();
 	void PrintMappedJSON(string fileName);
+	void checkMDPVars();
 
+	// unordered_map<DataPath*,unordered_set<string>> datapath_accessible_vars;
+	unordered_map<string,Module*> Variable2SPM;
+	unordered_map<string,int> Variable2SPMAddr;
 
 private:
 	int x_max;
@@ -148,6 +152,7 @@ private:
 
 	void EstablishTemporalLinkageModule(Module* curr_cycle_module, Module* next_cycle_module);
 	void PrintMappedJSONModule(Module* curr_module, json& output_json);
+
 
 
 

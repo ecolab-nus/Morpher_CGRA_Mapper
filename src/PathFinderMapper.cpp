@@ -550,6 +550,16 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					{
 						if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
 						{
+
+							if(!node->base_pointer_name.empty()){
+								//base pointer name is not empty
+								if(dp->accesible_memvars.find(node->base_pointer_name) == dp->accesible_memvars.end()){
+									//this dp does not support the variable
+									continue;
+								}
+
+							}
+							
 							if (checkDPFree(dp, node, penalty))
 							{
 								//									if(dp->getMappedNode()==NULL){
@@ -1198,7 +1208,6 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(LatPort src,
 
 bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 {
-
 	std::stack<DFGNode *> mappedNodes;
 	std::stack<DFGNode *> unmappedNodes;
 	std::map<DFGNode *, std::priority_queue<dest_with_cost>> estimatedRouteInfo;
@@ -1210,6 +1219,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 	this->cgra = cgra;
 	this->dfg = dfg;
+
+	Check_DFG_CGRA_Compatibility();
+	UpdateVariableBaseAddr();
 
 	//Testing 1 2 3
 	//getLongestDFGPath(dfg->findNode(1093),dfg->findNode(82));
@@ -3070,4 +3082,106 @@ bool CGRAXMLCompile::PathFinderMapper::checkMEMOp(string op)
 	}
 
 	return false;
+}
+
+void CGRAXMLCompile::PathFinderMapper::GetAllSupportedOPs(Module* currmod, unordered_set<string>& supp_ops, unordered_set<string>& supp_pointers){
+	// cout << "GetAllSupportedOPs :: currmod = " << currmod->getFullName() << "\n";
+
+	if(FU* fu = dynamic_cast<FU*>(currmod)){
+		for(auto it = fu->supportedOPs.begin(); it != fu->supportedOPs.end(); it++){
+			supp_ops.insert(it->first);
+		}
+	}
+
+	if(DataPath* dp = dynamic_cast<DataPath*>(currmod)){
+		for(string s : dp->accesible_memvars){
+			supp_pointers.insert(s);
+		}
+	}
+
+	if(CGRA* cgra_ins = dynamic_cast<CGRA*>(currmod)){
+		for(Module* submod : cgra_ins->subModArr[0]){
+			GetAllSupportedOPs(submod,supp_ops,supp_pointers);
+		}
+	}
+	else{
+		for(Module* submod : currmod->subModules){
+			GetAllSupportedOPs(submod,supp_ops,supp_pointers);
+		}
+	}
+
+}
+
+bool CGRAXMLCompile::PathFinderMapper::Check_DFG_CGRA_Compatibility(){
+
+	unordered_set<string> all_supp_ops;
+	unordered_set<string> all_supp_pointers;
+
+	GetAllSupportedOPs(cgra,all_supp_ops,all_supp_pointers);
+	unordered_set<string> base_pointers;
+
+	cout << "all supported pointers : \n";
+	for(string ptr : all_supp_pointers){
+		cout << "\t" << ptr << "\n";
+	}
+
+	cout << "all required pointers : \n";
+	for(auto it = dfg->pointer_sizes.begin(); it != dfg->pointer_sizes.end(); it++){
+		cout << "\t" << it->first << "\n";
+	}
+
+	for(DFGNode& node : dfg->nodeList){
+		string op = node.op;
+		if(all_supp_ops.find(op) == all_supp_ops.end()){
+			cout << "op=" << op << " is not supported in this CGRA, exiting....\n";
+			exit(EXIT_FAILURE);
+			return false;
+		}
+	}
+
+	for(auto it = dfg->pointer_sizes.begin(); it != dfg->pointer_sizes.end(); it++){
+		string pointer = it->first;
+		if(all_supp_pointers.find(pointer) == all_supp_pointers.end()){
+			cout << "pointer=" << pointer << " is not present in the CGRA, exiting....\n";
+			exit(EXIT_FAILURE);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void CGRAXMLCompile::PathFinderMapper::UpdateVariableBaseAddr(){
+
+	assert(cgra);
+	assert(dfg);
+
+	unordered_map<Module*,int> spm_addr;
+	for(auto it = cgra->Variable2SPM.begin(); it != cgra->Variable2SPM.end(); it++){
+		string var = it->first;
+		Module* spm = it->second;
+
+		if(spm_addr.find(spm) == spm_addr.end()){
+			spm_addr[spm] = 0;
+		}
+
+		int size = dfg->pointer_sizes[var];
+		cout << "UpdateVariableBaseAddr :: var = " << var << ", spm = " << spm->getFullName() << ", base_addr = " << spm_addr[spm] << "\n";
+		cgra->Variable2SPMAddr[var] = spm_addr[spm];
+
+		spm_addr[spm] = spm_addr[spm] + size;
+	}
+
+
+	for(auto it = cgra->Variable2SPMAddr.begin(); it != cgra->Variable2SPMAddr.end(); it++){
+		string var = it->first;
+
+		for(DFGNode& node : dfg->nodeList){
+			if(node.gep_offset != -1){
+				node.constant = node.gep_offset + it->second;
+			}
+		}
+	}
+
+	// exit(EXIT_SUCCESS);
 }

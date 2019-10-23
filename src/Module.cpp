@@ -223,6 +223,31 @@ std::vector<Port *> Module::getNextPorts(Port *currPort)
 	return nextPorts;
 }
 
+std::vector<Port *> Module::getFromPorts(Port *currPort)
+{
+	std::vector<Port *> fromPorts;
+
+	for (Port *p : connectedFrom[currPort])
+	{
+		fromPorts.push_back(p);
+	}
+
+	if (currPort->getType() == IN)
+	{
+		if (getParent())
+		{
+			for (Port *p : currPort->getMod()->getParent()->connectedFrom[currPort])
+			{
+				//					std::cout << currPort->getMod()->getParent()->getName() << "***************\n";
+				//				nextPorts.push_back(p);
+
+				fromPorts.push_back(p);
+			}
+		}
+	}
+	return fromPorts;
+}
+
 std::set<Port *> Module::getConflictPorts(Port *currPort)
 {
 	assert(this->getCGRA());
@@ -351,14 +376,15 @@ void Module::insertConnection(Port *src, Port *dest)
 	// cout << "srcp = " << src->getFullName() << ",destp = " << dest->getFullName() << "\n";
 
 	//	if(src_pe && dest_pe){
-	if (src_pe->T > dest_pe->T && dest_pe->T != 0)
+	if (src_pe && dest_pe && src_pe->T > dest_pe->T && dest_pe->T != 0)
 	{
 		std::cout << "ILLEGAL CONNECTION!\n";
 		std::cout << src_pe->getFullName() << "\n";
 		std::cout << dest_pe->getFullName() << "\n";
 		cout << "src_pe->T = " << src_pe->T << ",dest_pe->T = " << dest_pe->T << "\n";
+		assert(src_pe->T <= dest_pe->T || dest_pe->T == 0);
 	}
-	assert(src_pe->T <= dest_pe->T || dest_pe->T == 0);
+	
 	//	}
 
 	connectedTo[src].push_back(dest);
@@ -434,6 +460,18 @@ CGRAXMLCompile::Port *CGRAXMLCompile::Module::getOutPort(std::string Pname)
 CGRAXMLCompile::Port *CGRAXMLCompile::Module::getInternalPort(std::string Pname)
 {
 	for (Port *p : internalPorts)
+	{
+		if (p->getName().compare(Pname) == 0)
+		{
+			return p;
+		}
+	}
+	assert(false);
+}
+
+CGRAXMLCompile::Port *CGRAXMLCompile::Module::getSocketPort(std::string Pname)
+{
+	for (Port *p : socketPorts)
 	{
 		if (p->getName().compare(Pname) == 0)
 		{
@@ -654,6 +692,10 @@ CGRAXMLCompile::Port* CGRAXMLCompile::Module::getJSONPort(string pname, bool isS
 	{
 		src_p = src_mod->Name2Port[src_port_str];
 	}
+
+
+	// cout << "src_mod = " << src_mod->getName() << "\n";
+	// cout << "src_p_name = " << src_port_str << "\n";
 	assert(src_p);
 	return src_p;
 }

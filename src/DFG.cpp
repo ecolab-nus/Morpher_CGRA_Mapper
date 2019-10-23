@@ -100,8 +100,35 @@ bool DFG::parseXML(std::string fileName)
 		XMLElement *op = node->FirstChildElement("OP");
 		const char *opName = op->GetText();
 		std::cout << ",op=" << opName << "\n";
-
 		currDFGNode.op = std::string(opName);
+
+		XMLElement *base_pointer_name = node->FirstChildElement("BasePointerName");
+		if(base_pointer_name){
+			const char *base_pointer_name_str = base_pointer_name->GetText();
+			std::cout << ",base_pointer_name=" << base_pointer_name_str << "\n";
+			currDFGNode.base_pointer_name = std::string(base_pointer_name_str);
+
+			int base_pointer_size = -1;
+			base_pointer_name->QueryIntAttribute("size", &base_pointer_size); 
+			std::cout << ",base_pointer_size=" << base_pointer_size << "\n";
+			assert(base_pointer_size != -1);
+
+			if(pointer_sizes.find(currDFGNode.base_pointer_name) == pointer_sizes.end()){
+				pointer_sizes[currDFGNode.base_pointer_name] = base_pointer_size;
+			}
+			else{
+				//if its already there it should be equal
+				assert(pointer_sizes[currDFGNode.base_pointer_name] == base_pointer_size);
+			}
+
+		}
+
+		XMLElement *GEPOffset = node->FirstChildElement("GEPOffset");
+		if(GEPOffset){
+			int gep_offest = atoi(GEPOffset->GetText());
+			currDFGNode.gep_offset = gep_offest;
+		}
+
 		this->nodeList.push_back(currDFGNode);
 	}
 

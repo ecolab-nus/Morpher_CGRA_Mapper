@@ -30,7 +30,8 @@ enum PortType
 	OUT,
 	INT,
 	REGI,
-	REGO
+	REGO,
+	SOCKET
 };
 
 class Port

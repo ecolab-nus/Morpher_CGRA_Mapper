@@ -30,6 +30,8 @@ public:
 	int constant;
 	bool hasConst = false;
 	std::string op;
+	std::string base_pointer_name;
+	int gep_offset = -1;
 	std::vector<DFGNode *> parents;
 	std::vector<DFGNode *> phiParents;
 	std::vector<DFGNode *> recParents;

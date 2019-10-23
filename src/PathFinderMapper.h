@@ -80,6 +80,10 @@ public:
 	static bool checkMEMOp(string op);
 	void setMaxIter(int m){maxIter = m;}
 
+	bool Check_DFG_CGRA_Compatibility();
+
+	void UpdateVariableBaseAddr();
+
 private:
 	std::map<Port *, std::set<DFGNode *>> congestedPorts;
 	std::map<Port *, std::set<DFGNode *>> conflictedPorts;
@@ -95,6 +99,8 @@ private:
 	std::map<BackEdge, std::set<DFGNode *>> RecCyclesLS;
 	int getMaxLatencyBE(DFGNode *node, std::map<DataPath *, beParentInfo> &beParentDests, int &downStreamOps);
 	std::vector<DataPath *> modifyMaxLatCandDest(std::map<DataPath *, int> candDestIn, DFGNode *node, bool &changed);
+
+	void GetAllSupportedOPs(Module* currmod, unordered_set<string>& supp_ops, unordered_set<string>& supp_pointers);
 };
 
 } /* namespace CGRAXMLCompile */

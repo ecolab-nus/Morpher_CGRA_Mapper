@@ -12,6 +12,7 @@
 #include <set>
 #include <stack>
 #include <unordered_set>
+#include <unordered_map>
 #include "DFGNode.h"
 
 namespace CGRAXMLCompile
@@ -43,6 +44,8 @@ public:
 											  const std::vector<DFGNode *> &in2,
 											  const std::map<BackEdge, std::set<DFGNode *>> &RecCycles);
 	std::vector<DFGNode *> mergeAncestoryALAP(const std::vector<DFGNode *> &in1, const std::vector<DFGNode *> &in2);
+
+	std::unordered_map<std::string,int> pointer_sizes;
 
 private:
 	void strongconnect(DFGNode *v,
