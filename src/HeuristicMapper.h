@@ -29,11 +29,12 @@ class HeuristicMapper;
 struct dest_child_with_cost
 {
 	DFGNode *child;
+	DataPath* childDP;
 	LatPort childDest;
 	LatPort startPort;
 	int cost;
 
-	dest_child_with_cost(DFGNode *child, LatPort childDest, LatPort startPort, int cost) : child(child), childDest(childDest), startPort(startPort), cost(cost) {}
+	dest_child_with_cost(DFGNode *child, DataPath* dp, LatPort childDest, LatPort startPort, int cost) : child(child), childDP(dp), childDest(childDest), startPort(startPort), cost(cost) {}
 	bool operator<(const dest_child_with_cost &rhs) const
 	{
 		return cost > rhs.cost;

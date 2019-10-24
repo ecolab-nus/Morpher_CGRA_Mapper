@@ -489,7 +489,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 				break;
 			}
 
-			dest_child_with_cost dcwc(child, childDestPortLat, destPortLat, cost);
+			dest_child_with_cost dcwc(child, child->rootDP, childDestPortLat, destPortLat, cost);
 			alreadyMappedChilds.push(dcwc);
 		}
 		if (!pathExistMappedChild)

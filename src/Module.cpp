@@ -601,25 +601,25 @@ void CGRAXMLCompile::Module::UpdateMappedConnectionsJSON(json &output_json)
 				{
 					if (LatencyDiff == 0 && hasSameNode)
 					{
-						output_json["CONNECTIONS"][to_string(t)][src_port_name] = dest_port_name;
+						output_json["CONNECTIONS"][to_string(t)][src_port_name].push_back(dest_port_name);
 						output_json["MAPPED_NODES"][to_string(t)][src_port_name] = src_port->getNode()->idx;
 						output_json["MAPPED_NODES"][to_string(t)][dest_port_name] = dest_port->getNode()->idx;
 						valid_connection = true;
 					}
 				}
 
-				if (src_port->getName().find("WP") != string::npos)
-				{
-					assert(false);
-					if (!valid_connection)
-					{
-						cout << "src_port=" << src_port->getFullName() << "\n";
-						cout << "dest_port=" << dest_port->getFullName() << "\n";
-						cout << "src_node = " << src_port->getNode()->idx << "\n";
-						cout << "dest_node = " << dest_port->getNode()->idx << "\n";
-					}
-					assert(valid_connection);
-				}
+				// if (src_port->getName().find("WP") != string::npos)
+				// {
+				// 	if (!valid_connection)
+				// 	{
+				// 		cout << "src_port=" << src_port->getFullName() << "\n";
+				// 		cout << "dest_port=" << dest_port->getFullName() << "\n";
+				// 		cout << "src_node = " << src_port->getNode()->idx << "\n";
+				// 		cout << "dest_node = " << dest_port->getNode()->idx << "\n";
+				// 	}
+				// 	// assert(false);
+				// 	assert(valid_connection);
+				// }
 			}
 		}
 		mod = mod->getNextTimeIns();

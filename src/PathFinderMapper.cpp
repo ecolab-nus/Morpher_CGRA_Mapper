@@ -486,7 +486,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::map<DFGNode *, Port *> alreadyMappedChildPorts;
 
 	bool detailedDebug = false;
-	if(node->idx==1)detailedDebug=true;
+	// if(node->idx==1)detailedDebug=true;
 
 	//	std::cout << "EstimateEouting begin...\n";
 
@@ -524,6 +524,10 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			int ii = child->rootDP->getCGRA()->get_t_max();
 			assert(child->rootDP->getLat() != -1);
 			alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() + ii);
+		}
+		else if(child->idx == node->idx){
+			//adding a placeholder as this will be modified according to the destination in consideration.
+			alreadyMappedChildPorts[child] == NULL;
 		}
 	}
 
@@ -656,7 +660,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					std::map<Port *, std::set<DFGNode *>> mutexPaths;
 					if (detailedDebug)
 						std::cout << "par Estimating Path" << startCand->getFullName() << "," << startCand->getLat() << ","
-								  << "--->" << destPort->getFullName() << "," << minLatDestVal << ","
+								  << "--->" << destPort->getFullName() << "," << minLatDestVal << "," << ",parent_node = " << parent->idx
 								  << "\n";
 
 					LatPort startCandLat = std::make_pair(startCand->getLat(), startCand);
@@ -724,11 +728,14 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			{
 				DFGNode *child = pair.first;
 				Port *childDestPort = pair.second;
+				DataPath* childDP = child->rootDP;
 
-				if (child == node)
+				if (child->idx == node->idx)
 				{
 					childDestPort = dest->getInPort(node->childrenOPType[child]);
-					childDestPort->setLat(dest->getLat() + ii);
+					if (detailedDebug) cout << "setting latency = " << minLatDestVal + ii << "\n";
+					childDestPort->setLat(minLatDestVal + ii);
+					childDP = dest;
 				}
 
 				std::vector<LatPort> path;
@@ -742,7 +749,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				std::map<Port *, std::set<DFGNode *>> mutexPaths;
 				if (detailedDebug)
 					std::cout << "already child Estimating Path" << destPort->getFullName() << "," << minLatDestVal + latency << ","
-							  << "--->" << childDestPort->getFullName() << "," << childDestPort->getLat() << ","
+							  << "--->" << childDestPort->getFullName() << "," << childDestPort->getLat() << "," << "exist_child = " << child->idx  
 							  << "\n";
 				if (detailedDebug)
 					std::cout << "lat = " << childDestPort->getLat() << ",PE=" << childDestPort->getMod()->getPE()->getName() << ",t=" << childDestPort->getMod()->getPE()->T << "\n";
@@ -750,7 +757,8 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				LatPort childDestPortLat = std::make_pair(childDestPort->getLat(), childDestPort);
 				assert(childDestPort->getLat() != -1);
 				LatPort destPortLat = std::make_pair(minLatDestVal + latency, destPort);
-				pathExistMappedChild = pathExistMappedChild & LeastCostPathAstar(destPortLat, childDestPortLat, child->rootDP, path, cost, node, mutexPaths, child);
+
+				pathExistMappedChild = pathExistMappedChild & LeastCostPathAstar(destPortLat, childDestPortLat, childDP, path, cost, node, mutexPaths, child);
 
 				if (!pathExistMappedChild)
 				{
@@ -758,7 +766,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					break;
 				}
 
-				dest_child_with_cost dcwc(child, childDestPortLat, destPortLat, cost);
+				dest_child_with_cost dcwc(child,childDP, childDestPortLat, destPortLat, cost);
 				alreadyMappedChilds.push(dcwc);
 			}
 			if (!pathExistMappedChild)
@@ -865,7 +873,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 			for (LatPort p : possibleStarts)
 			{
 				int cost;
-				if (LeastCostPathAstar(p, dest_child_with_cost_ins.childDest, dest_child_with_cost_ins.child->rootDP, pathTmp, cost, node, mutexPathsTmp, dest_child_with_cost_ins.child))
+				if (LeastCostPathAstar(p, dest_child_with_cost_ins.childDest, dest_child_with_cost_ins.childDP, pathTmp, cost, node, mutexPathsTmp, dest_child_with_cost_ins.child))
 				{
 					pathTmp.clear();
 					q.push(cand_src_with_cost(p, dest_child_with_cost_ins.childDest, cost));
@@ -882,7 +890,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 				cand_src_with_cost head = q.top();
 				q.pop();
 				std::map<Port *, std::set<DFGNode *>> mutexPaths;
-				alreadMappedChildRouteSucc = LeastCostPathAstar(head.src, dest, dest_child_with_cost_ins.child->rootDP, path, cost, node, mutexPaths, dest_child_with_cost_ins.child);
+				alreadMappedChildRouteSucc = LeastCostPathAstar(head.src, dest, dest_child_with_cost_ins.childDP, path, cost, node, mutexPaths, dest_child_with_cost_ins.child);
 				if (alreadMappedChildRouteSucc)
 				{
 					assignPath(node, dest_child_with_cost_ins.child, path);
@@ -3127,7 +3135,7 @@ bool CGRAXMLCompile::PathFinderMapper::Check_DFG_CGRA_Compatibility(){
 
 	cout << "all required pointers : \n";
 	for(auto it = dfg->pointer_sizes.begin(); it != dfg->pointer_sizes.end(); it++){
-		cout << "\t" << it->first << "\n";
+		cout << "\t" << it->first << ",size = " << it->second << "\n";
 	}
 
 	for(DFGNode& node : dfg->nodeList){
@@ -3156,32 +3164,35 @@ void CGRAXMLCompile::PathFinderMapper::UpdateVariableBaseAddr(){
 	assert(cgra);
 	assert(dfg);
 
-	unordered_map<Module*,int> spm_addr;
-	for(auto it = cgra->Variable2SPM.begin(); it != cgra->Variable2SPM.end(); it++){
-		string var = it->first;
-		Module* spm = it->second;
+	// unordered_map<Module*,int> spm_addr;
+	// for(auto it = cgra->Variable2SPM.begin(); it != cgra->Variable2SPM.end(); it++){
+	// 	string var = it->first;
+	// 	Module* spm = it->second;
 
-		if(spm_addr.find(spm) == spm_addr.end()){
-			spm_addr[spm] = 0;
+	// 	if(spm_addr.find(spm) == spm_addr.end()){
+	// 		spm_addr[spm] = 0;
+	// 	}
+
+	// 	int size = dfg->pointer_sizes[var];
+	// 	cout << "UpdateVariableBaseAddr :: var = " << var << ", spm = " << spm->getFullName() << ", base_addr = " << spm_addr[spm] << "\n";
+	// 	cgra->Variable2SPMAddr[var] = spm_addr[spm];
+
+	// 	spm_addr[spm] = spm_addr[spm] + size;
+	// }
+
+
+	for(DFGNode& node : dfg->nodeList){
+		if(node.gep_offset != -1){
+			assert(!node.base_pointer_name.empty());
+			assert(cgra->Variable2SPMAddr.find(node.base_pointer_name) != cgra->Variable2SPMAddr.end());
+			node.constant = node.gep_offset + cgra->Variable2SPMAddr[node.base_pointer_name];
 		}
-
-		int size = dfg->pointer_sizes[var];
-		cout << "UpdateVariableBaseAddr :: var = " << var << ", spm = " << spm->getFullName() << ", base_addr = " << spm_addr[spm] << "\n";
-		cgra->Variable2SPMAddr[var] = spm_addr[spm];
-
-		spm_addr[spm] = spm_addr[spm] + size;
-	}
-
-
-	for(auto it = cgra->Variable2SPMAddr.begin(); it != cgra->Variable2SPMAddr.end(); it++){
-		string var = it->first;
-
-		for(DFGNode& node : dfg->nodeList){
-			if(node.gep_offset != -1){
-				node.constant = node.gep_offset + it->second;
-			}
+		else if(node.op.find("OLOAD") != string::npos || node.op.find("OSTORE") != string::npos){
+			//for outer loop load and stores, set the constant to the base address
+			assert(!node.base_pointer_name.empty());
+			assert(cgra->Variable2SPMAddr.find(node.base_pointer_name) != cgra->Variable2SPMAddr.end());
+			node.constant = cgra->Variable2SPMAddr[node.base_pointer_name];
 		}
 	}
-
 	// exit(EXIT_SUCCESS);
 }

@@ -124,6 +124,7 @@ public:
 
 	void EstablishTemporalLinkage();
 	void PrintMappedJSON(string fileName);
+	void InsertVariable2SPMAddrInfo(json& output_json);
 	void checkMDPVars();
 
 	// unordered_map<DataPath*,unordered_set<string>> datapath_accessible_vars;

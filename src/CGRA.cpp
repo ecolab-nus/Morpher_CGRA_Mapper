@@ -485,11 +485,13 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 					submod->isSPM = true;
 					if (module_desc.find("DATA_LAYOUT") != module_desc.end())
 					{
-						for (auto &el : module_desc["DATA_LAYOUT"])
+						for (auto &el : module_desc["DATA_LAYOUT"].items())
 						{
-							cout << "Inserting to module = " << submod->getName() << ", data_layout entry = " << static_cast<std::string>(el) << "\n";
-							submod->data_layout.insert(static_cast<std::string>(el));
-							this->Variable2SPM[static_cast<std::string>(el)] = submod;
+							cout << "Inserting to module = " << submod->getName() << ", data_layout var name = " << static_cast<std::string>(el.key());
+							cout << ",size = " << (int)el.value() << "\n";
+							submod->data_layout.insert(static_cast<std::string>(el.key()));
+							this->Variable2SPM[static_cast<std::string>(el.key())] = submod;
+							this->Variable2SPMAddr[static_cast<std::string>(el.key())] = (int)el.value();
 						}
 					}
 				}
@@ -1104,6 +1106,7 @@ void CGRAXMLCompile::CGRA::PrintMappedJSON(string fileName)
 	vector<PE *> zeroth_spatial_pe_list = getSpatialPEList(0);
 
 	output_json["II"] = get_t_max();
+	InsertVariable2SPMAddrInfo(output_json);
 
 	for (PE *pe : zeroth_spatial_pe_list)
 	{
@@ -1247,4 +1250,18 @@ void CGRAXMLCompile::CGRA::checkMDPVars()
 
 	cout << "checkMDPVars done.\n";
 	// assert(false);
+}
+
+void CGRAXMLCompile::CGRA::InsertVariable2SPMAddrInfo(json& output_json){
+
+	for(auto it = Variable2SPMAddr.begin(); it != Variable2SPMAddr.end(); it++){
+		string var = it->first;
+		int addr = it->second;
+		Module* spm = Variable2SPM[var];
+
+		output_json["DATA_LAYOUT"][var]["spm"] = spm->getFullName();
+		output_json["DATA_LAYOUT"][var]["addr"] = addr;
+	}
+
+
 }
