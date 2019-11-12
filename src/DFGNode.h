@@ -29,6 +29,7 @@ public:
 	int ALAP;
 	int constant;
 	bool hasConst = false;
+	bool npb;
 	std::string op;
 	std::string base_pointer_name;
 	int gep_offset = -1;

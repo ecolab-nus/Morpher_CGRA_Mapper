@@ -640,7 +640,8 @@ void CGRAXMLCompile::Module::UpdateMappedConnectionsJSON(json &output_json)
 					if (mod_dp->getMappedNode())
 					{
 						output_json["OPS"][to_string(t)] = mod_dp->getMappedNode()->op;
-						output_json["OP_ID"][to_string(t)] = mod_dp->getMappedNode()->idx;
+						output_json["OP_INFO"][to_string(t)]["id"] = mod_dp->getMappedNode()->idx;
+						output_json["OP_INFO"][to_string(t)]["NPB"] = mod_dp->getMappedNode()->npb;
 
 						if(mod_dp->getMappedNode()->hasConst){
 							//if there are constants they are always fed to I2 port.

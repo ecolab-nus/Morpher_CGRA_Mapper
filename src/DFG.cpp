@@ -189,11 +189,26 @@ bool DFG::parseXML(std::string fileName)
 			assert(output_nextiter == 0 || output_nextiter == 1);
 			findNode(idx)->childNextIter[findNode(output_idx)] = output_nextiter;
 
+
+
 			const char *type;
 			output->QueryStringAttribute("type", &type);
 			if (type)
 			{
 				findNode(idx)->childrenOPType[findNode(output_idx)] = std::string(type);
+
+				if(type == 0){
+					int npb;
+					output->QueryIntAttribute("NPB", &npb);
+					std::cout << "npb = " << npb;
+					assert(npb == 0 || npb == 1);
+					if(npb == 1){
+						findNode(output_idx)->npb = true;
+					}
+					else{
+						findNode(output_idx)->npb = false;
+					}
+				}
 			}
 
 			output = output->NextSiblingElement("Output");

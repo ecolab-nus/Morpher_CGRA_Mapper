@@ -233,6 +233,13 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 			}
 		}
 
+		for (auto &p : cgra_desc["INTERNALS"])
+		{
+			Port *port_ptr = new Port(p, INT, this);
+			this->Name2Port[p] = port_ptr;
+			this->internalPorts.push_back(port_ptr);
+		}
+
 		for (auto &el : cgra_desc["CONNECTIONS"].items())
 		{
 			string src = el.key();
@@ -248,6 +255,9 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 			{
 				src_mod_str = src_mod_str + "-T" + to_string(t);
 				src_mod = Name2SubMod[src_mod_str];
+			}
+			if(!src_mod){
+				cout << "src mod =" << src_mod_str << ", cannot be found.\n";
 			}
 			assert(src_mod);
 
@@ -296,7 +306,8 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 				{
 					dest_p = dest_mod->Name2Port[dest_port_str];
 				}
-				assert(dest_p);
+				// assert(dest_p);
+				if(!dest_p) throw 20;
 				this->insertConnection(src_p, dest_p);
 			}
 		}
@@ -575,6 +586,7 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 	// cout << json;
 
 	PreprocessPattern(json["ARCH"]["CGRA"]);
+	PreprocessInterSubmodConns(json["ARCH"]);
 	string verbose_json_filename = filename_withoutext + "_verbose.json";
 	ofstream verbose_json_file(verbose_json_filename.c_str());
 	verbose_json_file << setw(4) << json << std::endl;
@@ -1263,5 +1275,99 @@ void CGRAXMLCompile::CGRA::InsertVariable2SPMAddrInfo(json& output_json){
 		output_json["DATA_LAYOUT"][var]["addr"] = addr;
 	}
 
+
+}
+
+
+
+bool CGRAXMLCompile::CGRA::PreprocessInterSubmodConns(json& arch){
+
+	unordered_set<string> sockets;
+
+	for(auto& el : arch.items()){
+		string mod_type = el.key();
+		for(auto& socket_str : arch[mod_type]["ISOCKETS"]) sockets.insert((mod_type + ":" + (string)socket_str));
+		for(auto& socket_str : arch[mod_type]["TSOCKETS"]) sockets.insert((mod_type + ":" + (string)socket_str));
+		for(auto& socket_str : arch[mod_type]["SOCKETS"]) sockets.insert((mod_type + ":" + (string)socket_str));
+	}
+
+	for(auto& el : arch.items()){
+		string mod_type = el.key();
+		if(mod_type == "CGRA") continue;
+
+		struct Connection
+		{
+			string src_mod;
+			string src_port;
+			string dest_mod;
+			string dest_port;
+			Connection(string s1, string s2, string s3, string s4) : src_mod(s1), src_port(s2), dest_mod(s3), dest_port(s4){}
+		};
+
+		vector<Connection> inter_submod_conns;
+
+		unordered_map<string,string> insname2type;
+		for(auto& submod : arch[mod_type]["SUBMODS"].items()){
+			string type = submod.key();
+			for(auto& ins : submod.value()){
+				string name = ins["name"];
+				insname2type[name]=type;
+			}
+		}
+
+		for(auto& conn : arch[mod_type]["CONNECTIONS"].items()){
+			string src = conn.key();
+			string src_mod_str = src.substr(0, src.find("."));
+			string src_port_str = src.erase(0, src.find(".") + 1);
+
+			string src_mod_type;
+			if(src_mod_str == "THIS"){ 
+				src_mod_type = mod_type;
+			}
+			else{
+				assert(insname2type.find(src_mod_str) != insname2type.end());
+				src_mod_type = insname2type[src_mod_str];
+			}
+			// if(src_mod_type == "CGRA") continue;
+			if(sockets.find(src_mod_type + ":" + src_port_str) != sockets.end()) continue;
+
+			for(string dest : conn.value()){
+				string dest_mod_str = dest.substr(0, dest.find("."));
+				string dest_port_str = dest.erase(0, dest.find(".") + 1);
+
+				string dest_mod_type;
+				if(dest_mod_str == "THIS"){
+					dest_mod_type = mod_type;
+				}
+				else{
+					assert(insname2type.find(dest_mod_str) != insname2type.end());
+					dest_mod_type = insname2type[dest_mod_str];
+				}
+				// if(dest_mod_type == "CGRA") continue;
+				if(sockets.find(dest_mod_type + ":" + dest_port_str) != sockets.end()) continue;
+
+				if(src_mod_str != "THIS" && dest_mod_str != "THIS"){
+					inter_submod_conns.push_back(Connection(src_mod_str,src_port_str,dest_mod_str,dest_port_str));
+				}
+
+			}
+		}
+
+		//remove intra submodule connection and add internal proxy to connect those
+		for(Connection& rconn : inter_submod_conns){
+
+			string old_src = rconn.src_mod + "." + rconn.src_port;
+			string old_dest = rconn.dest_mod + "." + rconn.dest_port;
+
+			auto erase_it = find(arch[mod_type]["CONNECTIONS"][old_src].begin(), arch[mod_type]["CONNECTIONS"][old_src].end(),old_dest);
+			assert(erase_it != arch[mod_type]["CONNECTIONS"][old_src].end());
+			arch[mod_type]["CONNECTIONS"][old_src].erase(erase_it);
+			string new_internal_port_name = rconn.src_mod + "_" + rconn.src_port + "-->" + rconn.dest_mod + "_" + rconn.dest_port;
+
+			arch[mod_type]["INTERNALS"].push_back(new_internal_port_name);
+			arch[mod_type]["CONNECTIONS"][old_src].push_back("THIS." + new_internal_port_name);
+			arch[mod_type]["CONNECTIONS"]["THIS." + new_internal_port_name].push_back(old_dest);
+		}
+	}
 
 }
