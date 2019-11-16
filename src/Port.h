@@ -59,9 +59,12 @@ public:
 	int getLat();
 	void setLat(int lat);
 
+	PE* getPE(){return pe;}
+
 private:
 	std::string name;
 	Module *mod;
+	PE* pe;
 	PortType pType;
 	DFGNode *node = NULL;
 	int latency = -1;

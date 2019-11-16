@@ -47,6 +47,7 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 
 	std::unordered_map<LatPort, int, hash_LatPort> cost_to_port;
 	std::unordered_map<LatPort, LatPort, hash_LatPort> cameFrom;
+	std::unordered_map<LatPort, int, hash_LatPort> curr_hops_to_port;
 
 	path.clear();
 	mutexPaths.clear();
@@ -129,6 +130,7 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 	//	path.push_back(start);
 
 	cost_to_port[start] = 0;
+	curr_hops_to_port[start] = 0;
 
 	LatPort currPort;
 	std::vector<LatPort> deadEnds;
@@ -175,6 +177,11 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 		if (detailedDebug)
 			std::cout << "latency = " << currPort.first << "\n";
 
+		assert(curr_hops_to_port.find(currPort) != curr_hops_to_port.end());
+		if(curr_hops_to_port[currPort] > cgra->max_hops){
+			continue;
+		}
+
 		if (currPort == end)
 		{
 			if(cost_to_port[currPort] < curr_least_cost_to_end){
@@ -208,6 +215,7 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 			if (nextLatPort.first > end.first)
 				continue; //continue if the next port has higher latency
 			assert(nextLatPort.first - currPort.first <= 1);
+
 
 			//visiting the past port but if the latency is different then its not usable
 			//need to check whether its visited on the same path
@@ -293,6 +301,7 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 				if (detailedDebug)
 					std::cout << "latency = " << nextLatPort.first << ",";
 				int nextPortCost = cost_to_port[currPort] + calculateCost(currPort, nextLatPort, end);
+			
 
 				if (nextPort->getNode() == node)
 				{
@@ -325,6 +334,18 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 						cost_to_port[nextLatPort] = nextPortCost;
 						cameFrom[nextLatPort] = currPort;
 
+						if(nextLatPort.first == currPort.first && nextLatPort.second->getPE() != currPort.second->getPE()){
+							//next latport is inter-PE connection and it is not increasing latency
+							//therefore it should be a hop
+							curr_hops_to_port[nextLatPort] = curr_hops_to_port[currPort] + 1;
+						}
+						else if(nextLatPort.first != currPort.first){
+							curr_hops_to_port[nextLatPort] = 0;
+						}
+						else{
+							curr_hops_to_port[nextLatPort] = curr_hops_to_port[currPort];
+						}	
+
 						//							paths[nextLatPort]=paths[currPort];
 						//							paths[nextLatPort].insert(nextLatPort.second);
 						//							currPath.insert(currPort.second);
@@ -351,6 +372,18 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 				{
 					cost_to_port[nextLatPort] = nextPortCost;
 					cameFrom[nextLatPort] = currPort;
+
+					if(nextLatPort.first == currPort.first && nextLatPort.second->getPE() != currPort.second->getPE()){
+						//next latport is inter-PE connection and it is not increasing latency
+						//therefore it should be a hop
+						curr_hops_to_port[nextLatPort] = curr_hops_to_port[currPort] + 1;
+					}
+					else if(nextLatPort.first != currPort.first){
+						curr_hops_to_port[nextLatPort] = 0;
+					}	
+					else{
+						curr_hops_to_port[nextLatPort] = curr_hops_to_port[currPort];
+					}	
 
 					//						assert(paths.find(nextLatPort)==paths.end());
 					//						paths[nextLatPort]=paths[currPort];

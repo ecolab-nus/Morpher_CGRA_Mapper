@@ -23,6 +23,7 @@ Port::Port(std::string name, PortType pType, Module *mod)
 	this->name = name;
 	this->pType = pType;
 	this->mod = mod;
+	this->pe = mod->getPE(); assert(pe);
 }
 
 void Port::increaseUse(HeuristicMapper *hm)

@@ -133,6 +133,7 @@ public:
 	unordered_map<string,int> Variable2SPMAddr;
 
 	bool is_spm_modelled = false;
+	int max_hops = 4;
 
 private:
 	int x_max;
