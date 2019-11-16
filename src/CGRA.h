@@ -126,11 +126,13 @@ public:
 	void EstablishTemporalLinkage();
 	void PrintMappedJSON(string fileName);
 	void InsertVariable2SPMAddrInfo(json& output_json);
-	void checkMDPVars();
+	void checkMDPVars(unordered_set<Module *>& spms);
 
 	// unordered_map<DataPath*,unordered_set<string>> datapath_accessible_vars;
 	unordered_map<string,Module*> Variable2SPM;
 	unordered_map<string,int> Variable2SPMAddr;
+
+	bool is_spm_modelled = false;
 
 private:
 	int x_max;
@@ -154,6 +156,8 @@ private:
 
 	void EstablishTemporalLinkageModule(Module* curr_cycle_module, Module* next_cycle_module);
 	void PrintMappedJSONModule(Module* curr_module, json& output_json);
+
+	void SearchALLSPMs(Module *currModule, unordered_set<Module *> &spms);
 
 
 

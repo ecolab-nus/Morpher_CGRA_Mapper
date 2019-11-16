@@ -21,12 +21,22 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_set>
+#include <unordered_map>
 #include <memory>
 
 namespace CGRAXMLCompile
 {
 
 } /* namespace CGRAXMLCompile */
+
+struct hash_LatPort { 
+    size_t operator()(const pair<int, CGRAXMLCompile::Port*>& p) const
+    { 
+        auto hash1 = hash<int>{}(p.first); 
+        auto hash2 = hash<CGRAXMLCompile::Port*>{}(p.second); 
+        return hash1 ^ hash2; 
+    } 
+}; 
 
 bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 														  LatPort end, DataPath *endDP, std::vector<LatPort> &path, int &cost, DFGNode *node,
@@ -35,8 +45,8 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 
 	//	std::cout << "LeastCoastPath started with start=" << start->getFullName() << " to end=" << end->getFullName() << "\n";
 
-	std::map<LatPort, int> cost_to_port;
-	std::map<LatPort, LatPort> cameFrom;
+	std::unordered_map<LatPort, int, hash_LatPort> cost_to_port;
+	std::unordered_map<LatPort, LatPort, hash_LatPort> cameFrom;
 
 	path.clear();
 	mutexPaths.clear();
@@ -135,6 +145,8 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 	std::set<Port *> newNodeDPOutCP = newNodeDPOut->getMod()->getConflictPorts(newNodeDPOut);
 	std::set<Port *> endPortCP = end.second->getMod()->getConflictPorts(end.second);
 
+	int curr_least_cost_to_end = INT32_MAX;
+
 	while (!q.empty())
 	{
 		port_heuristic curr = q.top();
@@ -165,6 +177,13 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 
 		if (currPort == end)
 		{
+			if(cost_to_port[currPort] < curr_least_cost_to_end){
+				curr_least_cost_to_end = cost_to_port[currPort];
+			}
+			continue;
+		}
+
+		if(cost_to_port[currPort] > curr_least_cost_to_end){
 			continue;
 		}
 
@@ -555,13 +574,14 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 						if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
 						{
 
-							if(!node->base_pointer_name.empty()){
-								//base pointer name is not empty
-								if(dp->accesible_memvars.find(node->base_pointer_name) == dp->accesible_memvars.end()){
-									//this dp does not support the variable
-									continue;
+							if(cgra->is_spm_modelled){
+								if(!node->base_pointer_name.empty()){
+									//base pointer name is not empty
+									if(dp->accesible_memvars.find(node->base_pointer_name) == dp->accesible_memvars.end()){
+										//this dp does not support the variable
+										continue;
+									}
 								}
-
 							}
 							
 							if (checkDPFree(dp, node, penalty))
@@ -3147,13 +3167,18 @@ bool CGRAXMLCompile::PathFinderMapper::Check_DFG_CGRA_Compatibility(){
 		}
 	}
 
-	for(auto it = dfg->pointer_sizes.begin(); it != dfg->pointer_sizes.end(); it++){
-		string pointer = it->first;
-		if(all_supp_pointers.find(pointer) == all_supp_pointers.end()){
-			cout << "pointer=" << pointer << " is not present in the CGRA, exiting....\n";
-			exit(EXIT_FAILURE);
-			return false;
+	if(cgra->is_spm_modelled){
+		for(auto it = dfg->pointer_sizes.begin(); it != dfg->pointer_sizes.end(); it++){
+			string pointer = it->first;
+			if(all_supp_pointers.find(pointer) == all_supp_pointers.end()){
+				cout << "pointer=" << pointer << " is not present in the CGRA, exiting....\n";
+				exit(EXIT_FAILURE);
+				return false;
+			}
 		}
+	}
+	else{
+		cout << "SPMs are not modelled, therefore ignoring supported pointers check.\n";
 	}
 
 	return true;

@@ -605,7 +605,13 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 	ParseCGRA(json["ARCH"]["CGRA"], II);
 	cout << "Parsing JSON Success!!!\n";
 
-	checkMDPVars();
+	unordered_set<Module *> spms;
+	SearchALLSPMs(this, spms);
+
+	if(!spms.empty()){
+		this->is_spm_modelled = true;
+		checkMDPVars(spms);
+	}
 	// exit(EXIT_SUCCESS);
 	// assert(false);
 
@@ -1143,7 +1149,7 @@ void CGRAXMLCompile::CGRA::PrintMappedJSONModule(Module *curr_module, json &outp
 	}
 }
 
-void SearchALLSPMs(Module *currModule, unordered_set<Module *> &spms)
+void CGRAXMLCompile::CGRA::SearchALLSPMs(Module *currModule, unordered_set<Module *> &spms)
 {
 	// cout << "SearchALLSPMs :: currmod = " << currModule->getFullName() << "\n";
 	if (currModule->get_type() == "SPM")
@@ -1216,13 +1222,13 @@ void GetEndMPDs(Module *curr, Port *connecting_isocket, unordered_set<DataPath *
 	}
 }
 
-void CGRAXMLCompile::CGRA::checkMDPVars()
+void CGRAXMLCompile::CGRA::checkMDPVars(unordered_set<Module *>& spms)
 {
 	cout << "checkMDPVars started.\n";
-	unordered_set<Module *> spms;
-	SearchALLSPMs(this, spms);
+	// unordered_set<Module *> spms;
+	// SearchALLSPMs(this, spms);
 
-	assert(!spms.empty());
+	// assert(!spms.empty());
 
 	for (Module *spm : spms)
 	{
