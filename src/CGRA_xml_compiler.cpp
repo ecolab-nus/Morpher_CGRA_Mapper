@@ -137,6 +137,8 @@ int main(int argn, char *argc[])
 		testCGRA = new CGRA(json_file_name, 1);
 	}
 
+	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
+
 	//	HeuristicMapper hm(inputDFG_filename);
 	PathFinderMapper hm(inputDFG_filename);
 	hm.setMaxIter(args.maxiter);
@@ -175,7 +177,7 @@ int main(int argn, char *argc[])
 		{
 			tempCGRA = new CGRA(json_file_name, II, hm.getcongestedPortsPtr());
 		}
-		tempCGRA->analyzeTimeDist();
+		tempCGRA->analyzeTimeDist(tdi);
 
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();

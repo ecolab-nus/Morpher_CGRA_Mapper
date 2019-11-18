@@ -24,6 +24,11 @@ namespace CGRAXMLCompile
 
 class DFG;
 
+struct TimeDistInfo{
+	unordered_map<string,unordered_map<string,int>> TimeDistBetweenPEMap;
+	unordered_map<string,int> TimeDistBetweenClosestMEMPEMap;
+};
+
 class CGRA : public Module
 {
 public:
@@ -119,7 +124,8 @@ public:
 	unordered_map<string,int> getGlobalOPMinLatencyMap(){return GlobalOPMinLatencyMap;}
 	string getCGRAName();
 
-	void analyzeTimeDist();
+	TimeDistInfo analyzeTimeDist();
+	void analyzeTimeDist(TimeDistInfo tdi);
 	int getTimeClosestMEMPE(PE* currPE);
 	int getQuickTimeDistBetweenPEs(PE* srcPE, PE* destPE);
 
@@ -147,8 +153,12 @@ private:
 	unordered_map<string,int> GlobalOPMinLatencyMap;
 	string json_file;
 
-	unordered_map<PE*,unordered_map<PE*,int>> TimeDistBetweenPEMap;
-	unordered_map<PE*,int> TimeDistBetweenClosestMEMPEMap;
+	// unordered_map<PE*,unordered_map<PE*,int>> TimeDistBetweenPEMap;
+	// unordered_map<PE*,int> TimeDistBetweenClosestMEMPEMap;
+
+	unordered_map<string,unordered_map<string,int>> TimeDistBetweenPEMap;
+	unordered_map<string,int> TimeDistBetweenClosestMEMPEMap;
+
 	unordered_map<PE*,PE*> MapTzeroPE;
 
 	void traverseUntil(PE* srcPE, PE* destPE, Port* currPort, int time_dist, unordered_map<Port*,int>& already_traversed, int& result);
