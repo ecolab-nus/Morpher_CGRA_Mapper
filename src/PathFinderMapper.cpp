@@ -1355,6 +1355,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 			// MapHeader << ",DPs = " << this->cgra->numberofDPs;
 
 			MapHeader << ",CGRA=" << this->cgra->getCGRAName();
+			MapHeader << ",MaxHops=" << this->cgra->max_hops;
 
 			MapHeader << ",BB = " << node->BB;
 			MapHeader << ",mutexPathEn = " << this->enableMutexPaths;

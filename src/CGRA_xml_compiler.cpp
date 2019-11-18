@@ -37,6 +37,7 @@ struct arguments
 	bool use_json = false;
 	int ndps = 1;
 	int maxiter = 30;
+	int max_hops = 4;
 };
 
 arguments parse_arguments(int argn, char *argc[])
@@ -51,7 +52,7 @@ arguments parse_arguments(int argn, char *argc[])
 
 	opterr = 0;
 
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:")) != -1)
+	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:")) != -1)
 		switch (c)
 		{
 		case 'd':
@@ -84,6 +85,9 @@ arguments parse_arguments(int argn, char *argc[])
 			break;
 		case 'm':
 			ret.maxiter = atoi(optarg);
+			break;
+		case 'h':
+			ret.max_hops = atoi(optarg);
 			break;
 		case '?':
 			if (optopt == 'c')
@@ -178,6 +182,7 @@ int main(int argn, char *argc[])
 			tempCGRA = new CGRA(json_file_name, II, hm.getcongestedPortsPtr());
 		}
 		tempCGRA->analyzeTimeDist(tdi);
+		tempCGRA->max_hops = args.max_hops;
 
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();
