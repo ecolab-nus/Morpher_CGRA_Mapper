@@ -1083,7 +1083,7 @@ int CGRAXMLCompile::CGRA::getTimeClosestMEMPE(PE *currPE)
 {
 	assert(IntraPETimeDistAnalysisDone);
 	PE *zeroth_currPE = MapTzeroPE[currPE];
-	assert(TimeDistBetweenClosestMEMPEMap.find(zeroth_currPE) != TimeDistBetweenClosestMEMPEMap.end());
+	assert(TimeDistBetweenClosestMEMPEMap.find(zeroth_currPE->getName()) != TimeDistBetweenClosestMEMPEMap.end());
 
 	return TimeDistBetweenClosestMEMPEMap[zeroth_currPE->getName()];
 }
@@ -1101,8 +1101,8 @@ int CGRAXMLCompile::CGRA::getQuickTimeDistBetweenPEs(PE *srcPE, PE *destPE)
 	// cout << "zeroth_srcPE = " << zeroth_srcPE->getFullName() << "\n";
 	// cout << "zeroth_destPE = " << zeroth_destPE->getFullName() << "\n";
 
-	assert(TimeDistBetweenPEMap.find(zeroth_srcPE) != TimeDistBetweenPEMap.end());
-	assert(TimeDistBetweenPEMap[zeroth_srcPE].find(zeroth_destPE) != TimeDistBetweenPEMap[zeroth_srcPE].end());
+	assert(TimeDistBetweenPEMap.find(zeroth_srcPE->getName()) != TimeDistBetweenPEMap.end());
+	assert(TimeDistBetweenPEMap[zeroth_srcPE->getName()].find(zeroth_destPE->getName()) != TimeDistBetweenPEMap[zeroth_srcPE->getName()].end());
 
 	//Hack to make the zeroth_srcPE == zeroth_destPE more closer
 	if (zeroth_srcPE != zeroth_destPE)
