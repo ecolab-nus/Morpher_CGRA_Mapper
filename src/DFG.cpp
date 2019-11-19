@@ -121,6 +121,10 @@ bool DFG::parseXML(std::string fileName)
 				assert(pointer_sizes[currDFGNode.base_pointer_name] == base_pointer_size);
 			}
 
+			if(currDFGNode.op.find("LOAD") != std::string::npos || currDFGNode.op.find("STORE") != std::string::npos){
+				ldst_pointer_sizes[currDFGNode.base_pointer_name] = base_pointer_size;
+			}
+
 		}
 
 		XMLElement *GEPOffset = node->FirstChildElement("GEPOffset");

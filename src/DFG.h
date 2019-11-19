@@ -46,6 +46,7 @@ public:
 	std::vector<DFGNode *> mergeAncestoryALAP(const std::vector<DFGNode *> &in1, const std::vector<DFGNode *> &in2);
 
 	std::unordered_map<std::string,int> pointer_sizes;
+	std::unordered_map<std::string,int> ldst_pointer_sizes;
 
 private:
 	void strongconnect(DFGNode *v,

@@ -394,7 +394,7 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 
 		return ret;
 	}
-	else if (type == "FU_MEM" || type == "FU")
+	else if (type.find("FU_") != string::npos || type == "FU")
 	{
 		ret = new FU(parent, module_name, t);
 	}
@@ -608,14 +608,7 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 	ParseCGRA(json["ARCH"]["CGRA"], II);
 	cout << "Parsing JSON Success!!!\n";
 
-	unordered_set<Module *> spms;
-	SearchALLSPMs(this, spms);
 
-	if (!spms.empty())
-	{
-		this->is_spm_modelled = true;
-		checkMDPVars(spms);
-	}
 	// exit(EXIT_SUCCESS);
 	// assert(false);
 
@@ -1313,8 +1306,17 @@ void CGRAXMLCompile::CGRA::checkMDPVars(unordered_set<Module *> &spms)
 			cout << "memvar = " << memvar << "\n";
 			for (DataPath *dp : end_datapaths)
 			{
-				cout << "\t dp = " << dp->getFullName() << "\n";
-				dp->accesible_memvars.insert(memvar);
+				unordered_set<DataPath*> all_t_end_datapaths;
+				DataPath* next_t_dp = dp;
+				do{
+					all_t_end_datapaths.insert(next_t_dp);
+					next_t_dp = static_cast<DataPath*>(next_t_dp->getNextTimeIns());
+				}while(next_t_dp != dp);
+
+				for(DataPath* tdp : all_t_end_datapaths){
+					cout << "\t dp = " << tdp->getFullName() << "\n";
+					tdp->accesible_memvars.insert(memvar);
+				}
 			}
 		}
 	}

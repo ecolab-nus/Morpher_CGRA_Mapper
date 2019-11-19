@@ -80,6 +80,15 @@ public:
 		t_max = II;
 		ParseJSONArch(json_filename,II);
 		EstablishTemporalLinkage();
+
+		unordered_set<Module *> spms;
+		SearchALLSPMs(this, spms);
+		
+		if (!spms.empty())
+		{
+			this->is_spm_modelled = true;
+			checkMDPVars(spms);
+		}
 	}
 
 	void createGenericCGRA(int x, int y, int t, std::string peType = "GENERIC_8REGF", int numberofDPs = 1);

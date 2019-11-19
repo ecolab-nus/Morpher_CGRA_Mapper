@@ -637,6 +637,19 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					{
 						if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
 						{
+
+							bool is_mem_op = node->op.find("LOAD") != string::npos || node->op.find("STORE") != string::npos;
+							if(cgra->is_spm_modelled){
+								if(!node->base_pointer_name.empty() && is_mem_op){
+									//base pointer name is not empty
+									if(dp->accesible_memvars.find(node->base_pointer_name) == dp->accesible_memvars.end()){
+										//this dp does not support the variable
+										cout << "memvar=" << node->base_pointer_name <<  " is not supported in " << dp->getFullName() << "\n";
+										continue;
+									}
+								}
+							}
+
 							if (checkDPFree(dp, node, penalty))
 							{
 								//									if(dp->getMappedNode()==NULL){
@@ -3202,7 +3215,7 @@ bool CGRAXMLCompile::PathFinderMapper::Check_DFG_CGRA_Compatibility(){
 	}
 
 	if(cgra->is_spm_modelled){
-		for(auto it = dfg->pointer_sizes.begin(); it != dfg->pointer_sizes.end(); it++){
+		for(auto it = dfg->ldst_pointer_sizes.begin(); it != dfg->ldst_pointer_sizes.end(); it++){
 			string pointer = it->first;
 			if(all_supp_pointers.find(pointer) == all_supp_pointers.end()){
 				cout << "pointer=" << pointer << " is not present in the CGRA, exiting....\n";
