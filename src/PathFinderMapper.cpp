@@ -1295,8 +1295,10 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 	this->dfg = dfg;
 
 	Check_DFG_CGRA_Compatibility();
-	UpdateVariableBaseAddr();
 
+	if(cgra->is_spm_modelled){
+		UpdateVariableBaseAddr();
+	}
 	//Testing 1 2 3
 	//getLongestDFGPath(dfg->findNode(1093),dfg->findNode(82));
 
@@ -3256,6 +3258,7 @@ void CGRAXMLCompile::PathFinderMapper::UpdateVariableBaseAddr(){
 	for(DFGNode& node : dfg->nodeList){
 		if(node.gep_offset != -1){
 			assert(!node.base_pointer_name.empty());
+			cout << "base_pointer name = " << node.base_pointer_name << "\n";
 			assert(cgra->Variable2SPMAddr.find(node.base_pointer_name) != cgra->Variable2SPMAddr.end());
 			node.constant = node.gep_offset + cgra->Variable2SPMAddr[node.base_pointer_name];
 		}
