@@ -264,7 +264,7 @@
         "SPM" : [{"name" : "SPM0"}]
       },
       "DATA_LAYOUT" :{
-        "dataptr.1326":0
+        "dataptr.0328":0
       },
       "INIT_FILE" : "../json/test_data.json",
       "CONNECTIONS" : {

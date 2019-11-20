@@ -321,7 +321,7 @@
         "SPM" : [{"name" : "SPM0"}]
       },
       "DATA_LAYOUT" :{
-        "xor90" : 0, "xor116" : 0, "add.ptr126" : 0, "xor4" : 0, "add.ptr14" : 0
+        "xor90" : 0, "xor116" : 0, "add.ptr126" : 0, "xor4" : 0, "add.ptr14" : 0, "kp.0311" : 0
       },
       "INIT_FILE" : "../json/test_data.json",
       "CONNECTIONS" : {

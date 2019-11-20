@@ -266,7 +266,7 @@
       },
       "DATA_LAYOUT" :{
         "cx" : 0, "xor38" : 0, "ft_tab" : 0, "Nrnd" : 0, "xor64" : 0, "xor90" : 0, "xor116" : 0, "add.ptr126" : 0, 
-        "xor12" : 0, "xor" : 0, "xor8" : 0, "xor4" : 0, "add.ptr14" : 0
+        "xor12" : 0, "xor" : 0, "xor8" : 0, "xor4" : 0, "add.ptr14" : 0, "kp.0311" : 0
       },
       "INIT_FILE" : "../json/test_data.json",
       "CONNECTIONS" : {

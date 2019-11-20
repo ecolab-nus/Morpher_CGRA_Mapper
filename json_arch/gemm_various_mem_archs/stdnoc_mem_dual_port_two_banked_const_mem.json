@@ -275,18 +275,40 @@
         ]
       ,
       "CONNECTIONS" : {
-          "THIS.NORTH_I" : ["RF0.WP0","RF0.WP1","FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P"],
-          "THIS.EAST_I" : ["RF0.WP0","RF0.WP1","FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P"],
-          "THIS.WEST_I" : ["RF0.WP0","RF0.WP1","FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P"],
-          "THIS.SOUTH_I" : ["RF0.WP0","RF0.WP1","FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P"],
-          "RF0.RP0" : ["FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P","THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
-          "RF0.RP1" : ["FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P","THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
+          "THIS.NORTH_I" : ["RF0.WP0","RF0.WP1",
+                            "FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P",
+                            "FU_CONST_INS.DP0_I1","FU_CONST_INS.DP0_I2","FU_CONST_INS.DP0_P"],
+          "THIS.EAST_I" : ["RF0.WP0","RF0.WP1",
+                            "FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P",
+                            "FU_CONST_INS.DP0_I1","FU_CONST_INS.DP0_I2","FU_CONST_INS.DP0_P"],
+ 
+          "THIS.WEST_I" : ["RF0.WP0","RF0.WP1",
+                            "FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P",
+                            "FU_CONST_INS.DP0_I1","FU_CONST_INS.DP0_I2","FU_CONST_INS.DP0_P"],
+
+          "THIS.SOUTH_I" : ["RF0.WP0","RF0.WP1",
+                            "FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P",
+                            "FU_CONST_INS.DP0_I1","FU_CONST_INS.DP0_I2","FU_CONST_INS.DP0_P"],
+
+          "RF0.RP0" : ["FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P",
+                       "FU_CONST_INS.DP0_I1","FU_CONST_INS.DP0_I2","FU_CONST_INS.DP0_P",
+                       "THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
+
+          "RF0.RP1" : ["FU_INS.DP0_I1","FU_INS.DP0_I2","FU_INS.DP0_P",
+                       "FU_CONST_INS.DP0_I1","FU_CONST_INS.DP0_I2","FU_CONST_INS.DP0_P",
+                       "THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
 
           "FU_INS.DP0_T" : ["THIS.COMMON_T"],
           "FU_CONST_INS.DP0_T" : ["THIS.COMMON_T"],
           "THIS.COMMON_T" : ["RF0.WP0","RF0.WP1","THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
 
           "FU_CONST_INS.MEMPORT" : ["THIS.MEMPORT"]
+        },
+
+        "CONFLICTS": {
+          "FU_INS.DP0_I1" : ["FU_CONST_INS.DP0_I1","FU_CONST_INS.DP0_I2","FU_CONST_INS.DP0_P"],
+          "FU_INS.DP0_I2" : ["FU_CONST_INS.DP0_I1","FU_CONST_INS.DP0_I2","FU_CONST_INS.DP0_P"],
+          "FU_INS.DP0_P" : ["FU_CONST_INS.DP0_I1","FU_CONST_INS.DP0_I2","FU_CONST_INS.DP0_P"]
         }
       
     },
