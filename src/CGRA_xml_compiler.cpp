@@ -138,7 +138,7 @@ int main(int argn, char *argc[])
 	}
 	else
 	{
-		testCGRA = new CGRA(json_file_name, 1);
+		testCGRA = new CGRA(json_file_name, 1,xdim,ydim);
 	}
 
 	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
@@ -179,7 +179,7 @@ int main(int argn, char *argc[])
 		}
 		else
 		{
-			tempCGRA = new CGRA(json_file_name, II, hm.getcongestedPortsPtr());
+			tempCGRA = new CGRA(json_file_name, II,xdim,ydim, hm.getcongestedPortsPtr());
 		}
 		tempCGRA->analyzeTimeDist(tdi);
 		tempCGRA->max_hops = args.max_hops;
@@ -217,6 +217,12 @@ int main(int argn, char *argc[])
 		else
 		{
 			hm.sanityCheck();
+			//hm.assignLiveInOutAddr(&tempDFG);
+			if(PEType == "HyCUBE_4REG"){
+				std::cout << "Printing HyCUBE Binary...\n";
+				hm.printHyCUBEBinary(tempCGRA);
+			}
+			
 		}
 	}
 	return 0;

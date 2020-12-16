@@ -13,6 +13,7 @@
 #include "DataPath.h"
 #include "CGRA.h"
 #include "DFG.h"
+#include <bitset>
 
 namespace CGRAXMLCompile
 {
@@ -23,6 +24,113 @@ DFGNode::DFGNode()
 }
 
 } /* namespace CGRAXMLCompile */
+
+std::string CGRAXMLCompile::DFGNode::get27bitConstantBinaryString() {
+
+       assert(hasConst);
+       std::string s = std::bitset<27>(constant).to_string();
+       return s;
+}
+
+std::string CGRAXMLCompile::DFGNode::getBinaryString() {
+
+       if(op == "NOP"){
+               return "00000";
+       }
+       else if(op == "ADD"){
+               return "00001";
+       }
+       else if(op == "SUB"){
+               return "00010";
+       }
+       else if(op == "MUL"){
+               return "00011";
+       }
+       else if(op == "SEXT"){
+               return "00100";
+       }
+       else if(op == "DIV"){
+               return "00101";
+       }
+       else if(op == "INVDIV"){
+               return "00111";
+       }
+       else if(op == "LS"){
+               return "01000";
+       }
+       else if(op == "RS"){
+               return "01001";
+       }
+       else if(op == "ARS"){
+               return "01010";
+       }
+       else if(op == "AND"){
+               return "01011";
+       }
+       else if(op == "OR"){
+               return "01100";
+       }
+       else if(op == "XOR"){
+               return "01101";
+       }
+       else if(op == "SELECT"){
+               return "10000";
+       }
+       else if(op == "CMERGE"){
+               return "10001";
+       }
+       else if(op == "CMP"){
+               return "10010";
+       }
+       else if(op == "CLT"){
+               return "10011";
+       }
+       else if(op == "BR"){
+               return "10100";
+       }
+       else if(op == "BR"){
+               return "10100";
+       }
+       else if(op == "CGT"){
+               return "10101";
+       }
+       else if(op == "LOADCL"){
+               return "10110";
+       }
+       else if(op == "MOVCL"){
+               return "10111";
+       }
+       else if(op == "LOAD" || op == "OLOAD"){
+               return "11000";
+       }
+       else if(op == "LOADH" || op == "OLOADH"){
+               return "11001";
+       }
+       else if(op == "LOADB" || op == "OLOADB"){
+               return "11010";
+       }
+       else if(op == "STORE" || op == "OSTORE"){
+               return "11011";
+       }
+       else if(op == "STOREH" || op == "OSTOREH"){
+               return "11100";
+       }
+       else if(op == "STOREB" || op == "OSTOREB"){
+               return "11101";
+       }
+       else if(op == "ENDL"){
+               return "11110";
+       }
+       else if(op == "MOVC"){
+               return "11111";
+       }
+       else{
+               std::cout << "Op not compatible : " << op << "\n";
+               assert(false);
+       }
+
+}
+
 
 void CGRAXMLCompile::DFGNode::clear(DFG *dfg)
 {

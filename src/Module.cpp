@@ -356,6 +356,52 @@ std::pair<Port *, Port *> Module::getRegPort(std::string Pname)
 	assert(false);
 }
 
+Port* Module::getSingleRegPort2(std::string Pname)
+{
+
+	std::string ri = Pname + "_RI";
+
+	for (std::pair<Port *, Port *> portpair : regPorts)
+	{
+		if (portpair.first->getName() == ri)
+		{
+			return portpair.first;
+		}
+
+		if (portpair.first->getName() == Pname)
+		{
+			return portpair.first;
+		}
+
+		if (portpair.second->getName() == Pname)
+		{
+			return portpair.second;
+		}
+	}
+	assert(false);
+}
+
+Port* Module::getSingleRegPort(std::string Pname)
+{
+
+//	std::string ri = Pname + "_RO";
+
+	for (std::pair<Port *, Port *> portpair : regPorts)
+	{
+
+		if (portpair.first->getName() == Pname)
+		{
+			return portpair.first;
+		}
+
+		if (portpair.second->getName() == Pname)
+		{
+			return portpair.second;
+		}
+	}
+//	assert(false);
+}
+
 void Module::insertRegPort(std::string pName)
 {
 	// cout << "INSERT REGPORT = " << pName << ",to module = " << this->getFullName() << ",parent = " << getParent()->getName() << "\n";

@@ -47,6 +47,8 @@ public:
 	Port *getInternalPort(std::string Pname);
 	Port* getSocketPort(std::string Pname);
 	std::pair<Port *, Port *> getRegPort(std::string Pname);
+	Port* getSingleRegPort(std::string Pname);
+	Port* getSingleRegPort2(std::string Pname);
 	Module *getSubMod(std::string Mname);
 
 	std::string getName() { return name; }

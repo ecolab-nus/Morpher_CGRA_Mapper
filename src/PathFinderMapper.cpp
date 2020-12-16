@@ -23,6 +23,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <memory>
+#include <bitset>
 
 namespace CGRAXMLCompile
 {
@@ -3270,4 +3271,607 @@ void CGRAXMLCompile::PathFinderMapper::UpdateVariableBaseAddr(){
 		}
 	}
 	// exit(EXIT_SUCCESS);
+}
+
+void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
+
+	std::vector<std::vector<std::vector<InsFormat>>> InsFArr (cgra->get_t_max()+1,
+			std::vector<std::vector<InsFormat>>(cgra->get_y_max(),
+					std::vector<InsFormat>(cgra->get_x_max())
+			)
+	);
+	for (int t = 0; t < cgra->get_t_max(); ++t) {
+		vector<PE *> peList = this->cgra->getSpatialPEList(t);
+		//	for (int y = 0; y < cgra->get_y_max(); ++y) {
+			//		for (int x = 0; x < cgra->get_x_max(); ++x) {
+				int iter=0;
+				for (PE *pe : peList)
+				{
+
+					Port* northo = pe->getOutPort("NORTH_O"); assert(northo);
+					Port* easto = pe->getOutPort("EAST_O"); assert(easto);
+					Port* westo = pe->getOutPort("WEST_O"); assert(westo);
+					Port* southo = pe->getOutPort("SOUTH_O"); assert(southo);
+
+					DFGNode* north_o_node = northo->getNode();
+					DFGNode* east_o_node = easto->getNode();
+					DFGNode* west_o_node = westo->getNode();
+					DFGNode* south_o_node = southo->getNode();
+
+					//RegFile* RFT = static_cast<RegFile*>(pe->getSubMod("RF0")); assert(RFT);
+					FU* fu = static_cast<FU*>(pe->getSubMod("FU0")); assert(fu);
+					DataPath* dp = static_cast<DataPath*>(fu->getSubMod("DP0")); assert(dp);
+					//}
+
+					int prev_t;
+					int X;
+					int Y;
+					X = pe->X;
+					Y = pe->Y;
+					prev_t = (t + 2*cgra->get_t_max() - 1)%cgra->get_t_max();
+					vector<PE *> prevPEList = this->cgra->getSpatialPEList(prev_t);
+					//PE* prevPE = cgra->PEArr[prev_t][y][x];
+					PE* prevPE = prevPEList.at(iter);
+					FU* prevFU = static_cast<FU*>(prevPE->getSubMod("FU0")); assert(prevFU);
+					DataPath* prevDP = static_cast<DataPath*>(prevFU->getSubMod("DP0"));
+					DFGNode* mappedOP = prevDP->getMappedNode();
+					iter++;
+					//if(!north_o_node->op.empty())
+					//Port* northcon = [northo];
+					Module* mod =  westo->getMod();
+					DataPath *mod_dp = static_cast<DataPath *>(mod);
+					//				Port* i1_ip = fu->getInPort("DP0_I1"); assert(i1_ip);
+					//				Port* i2_ip = fu->getInPort("DP0_I2"); assert(i2_ip);
+					//				Port* p_ip = fu->getInPort("DP0_P"); assert(p_ip);
+
+					Port* i1_ip = dp->getInPort("I1"); assert(i1_ip);
+					Port* i2_ip = dp->getInPort("I2"); assert(i2_ip);
+					Port* p_ip = dp->getInPort("P"); assert(p_ip);
+
+					InsFormat insF;
+					//PE* prevPE = pe;
+
+					//XBar
+					if(north_o_node){
+						//	Port* In_n = mod->getJSONPort("NORTH_XBARI",true);
+						//Port* In_n = pe->getInPort("NORTH_I");
+						if(north_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+								northo->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+							insF.northo = "011";
+						}
+						else if(north_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
+								northo->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+							insF.northo = "000";
+						}
+						else if(north_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
+								northo->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+							insF.northo = "010";
+						}
+						else if(north_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+								northo->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+							insF.northo = "001";
+						}
+						else if(north_o_node == pe->getSingleRegPort("TREG_RI")->getNode() &&
+								northo->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+							insF.northo = "101";
+						}
+
+						else if(north_o_node == fu->getOutPort("DP0_T")->getNode() && northo->getLat() == fu->getOutPort("DP0_T")->getLat()){
+							insF.northo = "100";
+						}
+						else{
+							std::cout << "Port : " << northo->getFullName() << ",node = " << northo->getNode()->idx << ", source not found!\n";
+							assert(false);
+							insF.northo = "111";
+						}
+					}
+
+
+					else{
+						insF.northo = "111";
+					}
+
+					if(east_o_node){
+						if(east_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+								easto->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+							insF.easto = "011";
+						}
+						else if(east_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
+								easto->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+							insF.easto = "000";
+						}
+						else if(east_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
+								easto->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+							insF.easto = "010";
+						}
+						else if(east_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+								easto->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+							insF.easto = "001";
+						}
+						else if(east_o_node == pe->getSingleRegPort("TREG_RI")->getNode() &&
+								easto->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+							insF.easto = "101";
+						}
+						else if(east_o_node == fu->getOutPort("DP0_T")->getNode() && easto->getLat() == fu->getOutPort("DP0_T")->getLat()){
+							insF.easto = "100";
+						}
+						else{
+							std::cout << "Port : " << easto->getFullName() << ",node = " << easto->getNode()->idx << ", source not found!\n";
+							assert(false);
+							insF.easto = "111";
+						}
+					}
+					else{
+						insF.easto = "111";
+					}
+
+					if(west_o_node){
+						if(west_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+								westo->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+							insF.westo = "011";
+						}
+						else if(west_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
+								westo->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+							insF.westo = "000";
+						}
+						else if(west_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
+								westo->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+							insF.westo = "010";
+						}
+						else if(west_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+								westo->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+							insF.westo = "001";
+						}
+						else if(west_o_node ==  pe->getSingleRegPort("TREG_RI")->getNode() &&
+								westo->getLat() ==  pe->getSingleRegPort("TREG_RI")->getLat()){
+							insF.westo = "101";
+						}
+
+						else if(west_o_node == fu->getOutPort("DP0_T")->getNode() && westo->getLat() == fu->getOutPort("DP0_T")->getLat()){
+							insF.westo = "100";
+						}
+						else{
+							std::cout << "Port : " << westo->getFullName() << ",node = " << westo->getNode()->idx << ", source not found!\n";
+							assert(false);
+							insF.westo = "111";
+						}
+					}
+					else{
+						insF.westo = "111";
+					}
+
+					if(south_o_node){
+						if(south_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+								southo->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+							insF.southo = "011";
+						}
+						else if(south_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
+								southo->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+							insF.southo = "000";
+						}
+						else if(south_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
+								southo->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+							insF.southo = "010";
+						}
+						else if(south_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+								southo->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+							insF.southo = "001";
+						}
+						else if(south_o_node == pe->getSingleRegPort("TREG_RI")->getNode() &&
+								southo->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+							insF.southo = "101";
+						}
+						else if(south_o_node == fu->getOutPort("DP0_T")->getNode() && southo->getLat() == fu->getOutPort("DP0_T")->getLat()){
+							insF.southo = "100";
+						}
+						else{
+							//std::cout << "";
+							std::cout << "Port : " << southo->getFullName() << ",node = " << southo->getNode()->idx << ", source not found!\n";
+							assert(false);
+							insF.southo = "111";
+						}
+					}
+					else{
+						insF.southo = "111";
+					}
+
+
+					if(p_ip->getNode()){
+						if(p_ip->getNode() == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+								p_ip->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+							insF.alu_p = "011";
+						}
+						else if(p_ip->getNode() == pe->getInternalPort("EAST_XBARI")->getNode() &&
+								p_ip->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+							insF.alu_p = "000";
+						}
+						else if(p_ip->getNode() == pe->getInternalPort("WEST_XBARI")->getNode() &&
+								p_ip->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+							insF.alu_p = "010";
+						}
+						else if(p_ip->getNode() == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+								p_ip->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+							insF.alu_p = "001";
+						}
+						else if(p_ip->getNode() == pe->getSingleRegPort("TREG_RI")->getNode() &&
+								p_ip->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+							insF.alu_p = "101";
+						}
+						else if(p_ip->getNode() == fu->getOutPort("DP0_T")->getNode() && p_ip->getLat() == fu->getOutPort("DP0_T")->getLat()){
+							insF.alu_p = "100";
+						}
+						else if(p_ip->getNode()  == dp->getOutPort("T")->getNode() && p_ip->getLat() == dp->getOutPort("T")->getLat()){
+							insF.alu_p = "100";
+						}
+						else{
+							std::cout << "Port : " << p_ip->getFullName() << ",node = " << p_ip->getNode()->idx << ", source not found!\n";
+							assert(false);
+							insF.alu_p = "111";
+						}
+					}
+					else{
+						insF.alu_p = "111";
+					}
+
+					if(i1_ip->getNode()){
+						if(i1_ip->getNode() == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+								i1_ip->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+							insF.alu_i1 = "011";
+						}
+						else if(i1_ip->getNode() == pe->getInternalPort("EAST_XBARI")->getNode() &&
+								i1_ip->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+							insF.alu_i1 = "000";
+						}
+						else if(i1_ip->getNode() == pe->getInternalPort("WEST_XBARI")->getNode() &&
+								i1_ip->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+							insF.alu_i1 = "010";
+						}
+						else if(i1_ip->getNode() == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+								i1_ip->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+							insF.alu_i1 = "001";
+						}
+						else if(i1_ip->getNode() == pe->getSingleRegPort("TREG_RI")->getNode() &&
+								i1_ip->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+							insF.alu_i1 = "101";
+						}
+						else if(i1_ip->getNode() == fu->getOutPort("DP0_T")->getNode() && i1_ip->getLat() == fu->getOutPort("DP0_T")->getLat()){
+							insF.alu_i1 = "100";
+						}
+						//THILINI:: check with RTl for correct config
+						//					else if(i1_ip->getNode() == fu->getInPort("DP0_I1")->getNode() && i1_ip->getLat() == fu->getInPort("DP0_I1")->getLat()){
+						//						insF.alu_i1 = "110";
+						//					}
+
+						else if(i1_ip->getNode() == dp->getOutPort("T")->getNode() && i1_ip->getLat() == dp->getOutPort("T")->getLat()){
+							insF.alu_i1 = "100";
+						}
+						else{
+							std::cout << "Port : " << i1_ip->getFullName() << ",node = " << i1_ip->getNode()->idx << ", source not found!\n";
+							assert(false);
+							insF.alu_i1 = "111";
+						}
+					}
+					else{
+						insF.alu_i1 = "111";
+					}
+
+					if(i2_ip->getNode()){
+						if(i2_ip->getNode() == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+								i2_ip->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+							insF.alu_i2 = "011";
+						}
+						else if(i2_ip->getNode() == pe->getInternalPort("EAST_XBARI")->getNode() &&
+								i2_ip->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+							insF.alu_i2 = "000";
+						}
+						else if(i2_ip->getNode() == pe->getInternalPort("WEST_XBARI")->getNode() &&
+								i2_ip->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+							insF.alu_i2 = "010";
+						}
+						else if(i2_ip->getNode() == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+								i2_ip->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+							insF.alu_i2 = "001";
+						}
+						else if(i2_ip->getNode() == pe->getSingleRegPort("TREG_RI")->getNode() &&
+								i2_ip->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+							insF.alu_i2 = "101";
+						}
+						else if(i2_ip->getNode() == fu->getOutPort("DP0_T")->getNode() &&
+								i2_ip->getLat() == fu->getOutPort("DP0_T")->getLat()){
+							insF.alu_i2 = "100";
+						}
+						//THILINI:: check with RTl for correct config
+						//					else if(i2_ip->getNode() == fu->getInPort("DP0_I2")->getNode() && i2_ip->getLat() == fu->getInPort("DP0_I2")->getLat()){
+						//						insF.alu_i2 = "110";
+						//					}
+						else if(i2_ip->getNode() == dp->getOutPort("T")->getNode() && i2_ip->getLat() == dp->getOutPort("T")->getLat()){
+							insF.alu_i2 = "100";
+						}
+						else{
+							std::cout << "Port : " << i2_ip->getFullName() << ",node = " << i2_ip->getNode()->idx << ", source not found!\n";
+							assert(false);
+							insF.alu_i2 = "111";
+						}
+					}
+					else{
+						insF.alu_i2 = "111";
+					}
+
+					//TREG WE
+					if( pe->getSingleRegPort("TREG_RO")->getNode() &&
+							fu->getOutPort("DP0_T")->getNode() &&
+							pe->getSingleRegPort("TREG_RO")->getNode() == fu->getOutPort("DP0_T")->getNode() ){
+						insF.treg_we = "1";
+					}
+					else{
+						insF.treg_we = "0";
+					}
+
+					// Register write enables
+
+					Port* northi = pe->getInPort("NORTH_I"); assert(northi);
+					Port* easti = pe->getInPort("EAST_I"); assert(easti);
+					Port* westi = pe->getInPort("WEST_I"); assert(westi);
+					Port* southi = pe->getInPort("SOUTH_I"); assert(southi);
+
+					//				RegFile* RF0 = static_cast<RegFile*>(pe->getSubMod("RF0"));
+					//				RegFile* RF1 = static_cast<RegFile*>(pe->getSubMod("RF1"));
+					//				RegFile* RF2 = static_cast<RegFile*>(pe->getSubMod("RF2"));
+					//				RegFile* RF3 = static_cast<RegFile*>(pe->getSubMod("RF3"));
+
+
+					if(pe->getSingleRegPort("NR_RO")->getNode() &&
+							northi->getNode() &&
+							pe->getSingleRegPort("NR_RO")->getNode() == northi->getNode()){
+						insF.north_reg_we = "1";
+					}
+					else{
+						insF.north_reg_we = "0";
+					}
+					//THILINI:: check with RTL
+					/*		if(RF0->getInPort("WP1")->getNode() &&
+				   northi->getNode() &&
+				   RF0->getInPort("WP1")->getNode() == northi->getNode()){
+					insF.north_reg_we = "1";
+				}
+				else{
+					insF.north_reg_we = "0";
+				}*/
+
+					/*THILINI:: There are WP1 port as wess(two port RF) how to handle that??*/
+
+					if(pe->getSingleRegPort("ER_RO")->getNode() &&
+							easti->getNode() &&
+							pe->getSingleRegPort("ER_RO")->getNode() == easti->getNode()){
+						insF.east_reg_we = "1";
+					}
+					else{
+						insF.east_reg_we = "0";
+					}
+
+					if(pe->getSingleRegPort("WR_RO")->getNode() &&
+							westi->getNode() &&
+							pe->getSingleRegPort("WR_RO")->getNode() == westi->getNode()){
+						insF.west_reg_we = "1";
+					}
+					else{
+						insF.west_reg_we = "0";
+					}
+
+					if(pe->getSingleRegPort("SR_RO")->getNode() &&
+							southi->getNode() &&
+							pe->getSingleRegPort("SR_RO")->getNode() == southi->getNode()){
+						insF.south_reg_we = "1";
+					}
+					else{
+						insF.south_reg_we = "0";
+					}
+
+
+					//setting bypass bits
+					DFGNode* northi_node = northi->getNode();
+					DFGNode* easti_node = easti->getNode();
+					DFGNode* westi_node = westi->getNode();
+					DFGNode* southi_node = southi->getNode();
+
+
+					if(northi_node &&
+							northi_node == pe->getInternalPort("NORTH_XBARI")->getNode() && northi->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+						if(pe->getSingleRegPort("NR_RI")->getNode()){
+							std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("NR_RI")->getNode()->idx << ",portnode=" << northi_node->idx << "\n";
+							assert(pe->getSingleRegPort("NR_RI")->getNode() != pe->getInternalPort("NORTH_XBARI")->getNode());
+						}
+						insF.north_reg_bypass = "0";
+					}
+					else{
+						insF.north_reg_bypass = "1";
+					}
+
+					if(easti_node &&
+							easti_node == pe->getInternalPort("EAST_XBARI")->getNode() && easti->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+						if(pe->getSingleRegPort("ER_RI")->getNode()){
+							std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("ER_RI")->getNode()->idx << ",portnode=" << easti_node->idx << "\n";
+							assert(pe->getSingleRegPort("ER_RI")->getNode() != pe->getInternalPort("EAST_XBARI")->getNode());
+						}
+						insF.east_reg_bypass = "0";
+					}
+					else{
+						insF.east_reg_bypass = "1";
+					}
+
+					if(westi_node &&
+							westi_node == pe->getInternalPort("WEST_XBARI")->getNode() && westi->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+						if(pe->getSingleRegPort("WR_RI")->getNode()){
+							std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("WR_RI")->getNode()->idx << ",portnode=" << westi_node->idx << "\n";
+							assert(pe->getSingleRegPort("WR_RI")->getNode() != pe->getInternalPort("WEST_XBARI")->getNode());
+						}
+						insF.west_reg_bypass = "0";
+					}
+					else{
+						insF.west_reg_bypass = "1";
+					}
+
+					if(southi_node &&
+							southi_node == pe->getInternalPort("SOUTH_XBARI")->getNode() && southi->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+						if(pe->getSingleRegPort("SR_RI")->getNode()){
+							std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("SR_RI")->getNode()->idx << ",portnode=" << southi_node->idx << "\n";
+							assert(pe->getSingleRegPort("SR_RI")->getNode() != pe->getInternalPort("SOUTH_XBARI")->getNode());
+						}
+						insF.south_reg_bypass = "0";
+					}
+					else{
+						insF.south_reg_bypass = "1";
+					}
+
+
+
+					if(mappedOP){
+						insF.opcode = mappedOP->getBinaryString();
+						if(mappedOP->npb){
+							insF.negated_predicate = "1";
+						}
+					}
+					else{
+						insF.opcode = "00000";
+					}
+
+					if(mappedOP && mappedOP->hasConst){
+						insF.constant_valid = "1";
+						insF.constant = mappedOP->get27bitConstantBinaryString();
+					}
+					else{
+						insF.constant_valid = "0";
+						//					insF.constant = "123456789012345678901234567";
+						insF.constant = "000000000000000000000000000";
+					}
+
+					if( mappedOP && mappedOP->negated){
+						insF.negated_predicate = "1";
+						//					assert(false);
+					}
+					else{
+						insF.negated_predicate = "0";
+					}
+
+					InsFArr[t+1][Y][X] = insF;
+
+					//		}
+					//	}
+				}
+	}
+	InsFormat jumpl;
+	jumpl.negated_predicate = "0";
+	jumpl.constant_valid = "1";
+	jumpl.constant = "000000000000" + std::bitset<5>(1).to_string() + std::bitset<5>(cgra->get_t_max()).to_string() + std::bitset<5>(1).to_string();
+	assert(jumpl.constant.size() == 27);
+	jumpl.opcode = "11110";
+	jumpl.north_reg_we = "0";
+	jumpl.east_reg_we = "0";
+	jumpl.west_reg_we = "0";
+	jumpl.south_reg_we = "0";
+	jumpl.treg_we = "0";
+	jumpl.north_reg_bypass = "0";
+	jumpl.east_reg_bypass = "0";
+	jumpl.west_reg_bypass = "0";
+	jumpl.south_reg_bypass = "0";
+	jumpl.alu_p = "111";
+	jumpl.alu_i1 = "111";
+	jumpl.alu_i2 = "111";
+	jumpl.northo = "111";
+	jumpl.easto = "111";
+	jumpl.westo = "111";
+	jumpl.southo = "111";
+	//cout << "THILINI2  " <<  cgra->get_t_max() << "\n" ;
+
+	int x;
+	int y;
+	vector<PE *> peList = this->cgra->getSpatialPEList(0);
+	for (PE *pe : peList)
+	{
+		//for (int y = 0; y < Y; ++y) {
+		//	for (int x = 0; x < X; ++x) {
+		x = pe->X;
+		y = pe->Y;
+
+		jumpl.alu_p = InsFArr[cgra->get_t_max()][y][x].alu_p;
+		jumpl.alu_i1 = InsFArr[cgra->get_t_max()][y][x].alu_i1;
+		jumpl.alu_i2 = InsFArr[cgra->get_t_max()][y][x].alu_i2;
+		jumpl.northo = InsFArr[cgra->get_t_max()][y][x].northo;
+		jumpl.easto = InsFArr[cgra->get_t_max()][y][x].easto;
+		jumpl.westo = InsFArr[cgra->get_t_max()][y][x].westo;
+		jumpl.southo = InsFArr[cgra->get_t_max()][y][x].southo;
+		///cout << "THILINI::" << jumpl.alu_p << jumpl.alu_i1 << jumpl.alu_i2 << "\n";
+		InsFArr[0][y][x] = jumpl;
+	}
+
+	//std::string binFName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs)  + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths) + "_binary.bin";
+	//printBinFile(InsFArr,binFName,cgra);
+	//cout << "THILINI3  " <<  cgra->get_y_max() << "\n" ;
+	std::string binFName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs)  + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths) + "_binary.bin";
+	printBinFile(InsFArr,binFName,cgra);
+
+
+
+}
+
+
+void CGRAXMLCompile::PathFinderMapper::printBinFile(
+		const std::vector<std::vector<std::vector<InsFormat> > >& insFArr,
+		std::string fName, CGRA* cgra) {
+
+	std::ofstream binFile(fName.c_str());
+	int t_max = cgra->get_t_max() + 1;
+	int y_max = cgra->get_y_max();
+	int x_max = cgra->get_x_max();
+	//int y_max = 4;
+	//int x_max = 4;
+	binFile << "NPB,CONSTVALID,CONST,OPCODE,REGWEN,TREGWEN,REGBYPASS,PRED,OP1,OP2,NORTH,WEST,SOUTH,EAST\n";
+	//JUMPL Header
+	//cout << x_max << y_max << "\n";
+	//cout << "THILINI  " <<  cgra->get_y_max() << "\n" ;
+
+	for(int y = 0 ; y < y_max ; y++){
+		for(int x = 0 ; x < x_max ; x++){
+
+		}
+	}
+
+
+
+	for(int t = 0 ; t < t_max ; t++){
+		binFile << t << "\n";
+		for(int y = 0 ; y < y_max ; y++){
+			for(int x = 0 ; x < x_max ; x++){
+
+				binFile << "Y=" << y << " X=" << x << ",";
+				binFile << insFArr[t][y][x].negated_predicate;
+				binFile << insFArr[t][y][x].constant_valid;
+				binFile << insFArr[t][y][x].constant;
+				binFile << insFArr[t][y][x].opcode;
+				binFile << insFArr[t][y][x].north_reg_we;
+				binFile << insFArr[t][y][x].west_reg_we;
+				binFile << insFArr[t][y][x].south_reg_we;
+				binFile << insFArr[t][y][x].east_reg_we;
+				binFile << insFArr[t][y][x].treg_we;
+				binFile << insFArr[t][y][x].south_reg_bypass;
+				binFile << insFArr[t][y][x].north_reg_bypass;
+				binFile << insFArr[t][y][x].west_reg_bypass;
+				binFile << insFArr[t][y][x].east_reg_bypass;
+
+				binFile << insFArr[t][y][x].alu_p;
+				binFile << insFArr[t][y][x].alu_i2;
+				binFile << insFArr[t][y][x].alu_i1;
+				binFile << insFArr[t][y][x].northo;
+				binFile << insFArr[t][y][x].westo;
+				binFile << insFArr[t][y][x].southo;
+				binFile << insFArr[t][y][x].easto;
+
+				binFile << "\n";
+			}
+		}
+		binFile << "\n";
+	}
+
+
+	binFile.close();
 }

@@ -32,6 +32,34 @@ struct beParentInfo
 	}
 };
 
+struct InsFormat{
+	std::string easto;
+	std::string southo;
+	std::string westo;
+	std::string northo;
+	std::string alu_i1;
+	std::string alu_i2;
+	std::string alu_p;
+
+	std::string treg_we;
+
+	std::string east_reg_we;
+	std::string south_reg_we;
+	std::string west_reg_we;
+	std::string north_reg_we;
+
+	std::string east_reg_bypass;
+	std::string south_reg_bypass;
+	std::string west_reg_bypass;
+	std::string north_reg_bypass;
+
+	std::string opcode;
+	std::string constant;
+	std::string constant_valid;
+	std::string negated_predicate;
+};
+
+
 class PathFinderMapper : public HeuristicMapper
 {
 public:
@@ -83,6 +111,10 @@ public:
 	bool Check_DFG_CGRA_Compatibility();
 
 	void UpdateVariableBaseAddr();
+
+	void printHyCUBEBinary(CGRA* cgra);
+	void printBinFile(const std::vector<std::vector<std::vector<InsFormat>>>& insFArr, std::string fName, CGRA* cgra);
+
 
 private:
 	std::map<Port *, std::set<DFGNode *>> congestedPorts;

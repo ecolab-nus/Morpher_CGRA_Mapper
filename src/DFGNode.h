@@ -29,7 +29,8 @@ public:
 	int ALAP;
 	int constant;
 	bool hasConst = false;
-	bool npb;
+	bool npb=false;
+	bool negated=false;
 	std::string op;
 	std::string base_pointer_name;
 	int gep_offset = -1;
@@ -48,6 +49,7 @@ public:
 
 	std::string BB;
 
+	int align;
 	void clear(DFG *dfg);
 	std::string getOPtype(DFGNode *child);
 	bool isMemOp();
@@ -57,6 +59,8 @@ public:
 		return this->idx == rhs.idx;
 	}
 	std::set<DataPath *> blacklistDest;
+	std::string getBinaryString();
+	std::string get27bitConstantBinaryString();
 
 private:
 };

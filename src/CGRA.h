@@ -74,10 +74,13 @@ public:
 	}
 
 	CGRA(const Module *Parent, std::string name, int t) : Module(Parent,name,"CGRA",t){}
-	CGRA(std::string json_filename, int II,  std::map<Port *, std::set<DFGNode *>> *_congestedPortPtr = NULL) : Module(NULL,"CGRA_Ins","CGRA",0){
+	CGRA(std::string json_filename, int II, int x, int y,  std::map<Port *, std::set<DFGNode *>> *_congestedPortPtr = NULL) : Module(NULL,"CGRA_Ins","CGRA",0){
 		json_file = json_filename;
 		this->congestedPortPtr = _congestedPortPtr;
 		t_max = II;
+		x_max = x;
+		y_max = y;
+
 		ParseJSONArch(json_filename,II);
 		EstablishTemporalLinkage();
 
@@ -95,8 +98,8 @@ public:
 
 	void adjustII(int newII);
 	int get_t_max() { return t_max; }
-	// int get_y_max() { return y_max; }
-	// int get_x_max() { return x_max; }
+	int get_y_max() { return y_max; }
+    int get_x_max() { return x_max; }
 
 	std::map<Port *, std::set<DFGNode *>> *getCongestedPortPtr() { return congestedPortPtr; }
 	void setCongestedPortPtr(std::map<Port *, std::set<DFGNode *>> *congestedPortPtr) { this->congestedPortPtr = congestedPortPtr; }
