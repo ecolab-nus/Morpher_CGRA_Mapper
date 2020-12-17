@@ -216,7 +216,7 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 				{
 					int y = sm["Y"];
 					int x = sm["X"];
-					submod = ParseModule(top_desc["ARCH"][type], this, name, type, t, y, x);
+					submod = ParseModule(top_desc["ARCH"][type], this, name, type, t, x, y);// y, x);
 				}
 				else
 				{
@@ -403,7 +403,7 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 		assert(type.find("PE") != string::npos);
 		assert(x != -1);
 		assert(y != -1);
-		ret = new PE(parent, module_name, t, y, x);
+		ret = new PE(parent, module_name, t, x, y);//y, x);
 	}
 	else if (type == "CGRA")
 	{
@@ -489,7 +489,7 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 			{
 				int y = sm["Y"];
 				int x = sm["X"];
-				submod = ParseModule(top_desc["ARCH"][type], ret, name, type, t, y, x);
+				submod = ParseModule(top_desc["ARCH"][type], ret, name, type, t, x, y);//y, x);
 			}
 			else
 			{
@@ -1176,6 +1176,7 @@ void CGRAXMLCompile::CGRA::PrintMappedJSON(string fileName)
 		output_json["CGRA_INS"]["TYPE"] = "CGRA";
 		string pe_name = pe->getName();
 		string spatial_pe_name = pe_name.substr(0, pe_name.size() - 3); //remove the last "-T0" component;
+		cout <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
 		PrintMappedJSONModule(pe, output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name]);
 	}
 

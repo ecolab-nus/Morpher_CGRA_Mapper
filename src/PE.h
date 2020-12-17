@@ -103,8 +103,9 @@ public:
 		this->T = t;
 	}
 
-	PE(const Module *Parent, std::string name, int t, int y, int x) : Module(Parent,name,"PE",t){
-		this->T = t;
+	//PE(const Module *Parent, std::string name, int t, int y, int x) : Module(Parent,name,"PE",t){
+	PE(const Module *Parent, std::string name, int t, int x, int y) : Module(Parent,name,"PE",t){
+			this->T = t;
 
 		assert(y != -1);
 		assert(x != -1);
