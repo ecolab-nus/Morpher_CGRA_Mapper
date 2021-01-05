@@ -201,7 +201,8 @@ bool DFG::parseXML(std::string fileName)
 			{
 				findNode(idx)->childrenOPType[findNode(output_idx)] = std::string(type);
 
-				if(type == 0){
+//				if(type == 0){
+				if(std::string(type)=="P"){
 					int npb;
 					output->QueryIntAttribute("NPB", &npb);
 					std::cout << "npb = " << npb;

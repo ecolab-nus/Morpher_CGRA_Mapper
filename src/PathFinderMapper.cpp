@@ -3745,7 +3745,7 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 						insF.constant = "000000000000000000000000000";
 					}
 
-					if( mappedOP && mappedOP->negated){
+					if( mappedOP && mappedOP->npb){
 						insF.negated_predicate = "1";
 						//					assert(false);
 					}
