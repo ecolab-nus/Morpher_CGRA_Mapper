@@ -3301,6 +3301,8 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					//RegFile* RFT = static_cast<RegFile*>(pe->getSubMod("RF0")); assert(RFT);
 					FU* fu = static_cast<FU*>(pe->getSubMod("FU0")); assert(fu);
 					DataPath* dp = static_cast<DataPath*>(fu->getSubMod("DP0")); assert(dp);
+
+					DFGNode* currentMappedOP = dp->getMappedNode();
 					//}
 
 					int prev_t;
@@ -3315,6 +3317,8 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					FU* prevFU = static_cast<FU*>(prevPE->getSubMod("FU0")); assert(prevFU);
 					DataPath* prevDP = static_cast<DataPath*>(prevFU->getSubMod("DP0"));
 					DFGNode* mappedOP = prevDP->getMappedNode();
+
+
 					iter++;
 					//if(!north_o_node->op.empty())
 					//Port* northcon = [northo];
@@ -3517,25 +3521,43 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 						if(i1_ip->getNode() == pe->getInternalPort("NORTH_XBARI")->getNode() &&
 								i1_ip->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
 							insF.alu_i1 = "011";
+							if(currentMappedOP &&currentMappedOP->type_i1i2){
+								insF.alu_i2 = "011";
+							}
 						}
 						else if(i1_ip->getNode() == pe->getInternalPort("EAST_XBARI")->getNode() &&
 								i1_ip->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
 							insF.alu_i1 = "000";
+							if(currentMappedOP && currentMappedOP->type_i1i2){
+								insF.alu_i2 = "000";
+							}
 						}
 						else if(i1_ip->getNode() == pe->getInternalPort("WEST_XBARI")->getNode() &&
 								i1_ip->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
 							insF.alu_i1 = "010";
+							if(currentMappedOP && currentMappedOP->type_i1i2){
+								insF.alu_i2 = "010";
+							}
 						}
 						else if(i1_ip->getNode() == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
 								i1_ip->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
 							insF.alu_i1 = "001";
+							if(currentMappedOP && currentMappedOP->type_i1i2){
+								insF.alu_i2 = "001";
+							}
 						}
 						else if(i1_ip->getNode() == pe->getSingleRegPort("TREG_RI")->getNode() &&
 								i1_ip->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
 							insF.alu_i1 = "101";
+							if(currentMappedOP && currentMappedOP->type_i1i2){
+								insF.alu_i2 = "101";
+							}
 						}
 						else if(i1_ip->getNode() == fu->getOutPort("DP0_T")->getNode() && i1_ip->getLat() == fu->getOutPort("DP0_T")->getLat()){
 							insF.alu_i1 = "100";
+							if(currentMappedOP && currentMappedOP->type_i1i2){
+								insF.alu_i2 = "100";
+							}
 						}
 						//THILINI:: check with RTl for correct config
 						//					else if(i1_ip->getNode() == fu->getInPort("DP0_I1")->getNode() && i1_ip->getLat() == fu->getInPort("DP0_I1")->getLat()){
@@ -3544,17 +3566,25 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 
 						else if(i1_ip->getNode() == dp->getOutPort("T")->getNode() && i1_ip->getLat() == dp->getOutPort("T")->getLat()){
 							insF.alu_i1 = "100";
+							if(currentMappedOP && currentMappedOP->type_i1i2){
+								insF.alu_i2 = "100";
+							}
 						}
 						else{
 							std::cout << "Port : " << i1_ip->getFullName() << ",node = " << i1_ip->getNode()->idx << ", source not found!\n";
 							assert(false);
 							insF.alu_i1 = "111";
+							if(currentMappedOP && currentMappedOP->type_i1i2){
+								insF.alu_i2 = "111";
+							}
 						}
 					}
 					else{
 						insF.alu_i1 = "111";
 					}
 
+
+					if(!(currentMappedOP && currentMappedOP->type_i1i2)){
 					if(i2_ip->getNode()){
 						if(i2_ip->getNode() == pe->getInternalPort("NORTH_XBARI")->getNode() &&
 								i2_ip->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
@@ -3595,6 +3625,7 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					}
 					else{
 						insF.alu_i2 = "111";
+					}
 					}
 
 					//TREG WE

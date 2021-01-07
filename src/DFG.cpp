@@ -199,7 +199,12 @@ bool DFG::parseXML(std::string fileName)
 			output->QueryStringAttribute("type", &type);
 			if (type)
 			{
-				findNode(idx)->childrenOPType[findNode(output_idx)] = std::string(type);
+				if(std::string(type)=="I3"){
+					findNode(idx)->childrenOPType[findNode(output_idx)] = std::string("I1");
+					findNode(output_idx)->type_i1i2 = true;
+				}else{
+					findNode(idx)->childrenOPType[findNode(output_idx)] = std::string(type);
+				}
 
 //				if(type == 0){
 				if(std::string(type)=="P"){
@@ -214,6 +219,7 @@ bool DFG::parseXML(std::string fileName)
 						findNode(output_idx)->npb = false;
 					}
 				}
+
 			}
 
 			output = output->NextSiblingElement("Output");

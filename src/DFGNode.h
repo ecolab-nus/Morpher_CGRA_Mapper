@@ -30,6 +30,7 @@ public:
 	int constant;
 	bool hasConst = false;
 	bool npb=false;
+	bool type_i1i2 = false; //  true if i1 and i2 both get the data from same source (to support x*x)
 	bool negated=false;
 	std::string op;
 	std::string base_pointer_name;
