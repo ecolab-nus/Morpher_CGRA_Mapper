@@ -146,6 +146,8 @@ public:
 	// unordered_map<DataPath*,unordered_set<string>> datapath_accessible_vars;
 	unordered_map<string,Module*> Variable2SPM;
 	unordered_map<string,int> Variable2SPMAddr;
+	int get_x(){return x_max;}
+	int get_y(){return y_max;}
 
 	bool is_spm_modelled = false;
 	int max_hops = 4;

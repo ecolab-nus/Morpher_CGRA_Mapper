@@ -902,10 +902,64 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 
 	bool routeSucc = false;
 	dest_with_cost currDest;
-	while (!estimatedRoutes.empty())
+
+	bool need_heurstic_setting = false;
+	if(this->cgra->getCGRA()->get_x() >=6 ){
+		int cgra_x = this->cgra->getCGRA()->get_x();
+		int cgra_y = this->cgra->getCGRA()->get_y();
+		if(this->dfg->nodeList.size() > 40 ){
+			need_heurstic_setting = true;
+		}
+	}
+	if(node->parents.size() >  0){
+		need_heurstic_setting = false;
+	}
+	// need_heurstic_setting = false;
+	std::queue<dest_with_cost> alternative_estimatedRoutes;
+	if(need_heurstic_setting){
+		
+		std::vector<dest_with_cost> temp_estimatedRoutes;
+		while (!estimatedRoutes.empty()){
+			temp_estimatedRoutes.push_back(estimatedRoutes.top());
+			estimatedRoutes.pop();
+		}
+		std::stack<dest_with_cost> temp_temp;
+		int time ;
+		int cost;
+		bool finished = true;
+		for(auto a = temp_estimatedRoutes.begin();a<temp_estimatedRoutes.end();a++ ){
+			
+			temp_temp.empty();
+			time = a->dest->get_t();
+			cost = a->bestCost;
+			finished = false;
+			temp_temp.push(*a);
+			for(auto b =a; b<temp_estimatedRoutes.end(); b++){
+				if(b->dest->get_t() == time & std::abs(cost - b->bestCost)<=10000 ){
+					temp_temp.push(*b);
+					temp_estimatedRoutes.erase(b);
+				}
+			}
+			while(!temp_temp.empty()){
+				alternative_estimatedRoutes.push(temp_temp.top());
+				temp_temp.pop();
+			}
+			
+		}
+
+	}
+
+	
+	while (!estimatedRoutes.empty() || !alternative_estimatedRoutes.empty())
 	{
-		currDest = estimatedRoutes.top();
-		estimatedRoutes.pop();
+		if(need_heurstic_setting){
+			currDest = alternative_estimatedRoutes.front();
+			alternative_estimatedRoutes.pop();
+		}else{
+			currDest = estimatedRoutes.top();
+			estimatedRoutes.pop();
+		}
+		
 
 		if (currDest.dest->getMappedNode() != NULL)
 		{

@@ -7,6 +7,7 @@
 
 #include "HeuristicMapper.h"
 #include <string>
+#include <list>
 
 #ifndef PATHFINDERMAPPER_H_
 #define PATHFINDERMAPPER_H_

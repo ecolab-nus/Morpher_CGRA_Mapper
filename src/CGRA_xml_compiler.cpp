@@ -216,8 +216,26 @@ int main(int argn, char *argc[])
 		}
 		else
 		{
+			auto end = std::chrono::system_clock::now();
+			std::chrono::duration<double> elapsed_seconds = end-start;
+
+			std::ofstream outfile;
+			//commstd::cout<<"Output to the file!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+			// outfile.open("output_destnode10.txt", std::ios_base::app);
+			outfile.open("stretct.txt", std::ios_base::app);
+			// outfile.open("output.txt", std::ios_base::app);
+			std::string output = inputDFG_filename+" "+json_file_name+" "+std::to_string(tempDFG.nodeList.size())+" " +std::to_string(II)+ " "+std::to_string((int)elapsed_seconds.count()) +"\n";
+			outfile << output;
 			hm.sanityCheck();
 		}
 	}
+		std::ofstream outfile;
+			//commstd::cout<<"Output to the file!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+			// outfile.open("output_destnode10.txt", std::ios_base::app);
+			outfile.open("stretch.txt", std::ios_base::app);
+			// outfile.open("output.txt", std::ios_base::app);
+			std::string output = inputDFG_filename+" "+json_file_name+" failed\n";
+			outfile << output;
+			outfile.close();
 	return 0;
 }
