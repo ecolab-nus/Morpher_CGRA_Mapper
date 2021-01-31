@@ -107,6 +107,7 @@ public:
 	bool canExitCurrPE(LatPort p);
 	static bool checkMEMOp(string op);
 	void setMaxIter(int m){maxIter = m;}
+	void setMaxCandidate (int m) {maxCandidate = m;}
 
 	bool Check_DFG_CGRA_Compatibility();
 
@@ -120,6 +121,8 @@ private:
 	std::map<Port *, std::set<DFGNode *>> congestedPorts;
 	std::map<Port *, std::set<DFGNode *>> conflictedPorts;
 	int maxIter = 30;
+
+	int maxCandidate = 1000;
 
 	std::map<int, int> conflictedTimeStepMap;
 

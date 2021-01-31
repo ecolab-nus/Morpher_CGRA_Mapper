@@ -38,6 +38,7 @@ struct arguments
 	int ndps = 1;
 	int maxiter = 30;
 	int max_hops = 4;
+	int max_candidates =  1000;
 };
 
 arguments parse_arguments(int argn, char *argc[])
@@ -52,7 +53,7 @@ arguments parse_arguments(int argn, char *argc[])
 
 	opterr = 0;
 
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:")) != -1)
+	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:c:")) != -1)
 		switch (c)
 		{
 		case 'd':
@@ -88,6 +89,9 @@ arguments parse_arguments(int argn, char *argc[])
 			break;
 		case 'h':
 			ret.max_hops = atoi(optarg);
+			break;
+		case 'c':
+			ret.max_candidates = atoi(optarg);
 			break;
 		case '?':
 			if (optopt == 'c')
@@ -146,6 +150,7 @@ int main(int argn, char *argc[])
 	//	HeuristicMapper hm(inputDFG_filename);
 	PathFinderMapper hm(inputDFG_filename);
 	hm.setMaxIter(args.maxiter);
+	hm.setMaxCandidate(args.max_candidates);
 
 	int II = hm.getMinimumII(testCGRA, &currDFG);
 	std::cout << "Minimum II = " << II << "\n";

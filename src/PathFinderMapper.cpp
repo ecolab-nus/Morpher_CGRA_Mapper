@@ -681,6 +681,25 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	bool changed = false;
 	candidateDests = modifyMaxLatCandDest(minLatDests, node, changed);
 	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
+
+	std::vector<DataPath *> tempCandidateDest; 
+	if(candidateDests.size() > maxCandidate){
+		int candidate_num = candidateDests.size();
+		float round = ((float)candidate_num / maxCandidate);
+		std::cout<<"maxCandidate:"<<maxCandidate<<" round: "<<round<<std::endl;
+		int pos = 0;
+		int selectedCandiate = 0;
+		for(auto candidate: candidateDests){
+			if( pos >= round * selectedCandiate){
+				tempCandidateDest.push_back(candidate);
+				selectedCandiate++;
+			}
+			pos++;
+		}
+		std::cout<<"reduce the number of candidates to "<<tempCandidateDest.size()<<std::endl;
+	}
+	candidateDests = tempCandidateDest;
+	assert(candidateDests.size() <= maxCandidate);
 	int ii = this->cgra->get_t_max();
 
 	int minLatSucc = 1000000000;
