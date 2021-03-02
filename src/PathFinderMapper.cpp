@@ -687,7 +687,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::priority_queue<dest_with_cost> estimatedRoutesTemp;
 
 	int allowed_time_steps_for_connection = 30;
-	int iterations = allowed_time_steps_for_connection / ii;
+	int iterations = allowed_time_steps_for_connection;
 
 	//Route Estimation
 	for (int i = 0; i < iterations; ++i)
@@ -2140,6 +2140,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 	//populate reccycles
 	std::cout << "Populate Rec Cycles!\n";
 	RecCycles.clear();
+	///exit(0);
 	for (BEDist be : backedges)
 	{
 		//		std::set<DFGNode*> backedgePath;
