@@ -676,9 +676,12 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	//	node->blacklistDest.clear();
 
 	//	int minLat = getlatMinStarts(possibleStarts);
+	std::cout << "getlatMinStartsPHI\n";
 	int minLat = getlatMinStartsPHI(node, possibleStarts);
+	std::cout << "getLatCandDests\n";
 	std::map<DataPath *, int> minLatDests = getLatCandDests(candidateDests, minLat);
 	bool changed = false;
+	std::cout << "modifyMaxLatCandDest\n";
 	candidateDests = modifyMaxLatCandDest(minLatDests, node, changed);
 	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
 	int ii = this->cgra->get_t_max();
@@ -687,7 +690,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::priority_queue<dest_with_cost> estimatedRoutesTemp;
 
 	int allowed_time_steps_for_connection = 30;
-	int iterations = allowed_time_steps_for_connection;
+	int iterations = allowed_time_steps_for_connection/ii;
 
 	//Route Estimation
 	for (int i = 0; i < iterations; ++i)
@@ -2140,7 +2143,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 	//populate reccycles
 	std::cout << "Populate Rec Cycles!\n";
 	RecCycles.clear();
-	///exit(0);
+	//exit(0);
 	for (BEDist be : backedges)
 	{
 		//		std::set<DFGNode*> backedgePath;
