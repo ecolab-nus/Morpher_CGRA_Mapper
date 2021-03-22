@@ -1,0 +1,2 @@
+../../Release/CGRA_xml_compiler -d array_add_INNERMOST_LN1_PartPred_DFG.xml -x 4 -y 4 -j stdnoc.json 
+
