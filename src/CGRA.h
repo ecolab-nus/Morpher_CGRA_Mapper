@@ -109,6 +109,15 @@ public:
 	int numberofDPs = 1;
 	int freeMemNodes = 0;
 	std::set<DataPath *> freeMemNodeSet;
+	std::map<string, int> Op2ID;
+	std::map<string, string> Desc2Mux;
+	std::map<string, std::map<string, int>> SourcePort;
+	std::map<int, int*> ConstRecord;
+	int interConnection = false;
+
+	string getFUName(string operations, int* output_ID);
+	string getMuxName(string src_port_name, string desc_port_name, int* input_ID);
+	int getRegInfo(string src_port_name, string dest_port_name, int* input_ID, int* output_ID);
 
 	std::set<Port *> getConflictPorts(Port *p);
 	void insertConflictPort(Port *a, Port *b);
@@ -143,6 +152,9 @@ public:
 
 	void EstablishTemporalLinkage();
 	void PrintMappedJSON(string fileName);
+	// by Yujie
+	void PrintMappingForPillars(string fileName_i, string fileName_r);    
+
 	void InsertVariable2SPMAddrInfo(json& output_json);
 	void checkMDPVars(unordered_set<Module *>& spms);
 
@@ -152,11 +164,162 @@ public:
 
 	bool is_spm_modelled = false;
 	int max_hops = 4;
+	void insertConstOp(int id, int t, int Y, int X){
+		int* second = new int[3];
+		second[0] = t;
+		second[1] = Y;
+		second[2] = X;
+		ConstRecord.insert(pair<int, int*>(id, second));
+	}
+	void DataPrepare(){
+		//  for stdnoc
+		Op2ID.insert(pair<string, int>("NOP", 0));
+		Op2ID.insert(pair<string, int>("SEXT", 1));
+		Op2ID.insert(pair<string, int>("ZEXT", 2));
+		Op2ID.insert(pair<string, int>("TRUNC", 3));
+		Op2ID.insert(pair<string, int>("INPUT", 4));
+		Op2ID.insert(pair<string, int>("OUTPUT", 5));
+		Op2ID.insert(pair<string, int>("PHI", 6));
+		Op2ID.insert(pair<string, int>("CONST", 7));
+		Op2ID.insert(pair<string, int>("ADD", 8));
+		Op2ID.insert(pair<string, int>("SUB", 9));
+		Op2ID.insert(pair<string, int>("MUL", 10));
+		Op2ID.insert(pair<string, int>("DIV", 11));
+		Op2ID.insert(pair<string, int>("AND", 12));
+		Op2ID.insert(pair<string, int>("OR", 13));
+		Op2ID.insert(pair<string, int>("XOR", 14));
+		Op2ID.insert(pair<string, int>("SHLL", 15));
+		Op2ID.insert(pair<string, int>("LS", 15));
+		Op2ID.insert(pair<string, int>("SHRA", 16));
+		Op2ID.insert(pair<string, int>("CLT", 16));
+		Op2ID.insert(pair<string, int>("SHRL", 17));
+		Op2ID.insert(pair<string, int>("RS", 17));
+		Op2ID.insert(pair<string, int>("LOAD", 18));
+		Op2ID.insert(pair<string, int>("STORE", 19));
+		Op2ID.insert(pair<string, int>("GEP", 20));
+		Op2ID.insert(pair<string, int>("ICMP", 21));
+		Op2ID.insert(pair<string, int>("CMP", 21));
+		Op2ID.insert(pair<string, int>("SHR", 22));
+		Op2ID.insert(pair<string, int>("MOVC", 22));
+		Op2ID.insert(pair<string, int>("SLT", 23));
+		Op2ID.insert(pair<string, int>("CGT", 24));
+		Op2ID.insert(pair<string, int>("SLTU", 25));
+		Op2ID.insert(pair<string, int>("SELECT", 25));
+		Op2ID.insert(pair<string, int>("SHLA", 26));
+		Op2ID.insert(pair<string, int>("CMERGE", 26));
+		Op2ID.insert(pair<string, int>("LOADH", 27));
+		Op2ID.insert(pair<string, int>("STOREH", 28));
+		Op2ID.insert(pair<string, int>("LOADB", 29));
+		Op2ID.insert(pair<string, int>("STOREB", 30));
+		Op2ID.insert(pair<string, int>("LOADB_CONST", 31));
+		Op2ID.insert(pair<string, int>("STOREB_CONST", 32));
+		Op2ID.insert(pair<string, int>("ADD_CONST", 33));
+		Op2ID.insert(pair<string, int>("LS_CONST", 34));
+		Op2ID.insert(pair<string, int>("CMP_CONST", 35));
+		Op2ID.insert(pair<string, int>("CMERGE_CONST", 36));
+		Op2ID.insert(pair<string, int>("CMERGE_NPB", 37));
+
+		Desc2Mux.insert(pair<string, string>("DP0_I1", "muxI1"));
+		Desc2Mux.insert(pair<string, string>("I1", "muxI1"));
+		Desc2Mux.insert(pair<string, string>("DP0_I2", "muxI2"));
+		Desc2Mux.insert(pair<string, string>("I2", "muxI2"));
+		Desc2Mux.insert(pair<string, string>("DP0_P", "muxP"));
+		Desc2Mux.insert(pair<string, string>("P", "muxP"));
+		Desc2Mux.insert(pair<string, string>("WP0", "muxWP0"));
+		Desc2Mux.insert(pair<string, string>("WP1", "muxWP1"));
+		Desc2Mux.insert(pair<string, string>("NORTH_O", "muxNO"));
+		Desc2Mux.insert(pair<string, string>("EAST_O", "muxEO"));
+		Desc2Mux.insert(pair<string, string>("WEST_O", "muxWO"));
+		Desc2Mux.insert(pair<string, string>("SOUTH_O", "muxSO"));
+
+		std::map<string, int> muxI1;
+		muxI1.insert(pair<string, int>("WEST_I", 0));
+		muxI1.insert(pair<string, int>("EAST_I", 1));
+		muxI1.insert(pair<string, int>("NORTH_I", 2));
+		muxI1.insert(pair<string, int>("SOUTH_I", 3));
+		muxI1.insert(pair<string, int>("RP0", 4));
+		muxI1.insert(pair<string, int>("RP1", 5));
+		muxI1.insert(pair<string, int>("T", 6)); // may be extra
+		muxI1.insert(pair<string, int>("DP0_T", 6));
+		std::map<string, int> muxI2;
+		muxI2.insert(pair<string, int>("WEST_I", 0));
+		muxI2.insert(pair<string, int>("EAST_I", 1));
+		muxI2.insert(pair<string, int>("NORTH_I", 2));
+		muxI2.insert(pair<string, int>("SOUTH_I", 3));
+		muxI2.insert(pair<string, int>("RP0", 4));
+		muxI2.insert(pair<string, int>("RP1", 5));
+		std::map<string, int> muxP;
+		muxP.insert(pair<string, int>("WEST_I", 0));
+		muxP.insert(pair<string, int>("EAST_I", 1));
+		muxP.insert(pair<string, int>("NORTH_I", 2));
+		muxP.insert(pair<string, int>("SOUTH_I", 3));
+		muxP.insert(pair<string, int>("RP0", 4));
+		muxP.insert(pair<string, int>("RP1", 5));
+		std::map<string, int> muxWP0;
+		muxWP0.insert(pair<string, int>("WEST_I", 0));
+		muxWP0.insert(pair<string, int>("EAST_I", 1));
+		muxWP0.insert(pair<string, int>("NORTH_I", 2));
+		muxWP0.insert(pair<string, int>("SOUTH_I", 3));
+		muxWP0.insert(pair<string, int>("T", 4));
+		muxWP0.insert(pair<string, int>("DP0_T", 4));
+		std::map<string, int> muxWP1;
+		muxWP1.insert(pair<string, int>("WEST_I", 0));
+		muxWP1.insert(pair<string, int>("EAST_I", 1));
+		muxWP1.insert(pair<string, int>("NORTH_I", 2));
+		muxWP1.insert(pair<string, int>("SOUTH_I", 3));
+		muxWP1.insert(pair<string, int>("T", 4));
+		muxWP1.insert(pair<string, int>("DP0_T", 4));
+		std::map<string, int> muxNO;
+		muxNO.insert(pair<string, int>("T", 0));
+		muxNO.insert(pair<string, int>("DP0_T", 0));
+		muxNO.insert(pair<string, int>("RP0", 1));
+		muxNO.insert(pair<string, int>("RP1", 2));
+		std::map<string, int> muxEO;
+		muxEO.insert(pair<string, int>("T", 0));
+		muxEO.insert(pair<string, int>("DP0_T", 0));
+		muxEO.insert(pair<string, int>("RP0", 1));
+		muxEO.insert(pair<string, int>("RP1", 2));
+		std::map<string, int> muxWO;
+		muxWO.insert(pair<string, int>("T", 0));
+		muxWO.insert(pair<string, int>("DP0_T", 0));
+		muxWO.insert(pair<string, int>("RP0", 1));
+		muxWO.insert(pair<string, int>("RP1", 2));
+		std::map<string, int> muxSO;
+		muxSO.insert(pair<string, int>("T", 0));
+		muxSO.insert(pair<string, int>("DP0_T", 0));
+		muxSO.insert(pair<string, int>("RP0", 1));
+		muxSO.insert(pair<string, int>("RP1", 2));
+		std::map<string, int> muxT;
+		muxT.insert(pair<string, int>("LSU_O", 0));
+		muxT.insert(pair<string, int>("ALU_O", 1));
+		// std::map<string, std::map<string, int>> SourcePort;
+		SourcePort["muxI1"]=muxI1;
+		SourcePort["muxI2"]=muxI2;
+		SourcePort["muxP"]=muxP;
+		SourcePort["muxWP0"]=muxWP0;
+		SourcePort["muxWP1"]=muxWP1;
+		SourcePort["muxNO"]=muxNO;
+		SourcePort["muxEO"]=muxEO;
+		SourcePort["muxWO"]=muxWO;
+		SourcePort["muxSO"]=muxSO;
+		SourcePort["muxT"]=muxT;
+		// SourcePort.insert(pair<string, std::map<string, int>>("muxI1", muxI1));
+		// SourcePort.insert(pair<string, std::map<string, int>>("muxI2", muxI2));
+		// SourcePort.insert(pair<string, std::map<string, int>>("muxP", muxP));
+		// SourcePort.insert(pair<string, std::map<string, int>>("muxWP0", muxWP0));
+		// SourcePort.insert(pair<string, std::map<string, int>>("muxWP1", muxWP1));
+		// SourcePort.insert(pair<string, std::map<string, int>>("muxNO", muxNO));
+		// SourcePort.insert(pair<string, std::map<string, int>>("muxEO", muxEO));
+		// SourcePort.insert(pair<string, std::map<string, int>>("muxWO", muxWO));
+		// SourcePort.insert(pair<string, std::map<string, int>>("muxSO", muxSO));
+		// SourcePort.insert(pair<string, std::map<string, int>>("muxT", muxT));
+	}
 
 private:
 	int x_max;
 	int y_max;
 	int t_max;
+
 	std::map<Port *, std::set<Port *>> conflictPorts;
 	std::map<Port *, std::set<DFGNode *>> *congestedPortPtr;
 
@@ -179,6 +342,7 @@ private:
 
 	void EstablishTemporalLinkageModule(Module* curr_cycle_module, Module* next_cycle_module);
 	void PrintMappedJSONModule(Module* curr_module, json& output_json);
+	void PrintMappedPillarsModule(Module* curr_module, json& output_json, ofstream& outfile_i);
 
 	void SearchALLSPMs(Module *currModule, unordered_set<Module *> &spms);
 

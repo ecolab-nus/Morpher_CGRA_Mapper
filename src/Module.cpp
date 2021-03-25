@@ -648,6 +648,8 @@ void CGRAXMLCompile::Module::UpdateMappedConnectionsJSON(json &output_json)
 					if (LatencyDiff == 0 && hasSameNode)
 					{
 						output_json["CONNECTIONS"][to_string(t)][src_port_name].push_back(dest_port_name);
+						// by Yujie
+						std::cout<<src_port->getName()<<"\t"<<dest_port->getName()<<std::endl;
 						output_json["MAPPED_NODES"][to_string(t)][src_port_name] = src_port->getNode()->idx;
 						output_json["MAPPED_NODES"][to_string(t)][dest_port_name] = dest_port->getNode()->idx;
 						valid_connection = true;

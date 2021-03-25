@@ -148,6 +148,10 @@ public:
 	std::pair<Port *, Port *> getRegConPort(std::string pName);
 	std::set<std::pair<Port *, Port *>> getRegConPorts() { return allRegConPorts; }
 
+	// by Yujie
+	int getPosition_X(){ return X;}
+	int getPosition_Y(){ return Y;}
+
 private:
 	bool alreadyInit = false;
 	std::set<std::pair<Port *, Port *>> allRegConPorts;

@@ -83,6 +83,8 @@ public:
 	Module* getNextTimeIns(){return nextTimeIns;}
 	string get_type(){return type;}
 	void UpdateMappedConnectionsJSON(json& output_json);
+	void UpdateMappedConnectionsPillars(json& output_json, ofstream& outFile_i);
+
 	Port* getJSONPort(string pname, bool isSrc);
 
 	bool isSPM = false;

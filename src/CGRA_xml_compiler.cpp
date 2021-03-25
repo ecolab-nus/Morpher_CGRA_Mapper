@@ -201,8 +201,8 @@ int main(int argn, char *argc[])
 
 			if (II == 65)
 			{
-				std::cout << "II max of 32 has been reached and exiting...\n";
-				return 0;
+				std::cout << "II max of 65 has been reached and exiting...\n";
+				// return 0;
 			}
 
 			if (II > hm.upperboundII)

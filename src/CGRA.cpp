@@ -14,6 +14,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <iomanip>
+#include <regex>
 
 using json = nlohmann::json;
 using namespace CGRAXMLCompile;
@@ -1177,11 +1178,289 @@ void CGRAXMLCompile::CGRA::PrintMappedJSON(string fileName)
 		string pe_name = pe->getName();
 		string spatial_pe_name = pe_name.substr(0, pe_name.size() - 3); //remove the last "-T0" component;
 		cout <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
+		
 		PrintMappedJSONModule(pe, output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name]);
 	}
 
 	outFile << setw(4) << output_json << std::endl;
 	outFile.close();
+}
+
+// by Yujie
+void CGRAXMLCompile::CGRA::PrintMappingForPillars(string fileName_i, string fileName_r){
+	DataPrepare();
+
+	json output_json;
+	ofstream outFile_i(fileName_i);
+	ofstream outFile_r(fileName_r);
+	ofstream outJsonFile(fileName_i+"mapping.json");
+	assert(outJsonFile.is_open());
+	assert(outFile_i.is_open());
+	assert(outFile_r.is_open());
+
+	vector<PE *> zeroth_spatial_pe_list = getSpatialPEList(0);
+	output_json["II"] = get_t_max();
+	InsertVariable2SPMAddrInfo(output_json);   // It seems that there is no influence from this code. 
+
+	for (PE *pe : zeroth_spatial_pe_list){
+		output_json["CGRA_INS"]["TYPE"] = "CGRA";
+		string pe_name = pe->getName();
+		string spatial_pe_name = pe_name.substr(0, pe_name.size() - 3); //remove the last "-T0" component;
+		cout <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
+
+		PrintMappedPillarsModule(pe, output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name], outFile_i);
+	}
+	outJsonFile << setw(4) << output_json << std::endl;
+	outJsonFile.close();
+	outFile_i.close();
+	for (std::map<int, int*>::iterator iter = ConstRecord.begin(); iter != ConstRecord.end(); ++iter) {
+		outFile_r<<"const"<<iter->first<<" "<<iter->second[0]<<":cgra.tile_0.pe_"<<iter->second[1]<<"_"<<iter->second[2]<<".const0.internalNode_0"<<" "<<iter->second[0]<<" 0"<<std::endl;
+		delete []iter->second;
+	}
+	outFile_r.close();
+}
+
+// by Yujie
+void CGRAXMLCompile::CGRA::PrintMappedPillarsModule(Module *curr_module, json &output_json, ofstream& outFile_i)
+{
+	output_json["TYPE"] = curr_module->get_type();
+	curr_module->UpdateMappedConnectionsPillars(output_json, outFile_i);
+
+	for (Module *sub_module : curr_module->subModules)
+	{
+		PrintMappedPillarsModule(sub_module, output_json["SUBMODS"][sub_module->getName()], outFile_i);
+	}
+}
+
+//by Yujie
+// get multiplexer name from destination port name
+string CGRAXMLCompile::CGRA::getMuxName(string src_port_name, string desc_port_name, int* inputID){
+	std::map<string, string>::iterator Desc_iter;
+	string descName;
+	Desc_iter = Desc2Mux.find(desc_port_name);
+	if(Desc_iter != Desc2Mux.end()){
+		descName = Desc_iter->second;
+	}else{
+		interConnection = true;
+		return descName;
+	}
+	// string descName = Desc2Mux.find(desc_port_name)->second;
+	// std::cout<<descName<<std::endl;	
+	std::map<string, std::map<string, int>>::iterator iter;
+	iter = SourcePort.find(descName);
+	if(iter != SourcePort.end()){
+		std::map<string, int> component = iter->second;
+		std::map<string, int>::iterator it = component.find(src_port_name);
+		if(it != component.end()){
+			*inputID = it->second;
+		}else{
+			interConnection = true;
+			return descName;
+		}
+	}else{
+		std::cout<<"!!!!!!!!!!!!!!Wrong!!!!!!!!!!!!"<<std::endl;
+	}
+	return descName;
+}
+
+string CGRAXMLCompile::CGRA::getFUName(string operations, int* output_ID){
+	std::map<string, int>::iterator Op_iter;
+	Op_iter = Op2ID.find(operations);
+	if(Op_iter != Op2ID.end()){
+		*output_ID = Op_iter->second;
+	}else{
+		interConnection = true; // to judge whether needs to add suffix to op
+		std::cout<<"!!!!!!!!!!!!!!Wrong!!!!!!!!!!!!"<<std::endl;
+	}
+	if(*output_ID==18||*output_ID==19||(*output_ID>=27 && *output_ID<=32)){
+		return "loadStoreUnit";
+	}
+	return "alu0";
+}
+
+// by Yujie
+int CGRAXMLCompile::CGRA::getRegInfo(string src_port_name, string dest_port_name, int* input_ID, int* output_ID){
+	int regID = 0;
+	if(dest_port_name.compare("RP0")==0){
+		*output_ID = 0;
+		*input_ID = -1;
+		regID = (int)src_port_name[src_port_name.length()-4] - 48;
+	}else if(dest_port_name.compare("RP1")==0){
+		*output_ID = 1;
+		*input_ID = -1;
+		regID = (int)src_port_name[src_port_name.length()-4] - 48;		
+	}else{
+		*output_ID = -1;
+		regID = (int)dest_port_name[dest_port_name.length()-4] - 48;			
+		if(src_port_name.compare("WP0")==0){
+			*input_ID = 0;
+		}else{
+			*input_ID = 1;
+		}
+	}
+	return regID;
+}
+
+// by Yujie
+void CGRAXMLCompile::Module::UpdateMappedConnectionsPillars(json &output_json, ofstream& outFile_i)
+{
+	Module *mod = this;
+	CGRA *cgra = getCGRA();
+	do
+	{
+		int t = mod->get_t();
+		PE* mod_pe =mod->getPE();
+		int Y = mod_pe->getPosition_Y();
+		int X = mod_pe->getPosition_X();
+
+		for (auto it = mod->connectedTo.begin(); it != mod->connectedTo.end(); it++)
+		{
+			Port *src_port = it->first;
+			Module *src_module = src_port->getMod();
+			string src_port_name;
+			src_port_name = src_port->getName();
+
+			//if source port is not mapped no need to explore
+			if (src_port->getNode() == NULL)
+			{
+				// cout << "src_port = " << src_port->getFullName() << "is not used!\n";
+				continue;
+			}
+
+			for (Port *dest_port : it->second)
+			{
+				Module *dest_module = dest_port->getMod();
+				string dest_port_name;
+				dest_port_name = dest_port->getName();
+
+				//the dest port is not in use
+				if (dest_port->getNode() == NULL)
+					continue;
+
+				int LatencyDiff = dest_port->getLat() - src_port->getLat();
+				bool isTemproalRegConnection = src_port->getType() == REGO && dest_port->getType() == REGI;
+				bool isBothRegPorts = (src_port->getType() == REGO && dest_port->getType() == REGI) || (src_port->getType() == REGI && dest_port->getType() == REGO);
+				bool hasSameNode = dest_port->getNode() == src_port->getNode();
+				bool valid_connection = false;
+
+				if (!isBothRegPorts)
+				{
+					if (LatencyDiff == 0 && hasSameNode)
+					{
+						// to do !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+						output_json["CONNECTIONS"][to_string(t)][src_port_name].push_back(dest_port_name);
+						string ifRF = "RF";
+						string mux_desc = "!!!!!!!!!!!!!!!!!!Connection!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+						int input_ID = 0;
+						int output_ID = 0;
+						int regID = 0;
+						// std::cout<<src_port_name<<","<<dest_port_name<<std::endl;
+						if(ifRF.compare(mod->get_type())==0){
+							// for rf0
+							regID = cgra->getRegInfo(src_port_name, dest_port_name, &input_ID, &output_ID);
+							outFile_i<<"<"<<t<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<".rf0.internalNode_"<<regID<<">"<<std::endl;							
+							outFile_i<<input_ID<<std::endl << output_ID << std::endl;
+							// std::cout<<"<"<<t<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<".rf0.internalNode_"<<regID<<">"<<std::endl;							
+							// std::cout<<input_ID<<std::endl << output_ID << std::endl;
+						}else{
+							mux_desc = cgra->getMuxName(src_port_name, dest_port_name, &input_ID);
+							if(cgra->interConnection){
+								cgra->interConnection = false;
+							}else{
+								outFile_i<<"<"<<t<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<"."<<mux_desc<<".internalNode_0>"<<std::endl;
+								outFile_i<<input_ID<<std::endl << 0 << std::endl;
+								// std::cout<<"<"<<t<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<"."<<mux_desc<<".internalNode_0>"<<std::endl;
+								// std::cout<<input_ID<<std::endl << 0 << std::endl;
+							}
+						}
+						output_json["MAPPED_NODES"][to_string(t)][src_port_name] = src_port->getNode()->idx;
+						output_json["MAPPED_NODES"][to_string(t)][dest_port_name] = dest_port->getNode()->idx;
+						valid_connection = true;
+					}
+				}
+			}
+		}
+		mod = mod->getNextTimeIns();
+	} while (mod != this);
+
+	//If this is a funcional unit explore children for datapath submodule
+	if (FU *this_fu = dynamic_cast<FU *>(this))
+	{
+		for (Module *sub_module : this_fu->subModules)
+		{
+			if (DataPath *dp = dynamic_cast<DataPath *>(sub_module))
+			{
+				Module *mod = dp;
+				do
+				{
+					int t = mod->get_t();
+					int II = cgra->get_t_max();
+					PE* mod_pe =mod->getPE();
+					int Y = mod_pe->getPosition_Y();
+					int X = mod_pe->getPosition_X();
+
+					DataPath *mod_dp = static_cast<DataPath *>(mod);
+					if (mod_dp->getMappedNode())
+					{
+						// to do !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+						output_json["OPS"][to_string(t)] = mod_dp->getMappedNode()->op;
+
+						string mux_desc = "!!!!!!!!!!!!!!!FU!!!!!!!!!!";
+						int output_ID = 0;
+						string suffix_op = "";
+						if(mod_dp->getMappedNode()->npb){
+							suffix_op = "_NPB";
+						}
+						if(mod_dp->getMappedNode()->hasConst){
+							suffix_op = "_CONST";
+						}
+						mux_desc = cgra->getFUName(mod_dp->getMappedNode()->op+suffix_op, &output_ID);
+						std::cout<< mod_dp->getMappedNode()->op+suffix_op <<std::endl;
+
+						if(cgra->interConnection){
+							cgra->interConnection = false;
+							mux_desc = cgra->getFUName(mod_dp->getMappedNode()->op, &output_ID);
+							std::cout<< mod_dp->getMappedNode()->op<<std::endl;
+						}
+						
+						outFile_i<<"<"<<(t+1)%II<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<"."<<mux_desc<<".internalNode_0>"<<std::endl;
+						outFile_i<<"SELECTED_OP"<<std::endl;
+						outFile_i <<output_ID<< std::endl;						
+
+						// std::cout<<"<"<<(t+1)%cgra->get_t_max()<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<"."<<mux_desc<<".internalNode_0>"<<std::endl;
+						// std::cout<<"SELECTED_OP"<<std::endl;
+						// std::cout <<output_ID<< std::endl;	
+
+						if(mux_desc.compare("loadStoreUnit")==0){
+							outFile_i<<"<"<<(t+2)%II<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<".muxT.internalNode_0>"<<std::endl;
+							outFile_i<<0<<std::endl<<0<<std::endl;
+							// std::cout<<"<"<<(t+2)%cgra->get_t_max()<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<".muxT.internalNode_0>"<<std::endl;
+							// std::cout<<0<<std::endl<<0<<std::endl;
+						}
+
+						output_json["OP_INFO"][to_string(t)]["id"] = mod_dp->getMappedNode()->idx;
+						output_json["OP_INFO"][to_string(t)]["NPB"] = mod_dp->getMappedNode()->npb;
+
+						if(mod_dp->getMappedNode()->hasConst){
+							//if there are constants they are always fed to I2 port.
+							output_json["CONNECTIONS"][to_string(t)]["CONST." + to_string(mod_dp->getMappedNode()->constant)] = mod_dp->getName() + ".I2";
+							outFile_i<<"<"<<(t+1)%II<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<".const0.internalNode_0>"<<std::endl;
+							outFile_i<<"SELECTED_OP"<<std::endl<<7<<std::endl;
+							// std::cout<<"<"<<(t+1)%cgra->get_t_max()<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<".const0.internalNode_0>"<<std::endl;
+							// std::cout<<"SELECTED_OP"<<std::endl<<7<<std::endl;
+							cgra->insertConstOp(mod_dp->getMappedNode()->idx, (t+1)%II, Y, X);
+							// outFile_r<<"const"<<mod_dp->getMappedNode()->idx<<" "<<(t+1)%II<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<".const0.internalNode_0"<<" "<<(t+1)%II<<" 0"<<std::endl;
+						}
+
+					}
+					mod = mod->getNextTimeIns();
+				} while (mod != dp);
+
+				//Assumption :: only 1 datapath module is found inside FU
+				break;
+			}
+		}
+	}
 }
 
 void CGRAXMLCompile::CGRA::PrintMappedJSONModule(Module *curr_module, json &output_json)
@@ -1440,7 +1719,8 @@ bool CGRAXMLCompile::CGRA::PreprocessInterSubmodConns(json &arch)
 			auto erase_it = find(arch[mod_type]["CONNECTIONS"][old_src].begin(), arch[mod_type]["CONNECTIONS"][old_src].end(), old_dest);
 			assert(erase_it != arch[mod_type]["CONNECTIONS"][old_src].end());
 			arch[mod_type]["CONNECTIONS"][old_src].erase(erase_it);
-			string new_internal_port_name = rconn.src_mod + "_" + rconn.src_port + "-->" + rconn.dest_mod + "_" + rconn.dest_port;
+			// string new_internal_port_name = rconn.src_mod + "_" + rconn.src_port + "-->" + rconn.dest_mod + "_" + rconn.dest_port;
+			string new_internal_port_name = rconn.dest_port;
 
 			arch[mod_type]["INTERNALS"].push_back(new_internal_port_name);
 			arch[mod_type]["CONNECTIONS"][old_src].push_back("THIS." + new_internal_port_name);

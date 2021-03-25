@@ -687,7 +687,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::priority_queue<dest_with_cost> estimatedRoutesTemp;
 
 	int allowed_time_steps_for_connection = 30;
-	int iterations = allowed_time_steps_for_connection / ii;
+	int iterations = allowed_time_steps_for_connection;
 
 	//Route Estimation
 	for (int i = 0; i < iterations; ++i)
@@ -1561,7 +1561,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		this->printMappingLog();
 		this->printMappingLog2();
 
-		cgra->PrintMappedJSON(fNameLog1 + cgra->getCGRAName() + "mapping.json");
+		// by Yujie
+		// cgra->PrintMappedJSON(fNameLog1 + cgra->getCGRAName() + "mapping.json");
+		cgra->PrintMappingForPillars(fNameLog1 + cgra->getCGRAName() + "mapping_i.txt", fNameLog1 + cgra->getCGRAName() + "mapping_r.txt");
 
 		std::cout << "Map Success!.\n";
 		mappingLog.close();
