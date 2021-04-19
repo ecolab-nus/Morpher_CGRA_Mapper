@@ -89,7 +89,8 @@ public:
 
 	bool isSPM = false;
 	std::unordered_set<std::string> data_layout;
-
+	const std::map<Port *, std::vector<Port *>> getconnectedFrom(){return connectedFrom;}
+	const std::map<Port *, std::vector<Port *>> getconnectedTo(){return connectedTo;}
 protected:
 	//private:
 

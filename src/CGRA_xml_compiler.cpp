@@ -104,6 +104,50 @@ arguments parse_arguments(int argn, char *argc[])
 		return ret;
 }
 
+struct port_edge
+{
+	Port* a;
+	Port* b;
+	bool operator==(const port_edge &other) const
+	{
+		
+		return other.a == a && other.b == b;
+	}
+
+	bool operator<(const port_edge &other) const
+	{
+		
+		return a < other.a || b < other.b;
+	}
+};
+
+void find_routing_resource(Module * md, std::set<Port*> & ports, std::set<port_edge> & port_edges){
+
+		// std::cout<<"vist "<<md->getFullName()<<"\n";
+	for (auto & port_conn: md->getconnectedTo()){
+		auto master_port = port_conn.first;
+		ports.insert(master_port);
+		for(auto slave_port: port_conn.second ){
+			ports.insert(slave_port);
+			port_edges.insert(port_edge{master_port, slave_port});
+		}
+	}
+
+	for (auto & port_conn: md->getconnectedFrom()){
+		auto slave_port = port_conn.first;
+		ports.insert(slave_port);
+		for(auto master_port: port_conn.second ){
+			ports.insert(slave_port);
+			port_edges.insert(port_edge{master_port, slave_port});
+		}
+	}
+
+	for(auto submod: md->subModules){
+		find_routing_resource(submod, ports, port_edges);
+	}
+
+}
+
 int main(int argn, char *argc[])
 {
 	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
@@ -181,8 +225,19 @@ int main(int argn, char *argc[])
 		{
 			tempCGRA = new CGRA(json_file_name, II,xdim,ydim, hm.getcongestedPortsPtr());
 		}
+
+		std::set<Port*>  ports; std::set<port_edge>  port_edges;
+		for(auto submod: tempCGRA->Name2SubMod){
+		
+			find_routing_resource(submod.second, ports, port_edges);
+		}
+		std::cout << "Using II = " << II << "\n";
+		std::cout<<"number of ports: "<<ports.size()<<" number of edge: "<<port_edges.size();
+		// return 0;
 		tempCGRA->analyzeTimeDist(tdi);
 		tempCGRA->max_hops = args.max_hops;
+
+		// return 0;
 
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();

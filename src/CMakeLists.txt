@@ -3,6 +3,7 @@ FILE(GLOB MyHSources *.h)
 
 set(PROJ "cgra_xml_mapper")
 
+set(CMAKE_BUILD_TYPE "Debug")
 find_package(nlohmann_json CONFIG REQUIRED)
 
 add_executable(${PROJ} ${MyCPPSources} ${MyHSources})
