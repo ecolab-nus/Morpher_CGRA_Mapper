@@ -3,6 +3,19 @@
  *
  *  Created on: 31 Mar 2018
  *      Author: manupa
+ * 
+ *  notes on the mapper (zhaoying):
+ *  1) register connection in MRRG: to support store data into reg, it will connect reg.out -> reg.in (next cycle). It will also mark
+ * 		this as a reg_conn to set latency as 1.
+ * 	2) SortByASAPBAckEdge. It is sorted by path. 
+ *  3) Each iteration, it will put the information of congested prt into congestedPorts. The port can only hold one data (even in code), so the
+ * 	 later assignment will overwrite the old one. It uses congestedPorts to keep track of port history. It will set congested part a higher cost 
+ * 		to avoid congestion in next iteration.
+ * 	4) Conflict and congestion are different. Conflict means it cannot connect to multiple ports due to design limitation (usually between REGF 
+ * 		and FU in N2N).
+ * 	5) Backtrack means, when it cannot place/route for a node, it will undo for last mapped node.
+ *  6) It seems mutexpath is useless.
+ * 
  */
 
 #include "PathFinderMapper.h"
@@ -538,7 +551,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::map<DFGNode *, std::vector<Port *>> possibleStarts;
 	std::map<DFGNode *, Port *> alreadyMappedChildPorts;
 
-	bool detailedDebug = false;
+	bool detailedDebug = true;
 	// if(node->idx==1)detailedDebug=true;
 
 	//	std::cout << "EstimateEouting begin...\n";
@@ -3119,7 +3132,7 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 
 bool CGRAXMLCompile::PathFinderMapper::canExitCurrPE(LatPort p)
 {
-
+	//lzy: as the name shows, this is to check the  whether the port can lead a path which can exit the current PE. 
 	std::set<LatPort> alreadyVisited;
 
 	std::stack<LatPort> st;
