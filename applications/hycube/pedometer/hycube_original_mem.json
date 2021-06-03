@@ -275,7 +275,11 @@
         "SPM" : [{"name" : "SPM0"}]
       },
       "DATA_LAYOUT" :{
-        "acceleration_y":0,"acceleration_x":192,"acc_avg_y":64,"acceleration_z":128,"acc_vector":256
+        "acceleration_x":192,
+        "acceleration_y":0,
+        "acc_avg_y":64,
+        "acc_vector":256,
+        "acceleration_z":128
       },
       "INIT_FILE" : "../json/test_data.json",
       "CONNECTIONS" : {
@@ -292,7 +296,10 @@
         "SPM" : [{"name" : "SPM0"}]
       },
       "DATA_LAYOUT" :{
-        "km":2176,"step":2112,"acc_avg_x":2048,"acc_avg_z":2240
+        "acc_avg_x":2048,
+        "step":2112,
+        "km":2176,
+        "acc_avg_z":2240
       },
       "INIT_FILE" : "../json/test_data.json",
       "CONNECTIONS" : {
