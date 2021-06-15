@@ -275,7 +275,7 @@
         "SPM" : [{"name" : "SPM0"}]
       },
       "DATA_LAYOUT" :{
-        "A":0,"B":80
+        "C":0,"B":80
       },
       "INIT_FILE" : "../json/test_data.json",
       "CONNECTIONS" : {
@@ -292,7 +292,7 @@
         "SPM" : [{"name" : "SPM0"}]
       },
       "DATA_LAYOUT" :{
-        "C":2048
+        "A":2048
       },
       "INIT_FILE" : "../json/test_data.json",
       "CONNECTIONS" : {
