@@ -10,6 +10,8 @@
 #include <assert.h>
 #include <string.h>
 
+
+
 #include "DFG.h"
 #include "CGRA.h"
 #include "HeuristicMapper.h"
@@ -184,9 +186,15 @@ int main(int argn, char *argc[])
 	{
 		testCGRA = new CGRA(json_file_name, 1,xdim,ydim);
 	}
-
+#ifdef NOTIMEDISTANCEFUNC
+#else
 	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
+#endif
 
+#ifdef HIERARCHICAL
+	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
+#endif
+	return 0;
 	//	HeuristicMapper hm(inputDFG_filename);
 	PathFinderMapper hm(inputDFG_filename);
 	hm.setMaxIter(args.maxiter);
@@ -234,10 +242,18 @@ int main(int argn, char *argc[])
 		std::cout << "Using II = " << II << "\n";
 		std::cout<<"number of ports: "<<ports.size()<<" number of edge: "<<port_edges.size();
 		// return 0;
+#ifdef NOTIMEDISTANCEFUNC
+#else
 		tempCGRA->analyzeTimeDist(tdi);
+#endif
+
+#ifdef HIERARCHICAL
+		tempCGRA->analyzeTimeDist(tdi);
+#endif
+
 		tempCGRA->max_hops = args.max_hops;
 
-		// return 0;
+
 
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();
@@ -271,7 +287,10 @@ int main(int argn, char *argc[])
 		}
 		else
 		{
+//#ifdef HIERARCHICAL
+//#else
 			hm.sanityCheck();
+//#endif
 			//hm.assignLiveInOutAddr(&tempDFG);
 			if(PEType == "HyCUBE_4REG"){
 				std::cout << "Printing HyCUBE Binary...\n";

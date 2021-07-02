@@ -198,20 +198,29 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 
 	//NOTE you can only have sub modules at the CGRA level.
 	//You can always add functionality in terms of PEs.
+	std::cout << "Parse CGRA begins:\n";
 
 	for (int t = 0; t < II; t++)
 	{
-
+		for (auto &el : cgra_desc["SUBMODS"].items())
+		{
+			string type = el.key();
+			std::cout << "type=el.key():" << type <<endl;
+		}
 		for (auto &el : cgra_desc["SUBMODS"].items())
 		{
 
 			//if not at CGRA level, a single instance suffice
 			string type = el.key();
+			std::cout << "type=el.key():" << type <<endl;
 			for (auto &sm : el.value())
 			{
 				string name = sm["name"];
+
+				std::cout << "name = sm[name]:" << name <<endl;
 				name = name + "-T" + to_string(t);
 
+				std::cout << "name = " << name <<endl;
 				Module *submod;
 				if (sm.find("X") != sm.end() && sm.find("Y") != sm.end())
 				{
@@ -231,6 +240,7 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 
 				Name2SubMod[name] = submod;
 				subModArr[t].push_back(submod);
+				PEModArr[t].push_back(submod);
 			}
 		}
 
@@ -589,12 +599,19 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 
 	// cout << json;
 
+	//PreprocessPattern(json["ARCH"]["CGRA"]);
+#ifdef HIERARCHICAL
+	PreprocessTilePattern(json["ARCH"]);
+#else
 	PreprocessPattern(json["ARCH"]["CGRA"]);
+#endif
+
 	PreprocessInterSubmodConns(json["ARCH"]);
 	string verbose_json_filename = filename_withoutext + "_verbose.json";
 	ofstream verbose_json_file(verbose_json_filename.c_str());
 	verbose_json_file << setw(4) << json << std::endl;
 	verbose_json_file.close();
+
 
 	top_desc = json;
 
@@ -609,6 +626,7 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 	ParseCGRA(json["ARCH"]["CGRA"], II);
 	cout << "Parsing JSON Success!!!\n";
 
+	//exit(true);
 
 	// exit(EXIT_SUCCESS);
 	// assert(false);
@@ -692,9 +710,9 @@ void ExpandPattern(json &input, json &connections, json &submods)
 				int dest_y = y + toy;
 
 				if ((src_x >= 0) && (src_x < xdim) &&
-					(src_y >= 0) && (src_y < ydim) &&
-					(dest_x >= 0) && (dest_x < xdim) &&
-					(dest_y >= 0) && (dest_y < ydim))
+						(src_y >= 0) && (src_y < ydim) &&
+						(dest_x >= 0) && (dest_x < xdim) &&
+						(dest_y >= 0) && (dest_y < ydim))
 				{
 					string conn_from_str = submod_grid[src_x][src_y].second + "." + curr_port_str;
 					string conn_next_str = submod_grid[dest_x][dest_y].second + "." + to_port_str;
@@ -746,6 +764,437 @@ bool CGRAXMLCompile::CGRA::PreprocessPattern(json &top)
 	cout << "After JSON Begin :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
 	std::cout << setw(4) << top << std::endl;
 	cout << "After JSON End :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+}
+
+void ExpandTilePattern(json &top, json &input, json &connections, json &submods)
+{
+
+	assert(input["PATTERN"] == "GRID");
+
+	int tile_xdim = input["DIMS"]["X"];
+	int tile_ydim = input["DIMS"]["Y"];
+
+	int pe_xdim = top["TILE"]["SUBMODS"][0]["DIMS"]["X"];
+	int pe_ydim = top["TILE"]["SUBMODS"][0]["DIMS"]["Y"];
+
+	unordered_map<int, unordered_map<int, pair<string, string>>> submod_grid;
+	unordered_map<int, unordered_map<int, string>> pe_type_grid;
+
+	for (auto &el : top["CGRA"]["SUBMODS"][0]["MODS"])
+	{
+		int tile_x = el["X"];
+		int tile_y = el["Y"];
+		string tile_mod_type = el["MOD"];
+		string mod_name;
+		cout<<"inside loop";
+
+		for (auto &el_pe : top["TILE"]["SUBMODS"][0]["MODS"]){
+			int pe_x = el_pe["X"];
+			int pe_y = el_pe["Y"];
+			string pe_mod_type = el_pe["MOD"];
+			string mod_name;
+			if (el_pe.find("name") != el_pe.end())
+			{
+				mod_name = el_pe["name"];
+			}
+			else
+			{
+				mod_name = tile_mod_type + "_X" + to_string(tile_x) + "|" + "_Y" + to_string(tile_y) + "|_"+pe_mod_type + "_X" + to_string(pe_x) + "|" + "_Y" + to_string(pe_y) + "|";
+			}
+
+			json mod;
+			mod["name"] = mod_name;
+			mod["X"] = tile_x*pe_xdim+pe_x;
+			mod["Y"] = tile_y*pe_ydim+pe_y;
+
+			submods[pe_mod_type].push_back(mod);
+			submod_grid[pe_x + tile_x*pe_xdim][pe_y + tile_y*pe_ydim] = make_pair(pe_mod_type, mod_name);
+			pe_type_grid[pe_x + tile_x*pe_xdim][pe_y + tile_y*pe_ydim] = pe_mod_type;
+		}
+
+	}
+
+	for (auto &el : top["CGRA"]["SUBMODS"][0]["CONNECTIONS"])
+	{
+		string fromx_str = el["FROM_X"];
+		int fromx = atoi(fromx_str.substr(1, fromx_str.size() - 1).c_str());
+		if (fromx_str.size() == 1)
+			fromx = 0;
+
+		string fromy_str = el["FROM_Y"];
+		int fromy = atoi(fromy_str.substr(1, fromy_str.size() - 1).c_str());
+		if (fromy_str.size() == 1)
+			fromy = 0;
+
+		string curr_port_str = el["FROM_PORT"];
+
+		string tox_str = el["TO_X"];
+		int tox = atoi(tox_str.substr(1, tox_str.size() - 1).c_str());
+		if (tox_str.size() == 1)
+			tox = 0;
+
+		string toy_str = el["TO_Y"];
+		int toy = atoi(toy_str.substr(1, toy_str.size() - 1).c_str());
+		if (toy_str.size() == 1)
+			toy = 0;
+
+		string to_port_str = el["TO_PORT"];
+
+		cout << "fromx = " << fromx << ",";
+		cout << "fromy = " << fromy << ",";
+		cout << "tox = " << tox << ",";
+		cout << "toy = " << toy << "\n";
+
+		for (int y = 0; y < pe_ydim*tile_ydim; y++)
+		{
+			for (int x = 0; x < pe_xdim*tile_xdim; x++)
+			{
+
+				int src_x = x + pe_xdim*fromx;
+				int src_y = y + pe_ydim*fromy;
+				int dest_x = x + pe_xdim*tox;
+				int dest_y = y + pe_ydim*toy;
+				if(pe_type_grid[src_x][src_y].compare("PE_R1")==0){
+
+					if ((src_x >= 0) && (src_x < pe_xdim*tile_xdim) &&
+							(src_y >= 0) && (src_y < pe_ydim*tile_ydim) &&
+							(dest_x >= 0) && (dest_x < pe_xdim*tile_xdim) &&
+							(dest_y >= 0) && (dest_y < pe_ydim*tile_ydim))
+					{
+						string conn_from_str = submod_grid[src_x][src_y].second + "." + curr_port_str;
+						string conn_next_str = submod_grid[dest_x][dest_y].second + "." + to_port_str;
+						connections[conn_from_str].push_back(conn_next_str);
+					}
+				}
+
+				src_x = x + pe_xdim*fromx;
+				src_y = y + pe_ydim*fromy;
+				dest_x = x + 2*pe_xdim*tox;
+				dest_y = y + 2*pe_ydim*toy;
+				if(pe_type_grid[src_x][src_y].compare("PE_R2")==0){
+
+					if ((src_x >= 0) && (src_x < pe_xdim*tile_xdim) &&
+							(src_y >= 0) && (src_y < pe_ydim*tile_ydim) &&
+							(dest_x >= 0) && (dest_x < pe_xdim*tile_xdim) &&
+							(dest_y >= 0) && (dest_y < pe_ydim*tile_ydim))
+					{
+						string conn_from_str = submod_grid[src_x][src_y].second + "." + curr_port_str;
+						string conn_next_str = submod_grid[dest_x][dest_y].second + "." + to_port_str;
+						connections[conn_from_str].push_back(conn_next_str);
+					}
+				}
+			}
+		}
+	}
+
+	for (auto &el : top["TILE"]["SUBMODS"][0]["CONNECTIONS"])
+	{
+		string fromx_str = el["FROM_X"];
+		int fromx = atoi(fromx_str.substr(1, fromx_str.size() - 1).c_str());
+		if (fromx_str.size() == 1)
+			fromx = 0;
+
+		string fromy_str = el["FROM_Y"];
+		int fromy = atoi(fromy_str.substr(1, fromy_str.size() - 1).c_str());
+		if (fromy_str.size() == 1)
+			fromy = 0;
+
+		string curr_port_str = el["FROM_PORT"];
+
+		string tox_str = el["TO_X"];
+		int tox = atoi(tox_str.substr(1, tox_str.size() - 1).c_str());
+		if (tox_str.size() == 1)
+			tox = 0;
+
+		string toy_str = el["TO_Y"];
+		int toy = atoi(toy_str.substr(1, toy_str.size() - 1).c_str());
+		if (toy_str.size() == 1)
+			toy = 0;
+
+		string to_port_str = el["TO_PORT"];
+
+		cout << "fromx = " << fromx << ",";
+		cout << "fromy = " << fromy << ",";
+		cout << "tox = " << tox << ",";
+		cout << "toy = " << toy << "\n";
+
+		for (int y = 0; y < pe_ydim*tile_ydim; y++)
+		{
+			for (int x = 0; x < pe_xdim*tile_xdim; x++)
+			{
+				int src_x = x + fromx;
+				int src_y = y + fromy;
+				int dest_x = x + tox;
+				int dest_y = y + toy;
+
+				if ((src_x >= 0) && (src_x < pe_xdim*tile_xdim) &&
+						(src_y >= 0) && (src_y < pe_ydim*tile_ydim) &&
+						(dest_x >= 0) && (dest_x < pe_xdim*tile_xdim) &&
+						(dest_y >= 0) && (dest_y < pe_ydim*tile_ydim))
+				{
+					string conn_from_str = submod_grid[src_x][src_y].second + "." + curr_port_str;
+					string conn_next_str = submod_grid[dest_x][dest_y].second + "." + to_port_str;
+					connections[conn_from_str].push_back(conn_next_str);
+				}
+			}
+		}
+	}
+}
+
+
+bool CGRAXMLCompile::CGRA::PreprocessTilePattern(json &top)
+{
+
+	json submods;
+	json connections;
+
+	cout << "Before JSON Begin :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+	//std::cout << setw(4) << top << std::endl;
+	cout << "Before JSON Enddd :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+
+	tile_xdim = top["CGRA"]["SUBMODS"][0]["DIMS"]["X"];
+	tile_ydim = top["CGRA"]["SUBMODS"][0]["DIMS"]["Y"];
+
+	pe_xdim = top["TILE"]["SUBMODS"][0]["DIMS"]["X"];
+	pe_ydim = top["TILE"]["SUBMODS"][0]["DIMS"]["Y"];
+
+	for (auto &el : top["CGRA"]["SUBMODS"])
+	{
+
+
+		if (el.find("PATTERN") != el.end())
+		{
+			ExpandTilePattern(top, el, connections, submods);
+		}
+		else
+		{
+			for (auto &el2 : el.items())
+			{
+				auto key = el2.key();
+				auto value = el2.value();
+				submods[key] = value;
+			}
+		}
+	}
+
+	top["CGRA"].erase("SUBMODS");
+	top["CGRA"]["SUBMODS"] = submods;
+	top.erase("TILE");
+
+	// top["CONNECTIONS"] = connections;
+	for (auto &el : connections.items())
+	{
+		auto key = el.key();
+		auto value = el.value();
+		top["CGRA"]["CONNECTIONS"][key] = value;
+	}
+	printARCHI("arch_allconnections.dot",connections,submods);
+	printARCHI("arch_interclusterconnections.dot",connections,submods);
+	cout << "After JSON Begin :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+	//std::cout << setw(4) << top << std::endl;
+	cout << "After JSON End :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+}
+
+void CGRAXMLCompile::CGRA::printARCHI(std::string fileName,json &connections, json &submods) {
+	std::ofstream ofs;
+	ofs.open(fileName.c_str());
+
+	//Write the initial info
+//	ofs << "digraph Region_18 {\n";
+//	ofs << "\tgraph [ nslimit = \"1000.0\",\n";
+//	ofs <<	"\torientation = landscape,\n";
+//	ofs <<	"\t\tcenter = true,\n";
+//	ofs <<	"\tpage = \"8.5,11\",\n";
+//	ofs << "\tcompound=true,\n";
+//	ofs <<	"\tsize = \"10,7.5\" ] ;" << std::endl;
+	ofs << "digraph G{\n";
+	//ofs << "\tgraph [ pad=\"0.212,0.055\" ]\n";//bgcolor=lightgray]\n";
+	//https://observablehq.com/@magjac/placing-graphviz-nodes-in-fixed-positions
+
+	int pos=0;
+
+	for(auto &el : submods["PE_MEM"]){
+		string pe_name = el["name"];pos=0;
+		for(int i=0;i<2;++i){//find second occurence
+			pos = pe_name.find("|",pos+1);
+		}
+		string tile_name = pe_name.substr(0,pos);
+		tile_name.erase(std::remove(tile_name.begin(), tile_name.end(), '|'), tile_name.end());
+
+		    ofs << "subgraph cluster_" << tile_name <<"{\n";
+		    ofs << "style=filled\n";
+		    ofs << "color=lightgrey\n";
+
+			ofs << "\""; //BEGIN NODE NAME
+			ofs << "" << pe_name;
+			ofs << "\" [ fontname = \"Helvetica\" shape = box, color = black, pos = \"";
+			ofs << el["X"] <<",";
+			ofs << el["Y"] <<"!\" ";
+			ofs << ",label = \" ";
+			ofs << "" << el["X"] <<","<<el["Y"];
+
+			ofs << "\"]\n";
+			ofs << "label = \""<< tile_name << "\"\n";
+			ofs << "}\n";
+	}
+	for(auto &el : submods["PE"]){
+		string pe_name = el["name"];pos=0;
+		for(int i=0;i<2;++i){//find second occurence
+			pos = pe_name.find("|",pos+1);
+		}
+		string tile_name = pe_name.substr(0,pos);
+		tile_name.erase(std::remove(tile_name.begin(), tile_name.end(), '|'), tile_name.end());
+
+		    ofs << "subgraph cluster_" << tile_name <<"{\n";
+		    ofs << "style=filled\n";
+		    ofs << "color=lightgrey\n";
+
+			ofs << "\""; //BEGIN NODE NAME
+			ofs << "" << pe_name;
+			ofs << "\" [ fontname = \"Helvetica\" shape = box, color = black, pos = \"";
+			ofs << el["X"] <<",";
+			ofs << el["Y"] <<"!\" ";
+			ofs << ",label = \" ";
+			ofs << "" << el["X"] <<","<<el["Y"];
+
+			ofs << "\"]\n";
+			ofs << "label = \""<< tile_name << "\"\n";
+
+			ofs << "}\n";
+	}
+	for(auto &el : submods["PE_R1"]){
+		string pe_name = el["name"];pos=0;
+		for(int i=0;i<2;++i){//find second occurence
+			pos = pe_name.find("|",pos+1);
+		}
+		string tile_name = pe_name.substr(0,pos);
+		tile_name.erase(std::remove(tile_name.begin(), tile_name.end(), '|'), tile_name.end());
+
+		    ofs << "subgraph cluster_" << tile_name <<"{\n";
+		    ofs << "style=filled\n";
+		    ofs << "color=lightgrey\n";
+
+			ofs << "\""; //BEGIN NODE NAME
+			ofs << "" << pe_name;
+			ofs << "\" [ fontname = \"Helvetica\" shape = box, color = blue, pos = \"";
+			ofs << el["X"] <<",";
+			ofs << el["Y"] <<"!\" ";
+			ofs << ",label = \" ";
+			ofs << "" << el["X"] <<","<<el["Y"];
+
+			ofs << "\"]\n";
+			ofs << "label = \""<< tile_name << "\"\n";
+
+			ofs << "}\n";
+	}
+	for(auto &el : submods["PE_R2"]){
+		string pe_name = el["name"];pos=0;
+		for(int i=0;i<2;++i){//find second occurence
+			pos = pe_name.find("|",pos+1);
+		}
+		string tile_name = pe_name.substr(0,pos);
+		tile_name.erase(std::remove(tile_name.begin(), tile_name.end(), '|'), tile_name.end());
+
+		    ofs << "subgraph cluster_" << tile_name <<"{\n";
+		    ofs << "style=filled\n";
+		    ofs << "color=lightgrey\n";
+
+			ofs << "\""; //BEGIN NODE NAME
+			ofs << "" << pe_name;
+			ofs << "\" [ fontname = \"Helvetica\" shape = box, color = red, pos = \"";
+			ofs << el["X"] <<",";
+			ofs << el["Y"] <<"!\" ";
+			ofs << ",label = \" ";
+			ofs << "" << el["X"] <<","<<el["Y"];
+
+			ofs << "\"]\n";
+			ofs << "label = \""<< tile_name <<"\"\n";
+
+			ofs << "}\n";
+	}
+
+	//Draw Cluster Boundaries since clustering does not work with graphviz neato rendering
+	for(int i=0;i<=tile_xdim;i++){
+		ofs << "x"<<i;
+		ofs <<"[label = \"\", shape = box, color = transparent, pos = \"";
+		ofs <<	(i*pe_xdim-0.5);
+		ofs <<	",";
+		ofs	<< (pe_ydim*tile_ydim -0.1);
+		ofs	<<	"!\"]\n";
+		ofs << "x_"<<i;
+		ofs <<"[label = \"\",shape = box, color = transparent, pos = \"";
+		ofs <<	(i*pe_xdim-0.5);
+		ofs <<	",";
+		ofs	<< (- 0.8);
+		ofs	<<	"!\"]\n";
+
+		ofs << "x"<<i;
+		ofs << "-> x_";
+		ofs << i;
+		ofs << " [style = bold, arrowhead = none, color = black];\n";
+	}
+	for(int i=0;i<=tile_ydim;i++){
+		ofs << "y"<<i;
+		ofs <<"[label = \"\",shape = box, color = transparent, pos = \"";
+		ofs <<	(pe_xdim*tile_xdim );
+		ofs <<	",";
+		ofs	<< (i*pe_ydim-0.5);
+		ofs	<<	"!\"]\n";
+		ofs << "y_"<<i;
+		ofs <<"[label = \"\",shape = box, color = transparent, pos = \"";
+		ofs <<	(- 1);
+		ofs <<	",";
+		ofs	<< (i*pe_ydim-0.5);
+		ofs	<<	"!\"]\n";
+
+		ofs << "y"<<i;
+		ofs << "-> y_";
+		ofs << i;
+		ofs << " [style = bold, arrowhead = none, color = black];\n";
+	}
+//	ofs << "a [shape = box, color = transparent, pos = \"3.5,11.5!\"]\n";
+//
+//	ofs << "b [shape = box, color = transparent, pos = \"3.5,-0.5!\"]\n";
+//	ofs << "a -> b [style = bold, arrowhead = none, color = black];\n";
+
+
+	//The EDGES
+	for (auto &el : connections.items())
+	{
+		string key = el.key();
+		string value = el.value()[0];
+		//cout << key << ":" <<value << "\n";
+		//cout << key.substr(0,key.find(".")) << ":" <<value.substr(0,value.find(".")) << "\n";
+		ofs << "\"" << key.substr(0,key.find(".")) << "\"";
+		ofs << " -> ";
+		ofs << "\"" << value.substr(0,value.find(".")) << "\"";
+		ofs << " [style = ";
+
+		if(key.find("PE_R1") != std::string::npos && key.find("CLSTR") != std::string::npos ){
+			ofs << "dashed";
+			ofs << ", ";
+			ofs << "color = blue";
+		}
+		else if(key.find("PE_R2") != std::string::npos && key.find("CLSTR") != std::string::npos ){
+			ofs << "dashed";
+			ofs << ", ";
+			ofs << "color = red";
+		}
+		else{
+			ofs << "bold";
+			ofs << ", ";
+			if(fileName.find("interclusterconnections") !=std::string::npos ){
+			ofs << "color= transparent";
+			}else{
+			ofs << "color = grey";
+			}
+		}
+		ofs << "];\n";
+	}
+
+
+	ofs << "}" << std::endl;
+	ofs.close();
 }
 
 unordered_set<PE *> CGRAXMLCompile::CGRA::getAllPEList()
@@ -931,10 +1380,12 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist(TimeDistInfo tdi)
 
 TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 {
-
+#ifdef HIERARCHICAL
+	unordered_map<string,unordered_map<string,int>> TimeDistBetweenPEMapInTile;
+#endif
 	for (Module *m1 : subModArr[0])
 	{
-		cout << "m1 name = " << m1->getName() << ",";
+		cout << "m1 name = " << m1->getName() << "\n";
 		if (!dynamic_cast<PE *>(m1))
 		{
 			cout << "\t not a PE skipping...\n";
@@ -944,7 +1395,6 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 		TimeDistBetweenClosestMEMPEMap[pe1->getName()] = INT32_MAX;
 		for (Module *m2 : subModArr[0])
 		{
-			cout << "m2 name = " << m2->getName() << "\n";
 			if (!dynamic_cast<PE *>(m2))
 			{
 				cout << "\t not a PE skipping...\n";
@@ -953,9 +1403,33 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 			PE *pe2 = static_cast<PE *>(m2);
 			// if (pe1 == pe2)
 			// continue;
+#ifdef HIERARCHICAL
+			if(pe1->tile_name == pe2->tile_name){
+				cout << "pe1_name: " << pe1->pe_name_without_tile_prefix <<" pe2_name:" << pe2->pe_name_without_tile_prefix <<"\n";
+
+				//Run getTimeDistBetweenPEs() function only once for PEs in one tile
+				//Copy the time distances for the PEs in other tiles
+				if(TimeDistBetweenPEMapInTile[pe1->pe_name_without_tile_prefix].find(pe2->pe_name_without_tile_prefix) == TimeDistBetweenPEMapInTile[pe1->pe_name_without_tile_prefix].end()){
+					int time_dist =  getTimeDistBetweenPEs(pe1, pe2);
+					TimeDistBetweenPEMapInTile[pe1->pe_name_without_tile_prefix][pe2->pe_name_without_tile_prefix] = time_dist;
+					TimeDistBetweenPEMap[pe1->getName()][pe2->getName()] = time_dist;
+					cout << "	m2 name = " << m2->getName() << " Time Dist:" << time_dist <<"\n";
+				}else{
+					TimeDistBetweenPEMap[pe1->getName()][pe2->getName()] = TimeDistBetweenPEMapInTile[pe1->pe_name_without_tile_prefix][pe2->pe_name_without_tile_prefix];
+				}
+
+				if(TimeDistBetweenClosestMEMPEMapInTile.find(pe1->pe_name_without_tile_prefix) != TimeDistBetweenClosestMEMPEMapInTile.end()){
+					TimeDistBetweenClosestMEMPEMap[pe1->getName()] = TimeDistBetweenClosestMEMPEMapInTile[pe1->pe_name_without_tile_prefix];
+				}
+
+			}
+#else
+			cout << "m2 name = " << m2->getName() << "\n";
 			TimeDistBetweenPEMap[pe1->getName()][pe2->getName()] = getTimeDistBetweenPEs(pe1, pe2);
+#endif
 		}
 	}
+
 
 	if (get_t_max() > 1)
 	{
@@ -992,6 +1466,7 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 		cout << "PE=" << pe << "\ttime_dist=" << time_dist << "\n";
 	}
 
+
 	IntraPETimeDistAnalysisDone = true;
 	TimeDistInfo tdi;
 	tdi.TimeDistBetweenClosestMEMPEMap = TimeDistBetweenClosestMEMPEMap;
@@ -1007,7 +1482,7 @@ void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, 
 	{
 		if (time_dist < already_traversed[currPort])
 		{
-			// cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
+			 //cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
 			already_traversed[currPort] = time_dist;
 		}
 		else
@@ -1017,7 +1492,7 @@ void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, 
 	}
 	else
 	{
-		// cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
+		 //cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
 		already_traversed[currPort] = time_dist;
 	}
 
@@ -1028,15 +1503,21 @@ void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, 
 	{
 		if (time_dist < TimeDistBetweenClosestMEMPEMap[srcPE->getName()])
 		{
-			// cout << "fu = " << currFU->getFullName() << ",";
-			// cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
+			 //cout << "fu = " << currFU->getFullName() << ",";
+			 //cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
 			TimeDistBetweenClosestMEMPEMap[srcPE->getName()] = time_dist;
+#ifdef HIERARCHICAL
+			TimeDistBetweenClosestMEMPEMapInTile[srcPE->pe_name_without_tile_prefix] = time_dist;
+#endif
 		}
 	}
 
+
+
+
 	if (currFU != NULL && currPE == destPE)
 	{
-		// cout << "found destPE, srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
+		//cout << "found destPE, srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
 		result = time_dist;
 		return;
 	}
@@ -1044,6 +1525,12 @@ void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, 
 	vector<Port *> nextPorts = currPort->getMod()->getNextPorts(currPort);
 	for (Port *p : nextPorts)
 	{
+#ifdef HIERARCHICAL
+		PE *nextPE = p->getMod()->getPE();
+		if(nextPE->tile_name != srcPE->tile_name){
+			continue;
+		}
+#endif
 		int time_delta = 0;
 		if (p->getMod()->get_t() != currPort->getMod()->get_t())
 		{
@@ -1178,7 +1665,7 @@ void CGRAXMLCompile::CGRA::PrintMappedJSON(string fileName)
 		string pe_name = pe->getName();
 		string spatial_pe_name = pe_name.substr(0, pe_name.size() - 3); //remove the last "-T0" component;
 		cout <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
-		
+
 		PrintMappedJSONModule(pe, output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name]);
 	}
 
@@ -1422,7 +1909,7 @@ void CGRAXMLCompile::Module::UpdateMappedConnectionsPillars(json &output_json, o
 							mux_desc = cgra->getFUName(mod_dp->getMappedNode()->op, &output_ID);
 							std::cout<< mod_dp->getMappedNode()->op<<std::endl;
 						}
-						
+
 						outFile_i<<"<"<<(t+1)%II<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<"."<<mux_desc<<".internalNode_0>"<<std::endl;
 						outFile_i<<"SELECTED_OP"<<std::endl;
 						outFile_i <<output_ID<< std::endl;						

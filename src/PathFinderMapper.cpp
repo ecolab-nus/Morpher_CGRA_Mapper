@@ -604,6 +604,15 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	unordered_set<PE *> allPEs = cgra->getAllPEList();
 	for (PE *currPE : allPEs)
 	{
+#ifdef HIERARCHICAL
+				if( ((currPE->X <= 3)&&(currPE->Y <= 3)&&(node->TILE == 0))  || ((currPE->X > 3)&&(currPE->Y <= 3)&&(node->TILE == 1))
+						|| ((currPE->X <= 3)&&(currPE->Y > 3)&&(node->TILE == 2))  || ((currPE->X > 3)&&(currPE->Y > 3)&&(node->TILE == 3)) ){
+					//Map on this tile
+				}
+				else{
+					continue;
+				}
+#endif
 		for (Module *submod : currPE->subModules)
 		{
 			if (FU *fu = dynamic_cast<FU *>(submod))
@@ -613,6 +622,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				{
 					continue;
 				}
+
 
 				if (fu->currOP.compare(node->op) == 0)
 				{
@@ -681,7 +691,9 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			}
 		}
 	}
-
+#ifdef HIERARCHICAL
+	std::cout << "Tile = " << node->TILE << "\n";
+#endif
 	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
 	if (candidateDests.empty())
 		return false;
@@ -702,7 +714,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	int minLatSucc = 1000000000;
 	std::priority_queue<dest_with_cost> estimatedRoutesTemp;
 
-	int allowed_time_steps_for_connection = 30;
+	int allowed_time_steps_for_connection = 3;
 	int iterations = allowed_time_steps_for_connection;
 
 	//Route Estimation
@@ -710,14 +722,15 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	{
 		bool pathFromParentExist = false;
 		bool pathExistMappedChild = false;
-
+		if (detailedDebug)
+				std::cout << "iteration:" << i << endl;
 		for (DataPath *dest : candidateDests)
 		{
 			int minLatDestVal_prime = minLatDests[dest] + ii * i;
-			//		std::cout << "Candidate Dest =" ;
-			//		std::cout << dest->getPE()->getName() << ".";
-			//		std::cout << dest->getFU()->getName() << ".";
-			//		std::cout << dest->getName() << "\n";
+//					std::cout << "Candidate Dest =" ;
+//					std::cout << dest->getPE()->getName() << ".";
+//					std::cout << dest->getFU()->getName() << ".";
+//					std::cout << dest->getName() << "\n";
 
 			//		std::map<DFGNode*,std::priority_queue<cand_src_with_cost>> parentStartLocs;
 			std::priority_queue<parent_cand_src_with_cost> parentStartLocs;
@@ -1339,7 +1352,10 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 		std::string mappingLogFileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mapping.csv";
 		std::string mappingLog2FileName_withIter = mappingLog2FileName + "_Iter=" + std::to_string(i) + ".routeInfo.log";
-
+//#ifdef HIERARCHICAL
+		std::string mappingLog3FileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mappingwithlatency.csv";
+		mappingLog3.open(mappingLog3FileName_withIter.c_str());
+//#endif
 		mappingLog.open(mappingLogFileName_withIter.c_str());
 		mappingLog2.open(mappingLog2FileName_withIter.c_str());
 
@@ -1348,6 +1364,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 		assert(mappingLog.is_open());
 		assert(mappingLog2.is_open());
+		assert(mappingLog3.is_open());
 
 		while (!mappedNodes.empty())
 		{
@@ -1386,6 +1403,10 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 			// MapHeader << ",YDim = " << this->cgra->get_y_max();
 			// MapHeader << ",DPs = " << this->cgra->numberofDPs;
 
+#ifdef HIERARCHICAL
+			//if(mappedNodes.size()>40){ break;}
+#endif
+
 			MapHeader << ",CGRA=" << this->cgra->getCGRAName();
 			MapHeader << ",MaxHops=" << this->cgra->max_hops;
 
@@ -1406,7 +1427,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 				std::priority_queue<dest_with_cost> estimatedRoutes;
 				DFGNode *failedNode;
 				isEstRouteSucc = estimateRouting(node, estimatedRoutes, &failedNode);
-
+				std::cout << "route estimation done...\n";
 				if (!isEstRouteSucc)
 				{
 					printMappingLog();
@@ -1422,6 +1443,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 							mappingLog.close();
 							mappingLog2.close();
+							mappingLog3.close();
 							return false;
 						}
 						backTrackCredits--;
@@ -1465,6 +1487,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						mappingLog << "Map Failed!.\n";
 						mappingLog.close();
 						mappingLog2.close();
+						mappingLog3.close();
 						return false;
 					}
 				}
@@ -1490,6 +1513,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					std::cout << "Map Failed!.\n";
 					mappingLog.close();
 					mappingLog2.close();
+					mappingLog3.close();
 					return false;
 				}
 			}
@@ -1504,6 +1528,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					std::cout << "Map Failed!.\n";
 					mappingLog.close();
 					mappingLog2.close();
+					mappingLog3.close();
 					return false;
 				}
 
@@ -1515,6 +1540,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						std::cout << "Map Failed!.\n";
 						mappingLog.close();
 						mappingLog2.close();
+						mappingLog3.close();
 						return false;
 					}
 					//					assert(failedNode!=NULL);
@@ -1548,6 +1574,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					std::cout << "Map Failed!.\n";
 					mappingLog.close();
 					mappingLog2.close();
+					mappingLog3.close();
 					return false;
 				}
 			}
@@ -1566,9 +1593,13 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		estimatedRouteInfo.clear();
 		mappingLog.close();
 		mappingLog2.close();
+		mappingLog3.close();
 	}
 
 	//	congestionInfoFile.close();
+#ifdef HIERARCHICAL
+	//mapSuccess = true;
+#endif
 
 	if (mapSuccess)
 	{
@@ -1576,6 +1607,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog2 << "Map Success!.\n";
 		this->printMappingLog();
 		this->printMappingLog2();
+//#ifdef HIERARCHICAL
+		this->printMappingLog3();
+//#endif
 
 		// by Yujie
 		// cgra->PrintMappedJSON(fNameLog1 + cgra->getCGRAName() + "mapping.json");
@@ -1584,7 +1618,10 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		std::cout << "Map Success!.\n";
 		mappingLog.close();
 		mappingLog2.close();
-
+		mappingLog3.close();
+#ifdef HIERARCHICAL
+		//return true;
+#endif
 		std::cout << "Checking conflict compatibility!\n";
 		checkConflictedPortCompatibility();
 
@@ -1606,6 +1643,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		std::cout << "Map Failed!.\n";
 		mappingLog.close();
 		mappingLog2.close();
+		mappingLog3.close();
 		return false;
 	}
 }
@@ -2833,24 +2871,24 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 		for (std::pair<int, std::set<DFGNode *>> pair : asapOrder)
 		{
 			int maxOplatency = 0;
-			std::cout << "ops : ";
+//			std::cout << "ops : ";
 			for (DFGNode *n : pair.second)
 			{
-				std::cout << "idx=" << n->idx << "[" << n->op << "]"
-						  << "(" << OpLatency[n->op] << ")"
-						  << ",";
+//				std::cout << "idx=" << n->idx << "[" << n->op << "]"
+//						  << "(" << OpLatency[n->op] << ")"
+//						  << ",";
 				int new_lat = OpLatency[n->op];
 				if (new_lat > maxOplatency)
 					maxOplatency = new_lat;
 			}
-			std::cout << "\n";
-			std::cout << "ASAP=" << pair.first << ",OPLAT=" << maxOplatency << "\n";
+//			std::cout << "\n";
+//			std::cout << "ASAP=" << pair.first << ",OPLAT=" << maxOplatency << "\n";
 
 			if ((bpi.dsMEMfound == false) && (node->ASAP < pair.first))
 			{
 				if (maxOplatency == 2)
 				{
-					std::cout << "MEM FOUND SET TRUE!\n";
+//					std::cout << "MEM FOUND SET TRUE!\n";
 					bpi.dsMEMfound = true;
 					bpi.uptoMEMops = upstreamOPs;
 				}
@@ -2896,7 +2934,7 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 
 	if (maxLat != LARGE_VALUE)
 	{
-		std::cout << "getMaxLatencyBE :: node=" << node->idx << " maxLat = " << maxLat << "\n";
+//		std::cout << "getMaxLatencyBE :: node=" << node->idx << " maxLat = " << maxLat << "\n";
 		//		assert(false);
 	}
 	std::cout << "getMaxLatencyBE done!\n";
@@ -3072,10 +3110,13 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 			{
 				//				if(pair.second.isLDST == false){
 				PE *bePE = pair.first->getPE();
-				// int dx = std::abs(bePE->X - pe->X);
-				// int dy = std::abs(bePE->Y - pe->Y);
-				// int dist = dx + dy;
+#ifdef NOTIMEDISTANCEFUNC
+				 int dx = std::abs(bePE->X - pe->X);
+				 int dy = std::abs(bePE->Y - pe->Y);
+				 int dist = dx + dy;
+#else
 				int dist = cgra->getQuickTimeDistBetweenPEs(bePE,pe);
+#endif
 
 				if (pair.second.isLDST == true)
 				{
@@ -3085,18 +3126,21 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 				int dsOps = pair.second.downStreamOps;
 				if (pair.second.dsMEMfound)
 				{
-					// dist = pe->X;
+#ifdef NOTIMEDISTANCEFUNC
+				    dist = pe->X;
+#else
 					dist = cgra->getTimeClosestMEMPE(pe);
+#endif
 					dsOps = pair.second.uptoMEMops;
-					std::cout << "**MEM FOUND DOWN**\n";
+//					std::cout << "**MEM FOUND DOWN**\n";
 				}
 
 				if (maxLat != LARGE_VALUE)
 				{
-					std::cout << "pe=" << pe->getName() << ",";
-					std::cout << "dist=" << dist << ",";
-					std::cout << "slack=" << pair.second.lat - maxLat << ",";
-					std::cout << "downstreamOps=" << dsOps << "\n";
+//					std::cout << "pe=" << pe->getName() << ",";
+//					std::cout << "dist=" << dist << ",";
+//					std::cout << "slack=" << pair.second.lat - maxLat << ",";
+//					std::cout << "downstreamOps=" << dsOps << "\n";
 				}
 
 				int lat_slack = pair.second.lat - maxLat;

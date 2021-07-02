@@ -251,6 +251,9 @@ public:
 
 	void printMappingLog();
 	void printMappingLog2();
+//#ifdef HIERARCHICAL
+	void printMappingLog3();
+//#endif
 
 	bool checkRecParentViolation(DFGNode *node, LatPort nextPort);
 
@@ -270,6 +273,9 @@ protected:
 
 	std::ofstream mappingLog;
 	std::ofstream mappingLog2;
+//#ifdef HIERARCHICAL
+	std::ofstream mappingLog3;
+//#endif
 	std::vector<DFGNode *> sortedNodeList;
 
 	void removeFailedNode(std::stack<DFGNode *> &mappedNodes, std::stack<DFGNode *> &unmappedNodes, DFGNode *failedNode);

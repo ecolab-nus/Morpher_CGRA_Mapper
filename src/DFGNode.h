@@ -13,6 +13,9 @@
 #include <map>
 #include <set>
 
+#define HIERARCHICAL
+#define NOTIMEDISTANCEFUNC
+
 namespace CGRAXMLCompile
 {
 
@@ -27,6 +30,9 @@ public:
 	int idx;
 	int ASAP;
 	int ALAP;
+#ifdef HIERARCHICAL
+	int TILE;
+#endif
 	int constant;
 	bool hasConst = false;
 	bool npb=false;

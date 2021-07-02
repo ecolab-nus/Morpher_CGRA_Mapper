@@ -294,7 +294,7 @@ bool CGRAXMLCompile::HeuristicMapper::Map(CGRA *cgra, DFG *dfg)
 }
 
 bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
-													  std::priority_queue<dest_with_cost> &estimatedRoutes, DFGNode **failedNode)
+		std::priority_queue<dest_with_cost> &estimatedRoutes, DFGNode **failedNode)
 {
 
 	std::map<DFGNode *, std::vector<Port *>> possibleStarts;
@@ -511,7 +511,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 }
 
 bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode *node,
-											std::priority_queue<dest_with_cost> &estimatedRoutes, DFGNode **failedNode)
+		std::priority_queue<dest_with_cost> &estimatedRoutes, DFGNode **failedNode)
 {
 
 	std::cout << "Route begin...\n";
@@ -949,7 +949,7 @@ void CGRAXMLCompile::HeuristicMapper::SortSCCDFG()
 }
 
 void CGRAXMLCompile::HeuristicMapper::assignPath(DFGNode *src, DFGNode *dest,
-												 std::vector<LatPort> path)
+		std::vector<LatPort> path)
 {
 
 	std::cout << "assigning path from:" << src->idx << " to:" << dest->idx << "\n";
@@ -1249,7 +1249,7 @@ bool CGRAXMLCompile::HeuristicMapper::LeastCostPathAstar(LatPort start, LatPort 
 }
 
 int CGRAXMLCompile::HeuristicMapper::calculateCost(LatPort src,
-												   LatPort next_to_src, LatPort dest)
+		LatPort next_to_src, LatPort dest)
 {
 
 	PE *srcPE = src.second->findParentPE();
@@ -1326,12 +1326,12 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog()
 	struct util
 	{
 		void static repeatedPush(std::stringstream &ss, std::string pushStr, int count)
-		{
+								{
 			for (int i = 0; i < count; ++i)
 			{
 				ss << pushStr;
 			}
-		}
+								}
 	};
 
 	vector<string> lineHeaders;
@@ -1571,8 +1571,8 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog()
 }
 
 bool CGRAXMLCompile::HeuristicMapper::LeastCostPathDjk(Port *start, Port *end,
-													   std::vector<Port *> &path, int &cost, DFGNode *node,
-													   std::map<Port *, std::set<DFGNode *>> &mutexPaths)
+		std::vector<Port *> &path, int &cost, DFGNode *node,
+		std::map<Port *, std::set<DFGNode *>> &mutexPaths)
 {
 	//
 	//	//	std::cout << "LeastCoastPath started with start=" << start->getFullName() << " to end=" << end->getFullName() << "\n";
@@ -1741,7 +1741,7 @@ bool CGRAXMLCompile::HeuristicMapper::LeastCostPathDjk(Port *start, Port *end,
 }
 
 bool CGRAXMLCompile::HeuristicMapper::dataPathCheck(DataPath *dp,
-													DFGNode *node)
+		DFGNode *node)
 {
 
 	if (dp->getMappedNode() != NULL)
@@ -1822,7 +1822,7 @@ void CGRAXMLCompile::HeuristicMapper::printMappingLog2()
 				if (parent->rootDP != NULL)
 				{
 					mappingLog2 << "\t"
-								<< "parent:" << parent->idx << "\n";
+							<< "parent:" << parent->idx << "\n";
 					for (std::pair<Port *, int> pair : parent->routingPorts)
 					{
 						Port *p = pair.first;
@@ -1870,7 +1870,7 @@ bool CGRAXMLCompile::HeuristicMapper::sanityCheck()
 }
 
 void CGRAXMLCompile::HeuristicMapper::removeFailedNode(std::stack<DFGNode *> &mappedNodes,
-													   std::stack<DFGNode *> &unmappedNodes, DFGNode *failedNode)
+		std::stack<DFGNode *> &unmappedNodes, DFGNode *failedNode)
 {
 
 	DFGNode *fNode = failedNode;
@@ -1901,7 +1901,7 @@ void CGRAXMLCompile::HeuristicMapper::removeFailedNode(std::stack<DFGNode *> &ma
 }
 
 bool CGRAXMLCompile::HeuristicMapper::checkRecParentViolation(DFGNode *node,
-															  LatPort nextPort)
+		LatPort nextPort)
 {
 	//assert(false);
 	for (DFGNode *recParent : node->recParents)
@@ -1921,7 +1921,7 @@ bool CGRAXMLCompile::HeuristicMapper::checkRecParentViolation(DFGNode *node,
 }
 
 int CGRAXMLCompile::HeuristicMapper::getlatMinStarts(
-	const std::map<DFGNode *, std::vector<Port *>> &possibleStarts)
+		const std::map<DFGNode *, std::vector<Port *>> &possibleStarts)
 {
 
 	int min;
@@ -1956,7 +1956,7 @@ int CGRAXMLCompile::HeuristicMapper::getlatMinStarts(
 }
 
 std::map<CGRAXMLCompile::DataPath *, int> CGRAXMLCompile::HeuristicMapper::getLatCandDests(
-	const std::vector<DataPath *> &candidateDests, int minLat)
+		const std::vector<DataPath *> &candidateDests, int minLat)
 {
 
 	std::map<CGRAXMLCompile::DataPath *, int> res;
@@ -1993,3 +1993,260 @@ std::map<CGRAXMLCompile::DataPath *, int> CGRAXMLCompile::HeuristicMapper::getLa
 	}
 	return res;
 }
+
+//#ifdef HIERARCHICAL
+void CGRAXMLCompile::HeuristicMapper::printMappingLog3()
+{
+
+	struct util
+	{
+		void static repeatedPush(std::stringstream &ss, std::string pushStr, int count)
+								{
+			for (int i = 0; i < count; ++i)
+			{
+				ss << pushStr;
+			}
+								}
+	};
+
+	vector<string> lineHeaders;
+
+	vector<PE *> zeroth_spatialPEs = cgra->getSpatialPEList(0);
+	std::stringstream peHeader;
+	std::stringstream fuHeader;
+	std::stringstream dpHeader;
+	for (PE *pe : zeroth_spatialPEs)
+	{
+		peHeader << pe->getName();
+
+		int fuCount = 0;
+		int dpCount = 0;
+		for (Module *mod : pe->subModules)
+		{
+			if (FU *fu = dynamic_cast<FU *>(mod))
+			{
+				fuCount++;
+				for (Module *mod : fu->subModules)
+				{
+					if (DataPath *dp = dynamic_cast<DataPath *>(mod))
+					{
+						dpCount++;
+					}
+				}
+			}
+		}
+
+		int inputPortCount = pe->inputPorts.size();
+		int outputPortCount = pe->outputPorts.size();
+		int regConPortCount = pe->getRegConPorts().size()*2;
+		int totalColumns = dpCount;// + inputPortCount + outputPortCount + regConPortCount;
+
+		for (Module *mod : pe->subModules)
+		{
+			if (FU *fu = dynamic_cast<FU *>(mod))
+			{
+				fuHeader << fu->getName() << ",";
+				for (Module *mod : fu->subModules)
+				{
+					if (DataPath *dp = dynamic_cast<DataPath *>(mod))
+					{
+						dpHeader << dp->getName() << ",";
+					}
+				}
+			}
+		}
+		//
+		//		for (Port *ip : pe->inputPorts)
+		//		{
+		//			dpHeader << ip->getName() << ",";
+		//		}
+		//
+		//		for (Port *op : pe->outputPorts)
+		//		{
+		//			dpHeader << op->getName() << ",";
+		//		}
+		//
+		//		for (pair<Port*,Port*> pp : pe->getRegConPorts())
+		//		{
+		//			Port* ri = pp.first;
+		//			Port* ro = pp.second;
+		//
+		//			dpHeader << ri->getName() << ",";
+		//			dpHeader << ro->getName() << ",";
+		//		}
+
+		util::repeatedPush(peHeader, ",", totalColumns);
+		util::repeatedPush(fuHeader, ",", totalColumns - fuCount);
+	}
+
+	mappingLog3 << "," << peHeader.str() << "\n";
+	mappingLog3 << "," << fuHeader.str() << "\n";
+	mappingLog3 << "," << dpHeader.str() << "\n";
+
+	std::map<int, std::vector<std::vector<std::string>>> lineMatrix;
+	std::map<int, std::vector<std::string>> SchedulelineMatrix;
+	std::map<std::pair<int,std::string>, int> schedule;
+	int maxlat=0;
+
+	for (int t = 0; t < cgra->get_t_max(); ++t)
+	{
+
+		//				peHeader << "PE_" << t << y << x  << ",";
+		// peHeader << "X=" << x << ",";
+		vector<PE *> spatialPEs = cgra->getSpatialPEList(t);
+		for (PE *pe : spatialPEs)
+		{
+			// PE *pe = cgra->PEArr[t][y][x];
+
+			std::stringstream peHeader;
+			std::stringstream fuHeader;
+			std::stringstream dpHeader;
+			std::stringstream dpOp;
+
+			peHeader << "T=" << t << "," << pe->getName();
+
+			int fuCount = 0;
+			int dpCount = 0;
+			for (Module *mod : pe->subModules)
+			{
+				if (FU *fu = dynamic_cast<FU *>(mod))
+				{
+					fuCount++;
+					for (Module *mod : fu->subModules)
+					{
+						if (DataPath *dp = dynamic_cast<DataPath *>(mod))
+						{
+							dpCount++;
+						}
+					}
+				}
+			}
+
+			int inputPortCount = pe->inputPorts.size();
+			int outputPortCount = pe->outputPorts.size();
+			int regConPortCount = pe->getRegConPorts().size()*2;
+			int totalColumns = dpCount + inputPortCount + outputPortCount + regConPortCount;
+
+			for (Module *mod : pe->subModules)
+			{
+				if (FU *fu = dynamic_cast<FU *>(mod))
+				{
+					fuHeader << fu->getName() << ",";
+					for (Module *mod : fu->subModules)
+					{
+						if (DataPath *dp = dynamic_cast<DataPath *>(mod))
+						{
+							dpHeader << dp->getName() << ",";
+							if (dp->getMappedNode())
+							{
+								dpOp << dp->getMappedNode()->idx << ": " << dp->getLat();
+
+
+								schedule[make_pair(dp->getLat(),pe->getName())]=dp->getMappedNode()->idx;
+								//								std::cout << "IDYYYY:"<< dp->getLat()<<":"<<pe->getName()<<dp->getMappedNode()->idx<<","<<schedule[make_pair(dp->getLat(),pe->getName())]<<endl;
+								if(dp->getLat()>maxlat){maxlat=dp->getLat();}
+								//								dpOp << dp->getMappedNode()->idx << ":" << dp->getMappedNode()->op<< ":" << dp->getLat();
+								//								if (dp->getMappedNode()->hasConst)
+								//								{
+								//									dpOp << "+C";
+								//								}
+								//								dpOp << "(";
+								//								for (DFGNode *parent : dp->getMappedNode()->parents)
+								//								{
+								//									dpOp << parent->idx << "-";
+								//								}
+								//								dpOp << "|";
+								//								for (DFGNode *child : dp->getMappedNode()->children)
+								//								{
+								//									dpOp << child->idx << "-";
+								//								}
+								//								dpOp << ")";
+								dpOp << ",";
+							}
+							else
+							{
+								dpOp << "---,";
+							}
+						}
+					}
+				}
+			}
+
+
+
+			std::vector<string> lineWord;
+			// lineWord.push_back(peHeader.str());
+			// lineWord.push_back(fuHeader.str());
+			// lineWord.push_back(dpHeader.str());
+			lineWord.push_back(dpOp.str());
+
+			lineMatrix[t].push_back(lineWord);
+		}
+	}
+
+	int lineCount = 1;
+
+	//print line matrix
+	for (int t = 0; t < cgra->get_t_max(); ++t)
+	{
+		mappingLog3 << "T=" << t << ",";
+		for (vector<string> linewords : lineMatrix[t])
+		{
+			for (int l = 0; l < lineCount; ++l)
+			{
+				mappingLog3 << linewords[l];
+			}
+			// mappingLog << "\n";
+		}
+		mappingLog3 << "\n";
+	}
+	mappingLog3 << "************************************\n";
+	mappingLog3 << "***************Schedule:*********************\n";
+	for (int l = 0; l <= maxlat;++l)//cgra->get_t_max(); ++t)
+	{
+		int t = l%cgra->get_t_max();
+		vector<PE *> spatialPEs = cgra->getSpatialPEList(t);
+		for (PE *pe : spatialPEs)
+		{
+			// PE *pe = cgra->PEArr[t][y][x];
+
+			std::stringstream dpHeader;
+			std::stringstream dpOp;
+
+
+
+
+			if(schedule.find(make_pair(l,pe->getName()))!=schedule.end()){
+				dpOp << schedule[make_pair(l,pe->getName())];
+				dpOp << ",";
+				//					std::cout << "IDXXXX:"<<schedule[make_pair(l,pe->getName())]<<endl;
+			}else{
+				dpOp << "---,";
+			}
+
+
+			SchedulelineMatrix[l].push_back(dpOp.str());
+		}
+	}
+
+
+
+	//print line matrix
+	for (int l = 0; l <= maxlat;++l)//int t = 0; t < cgra->get_t_max(); ++t)
+	{
+		mappingLog3 << "L=" << l << ",";
+
+		for (std::string linewords : SchedulelineMatrix[l])
+		{
+			//				for (int li = 0; li < lineCount; ++li)
+			//				{
+			mappingLog3 << linewords;
+			//				}
+			// mappingLog << "\n";
+		}
+		mappingLog3 << "\n";
+	}
+
+}
+
+//#endif

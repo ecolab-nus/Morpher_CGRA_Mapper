@@ -129,11 +129,14 @@ public:
 	Module* ParseModule(json& module_desc, Module* parent, string module_name, string type, int t, int x = -1, int y = -1);
 	void ParseCGRA(json& cgra_desc, int II);
 	unordered_map<int,std::vector<Module*>> subModArr;
+	unordered_map<int,std::vector<Module*>> PEModArr;
 
 
 	bool ParseJSONArch(string fileName, int II);
 	bool PreprocessPattern(json& top);
 	bool PreprocessInterSubmodConns(json& top);
+	bool PreprocessTilePattern(json& top);
+	void printARCHI(std::string fileName,json &connections, json &submods);
 	json top_desc;
 
 	unordered_set<PE*> getAllPEList();
@@ -334,6 +337,11 @@ private:
 	unordered_map<string,unordered_map<string,int>> TimeDistBetweenPEMap;
 	unordered_map<string,int> TimeDistBetweenClosestMEMPEMap;
 
+#ifdef HIERARCHICAL
+
+	unordered_map<string,int> TimeDistBetweenClosestMEMPEMapInTile;
+#endif
+
 	unordered_map<PE*,PE*> MapTzeroPE;
 
 	void traverseUntil(PE* srcPE, PE* destPE, Port* currPort, int time_dist, unordered_map<Port*,int>& already_traversed, int& result);
@@ -347,7 +355,11 @@ private:
 	void SearchALLSPMs(Module *currModule, unordered_set<Module *> &spms);
 
 
+	int tile_xdim=0;
+    int tile_ydim=0;
 
+    int pe_xdim=0;
+	int pe_ydim=0;
 
 };
 

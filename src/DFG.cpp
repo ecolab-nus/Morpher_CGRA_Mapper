@@ -81,6 +81,12 @@ bool DFG::parseXML(std::string fileName)
 		node->QueryIntAttribute("ALAP", &alap);
 		assert(alap != -1);
 		currDFGNode.ALAP = alap;
+#ifdef HIERARCHICAL
+		int tile = -1;
+		node->QueryIntAttribute("TILE", &tile);
+		assert(tile != -1);
+		currDFGNode.TILE = tile;
+#endif
 
 		const char *BBName;
 		node->QueryStringAttribute("BB", &BBName);
