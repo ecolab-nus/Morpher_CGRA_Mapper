@@ -161,7 +161,7 @@ int main(int argn, char *argc[])
 	// assert(argn >= 7);
 
 	arguments args = parse_arguments(argn,argc);
-	std::string inputDFG_filename = args.dfg_filename;\
+	std::string inputDFG_filename = args.dfg_filename;
 	int xdim = args.xdim;
 	int ydim = args.ydim;
 	string PEType = args.PEType;
@@ -171,8 +171,10 @@ int main(int argn, char *argc[])
 	
 	DFG currDFG;
 	currDFG.parseXML(inputDFG_filename);
+	//return 0;
 	currDFG.printDFG();
 
+	//exit(true);
 	bool isGenericPE;
 
 	// CGRA testCGRA(NULL, "testCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
@@ -194,18 +196,22 @@ int main(int argn, char *argc[])
 #ifdef HIERARCHICAL
 	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
 #endif
-	return 0;
+	//return 0;
 	//	HeuristicMapper hm(inputDFG_filename);
 	PathFinderMapper hm(inputDFG_filename);
 	hm.setMaxIter(args.maxiter);
 
-	int II = hm.getMinimumII(testCGRA, &currDFG);
-	std::cout << "Minimum II = " << II << "\n";
+	int resII = hm.getMinimumII(testCGRA, &currDFG);
+	int recII  = hm.getRecMinimumII(&currDFG);
+	std::cout << "Res Minimum II = " << resII << "\n";
+	std::cout << "Rec Minimum II = " << recII << "\n";
+	std::cout << "Init User II = " << initUserII << "\n";
+	int II = std::max(recII, resII);
 
 	II = std::max(initUserII, II);
 
 	std::cout << "Using II = " << II << "\n";
-
+//exit(true);
 	hm.enableMutexPaths = true;
 	if (args.noMutexPaths)
 	{

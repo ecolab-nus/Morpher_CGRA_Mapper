@@ -11,6 +11,9 @@
 #include <queue>
 #include "Port.h"
 #include <algorithm>
+#include <list>
+#include <fstream>
+#include <sstream>
 
 #include "tinyxml2.h"
 using namespace tinyxml2;
@@ -25,6 +28,109 @@ DFG::DFG()
 
 bool DFG::parseXML(std::string fileName)
 {
+
+#ifdef HIERARCHICAL
+	std::string clustering_outcome_file_name = "clustering_outcome.txt";
+	std::ifstream clustering_outcome(clustering_outcome_file_name.c_str());
+	std::map<int, int> nodeid_to_clusterid;
+
+	std::string line;
+//	std::cout<< "clustering:";
+	while(std::getline(clustering_outcome,line)){
+		std::istringstream iss2(line);
+
+		std::string node_id;
+		std::string cluster_id;
+
+		std::getline(iss2,node_id,'\t');
+		std::getline(iss2,cluster_id,',');
+
+
+		nodeid_to_clusterid[atoi(node_id.c_str())]= atoi(cluster_id.c_str());
+//		std::cout << node_id << "," << nodeid_to_clusterid[atoi(node_id.c_str())] << "\n";
+	}
+	std::string interclusteredges_file_name = "inter_cluster_edges.txt";
+	std::ifstream interclusteredges(interclusteredges_file_name.c_str());
+	std::set< std::pair<int,int>> intercluster_edges;
+
+
+	while(std::getline(interclusteredges,line)){
+		std::istringstream iss2(line);
+
+		std::string edge_0;
+		std::string edge_1;
+
+		std::getline(iss2,edge_0,'\t');
+		std::getline(iss2,edge_1,',');
+
+		intercluster_edges.insert( std::make_pair(atoi(edge_0.c_str()),atoi(edge_1.c_str())) );
+	}
+	/*
+	 * Read DFG cluster to CGRA cluster mapping txt file
+	 * CGRA cluster is represented by row and column ID pair
+	 * One DFG cluster can be mapped onto multiple CGRA clusters
+	 * Therefore it needs a vector of pairs to hold CGRA cluster information
+	 * */
+	std::string dfg_to_cgra_cluster_mapping_outcome_file_name = "dfg_to_cgra_cluster_mapping_outcome.txt";
+	std::ifstream dfg_to_cgra_cluster_mapping(dfg_to_cgra_cluster_mapping_outcome_file_name.c_str());
+//	std::map<int,std::vector<std::pair<int,int>> > dfg_cluster_to_cgra_cluster;
+	std::map<int,std::vector<std::string> > dfg_cluster_to_cgra_cluster;
+
+    int number_of_clusters = 0;
+	while(std::getline(dfg_to_cgra_cluster_mapping,line)){
+		std::istringstream iss3(line);
+
+		std::string dfg_cluster_id;
+		std::string rows;
+		std::string columns;
+
+		std::getline(iss3,dfg_cluster_id,'\t');
+		std::getline(iss3,rows,'\t');
+		std::getline(iss3,columns,'.');
+
+		std::cout << "dfg_cluster_id=" << dfg_cluster_id << ",rows=" << rows << ",columns=" << columns << "\n";
+		number_of_clusters = std::stoi(dfg_cluster_id);
+		//int row_size =
+		std::string rows_ = rows.substr(1,(rows.size()-2));
+		std::string cols_ = columns.substr(1,(columns.size()-2));
+		int start = 0;
+		int end = rows_.find(", ");
+		while(end !=-1){
+			std::string row = rows_.substr(start,end-start);
+			std::string col = cols_.substr(start,end-start);
+//			std::cout << row<<"\t";
+//			std::cout << col<<"\n";
+
+			//dfg_cluster_to_cgra_cluster[std::stoi(dfg_cluster_id)].push_back(std::make_pair(std::stoi(row),std::stoi(col)));
+			std::string tile_name = "TILE_X"+col+"|_Y"+row;
+			dfg_cluster_to_cgra_cluster[std::stoi(dfg_cluster_id)].push_back(tile_name);
+
+			start = end + 2;
+			end = rows_.find(", ",start);
+
+		}
+		std::string row = rows_.substr(start,end-start);
+		std::string col = cols_.substr(start,end-start);
+//		std::cout << row<<"\t";
+//		std::cout << col<<"\n";
+//		dfg_cluster_to_cgra_cluster[std::stoi(dfg_cluster_id)].push_back(std::make_pair(std::stoi(row),std::stoi(col)));
+
+		std::string tile_name = "TILE_X"+col+"|_Y"+row;
+		dfg_cluster_to_cgra_cluster[std::stoi(dfg_cluster_id)].push_back(tile_name);
+
+	}
+	std::cout<<"Cluster ID: (row,col)";
+	for (int i =0;i<=number_of_clusters;i++){
+		std::cout << i <<":";
+		for(auto tile_name : dfg_cluster_to_cgra_cluster[i]){
+			std::cout << tile_name <<"\t";
+		}
+		std::cout<<"\n";
+	}
+//	std::cout<< "inter cluster edges:";
+//	for ( const auto& edge : intercluster_edges )
+//	        std::cout << edge.first << ", " << edge.second << "\n";
+#endif
 	XMLDocument doc;
 	doc.LoadFile(fileName.c_str());
 
@@ -82,10 +188,13 @@ bool DFG::parseXML(std::string fileName)
 		assert(alap != -1);
 		currDFGNode.ALAP = alap;
 #ifdef HIERARCHICAL
-		int tile = -1;
-		node->QueryIntAttribute("TILE", &tile);
-		assert(tile != -1);
-		currDFGNode.TILE = tile;
+		//int tile = -1;
+		//node->QueryIntAttribute("TILE", &tile);
+		//assert(tile != -1);
+		//currDFGNode.TILE = tile;
+		assert(nodeid_to_clusterid.count(idx));
+		currDFGNode.DFG_CLUSTER = nodeid_to_clusterid[idx];
+		currDFGNode.CGRA_CLUSTERS = dfg_cluster_to_cgra_cluster[nodeid_to_clusterid[idx]];
 #endif
 
 		const char *BBName;
@@ -108,30 +217,30 @@ bool DFG::parseXML(std::string fileName)
 		std::cout << ",op=" << opName << "\n";
 		currDFGNode.op = std::string(opName);
 
-		XMLElement *base_pointer_name = node->FirstChildElement("BasePointerName");
-		if(base_pointer_name){
-			const char *base_pointer_name_str = base_pointer_name->GetText();
-			std::cout << ",base_pointer_name=" << base_pointer_name_str << "\n";
-			currDFGNode.base_pointer_name = std::string(base_pointer_name_str);
+//		XMLElement *base_pointer_name = node->FirstChildElement("BasePointerName");
+//		if(base_pointer_name){
+//			const char *base_pointer_name_str = base_pointer_name->GetText();
+//			std::cout << ",base_pointer_name=" << base_pointer_name_str << "\n";
+//			currDFGNode.base_pointer_name = std::string(base_pointer_name_str);
 
-			int base_pointer_size = -1;
-			base_pointer_name->QueryIntAttribute("size", &base_pointer_size); 
-			std::cout << ",base_pointer_size=" << base_pointer_size << "\n";
-			assert(base_pointer_size != -1);
+//			int base_pointer_size = -1;
+//			base_pointer_name->QueryIntAttribute("size", &base_pointer_size);
+//			std::cout << ",base_pointer_size=" << base_pointer_size << "\n";
+//			assert(base_pointer_size != -1);
+//
+//			if(pointer_sizes.find(currDFGNode.base_pointer_name) == pointer_sizes.end()){
+//				pointer_sizes[currDFGNode.base_pointer_name] = base_pointer_size;
+//			}
+//			else{
+//				//if its already there it should be equal
+//				assert(pointer_sizes[currDFGNode.base_pointer_name] == base_pointer_size);
+//			}
+//
+//			if(currDFGNode.op.find("LOAD") != std::string::npos || currDFGNode.op.find("STORE") != std::string::npos){
+//				ldst_pointer_sizes[currDFGNode.base_pointer_name] = base_pointer_size;
+//			}
 
-			if(pointer_sizes.find(currDFGNode.base_pointer_name) == pointer_sizes.end()){
-				pointer_sizes[currDFGNode.base_pointer_name] = base_pointer_size;
-			}
-			else{
-				//if its already there it should be equal
-				assert(pointer_sizes[currDFGNode.base_pointer_name] == base_pointer_size);
-			}
-
-			if(currDFGNode.op.find("LOAD") != std::string::npos || currDFGNode.op.find("STORE") != std::string::npos){
-				ldst_pointer_sizes[currDFGNode.base_pointer_name] = base_pointer_size;
-			}
-
-		}
+//		}
 
 		XMLElement *GEPOffset = node->FirstChildElement("GEPOffset");
 		if(GEPOffset){
@@ -201,6 +310,7 @@ bool DFG::parseXML(std::string fileName)
 
 
 
+
 			const char *type;
 			output->QueryStringAttribute("type", &type);
 			if (type)
@@ -212,7 +322,7 @@ bool DFG::parseXML(std::string fileName)
 					findNode(idx)->childrenOPType[findNode(output_idx)] = std::string(type);
 				}
 
-//				if(type == 0){
+				//				if(type == 0){
 				if(std::string(type)=="P"){
 					int npb;
 					output->QueryIntAttribute("NPB", &npb);
@@ -227,6 +337,17 @@ bool DFG::parseXML(std::string fileName)
 				}
 
 			}
+#ifdef HIERARCHICAL
+			if(intercluster_edges.find(std::make_pair(idx,output_idx)) != intercluster_edges.end()){
+				findNode(idx)->childrenEdgeType[findNode(output_idx)] = "INTER";
+				//std::cout << "Inter edge:"<< idx<<","<<output_idx <<" \n";
+			}else if (output_nextiter == 1){
+				findNode(idx)->childrenEdgeType[findNode(output_idx)] = "INTER"; // let backedges to use inter cluster routing
+			}else{
+				findNode(idx)->childrenEdgeType[findNode(output_idx)] = "INTRA";
+				//std::cout << "Intra edge:"<< idx<<","<<output_idx <<" \n";
+			}
+#endif
 
 			output = output->NextSiblingElement("Output");
 		}
@@ -247,6 +368,7 @@ bool DFG::parseXML(std::string fileName)
 		}
 		std::cout << "\n";
 	}
+
 }
 
 void DFG::printDFG()
@@ -268,6 +390,13 @@ void DFG::printDFG()
 			std::cout << child->idx << ",";
 		}
 		std::cout << "\n";
+#ifdef HIERARCHICAL
+		std::cout << "CGRA Clusters: ";
+		for(auto tile_name: node.CGRA_CLUSTERS){
+			std::cout << tile_name<< "\t";
+		}
+		std::cout << "\n";
+#endif
 	}
 	std::cout << "Printing DFG Done!\n";
 }
@@ -318,9 +447,9 @@ bool DFG::isMutexNodes(DFGNode *a, DFGNode *b, Port *p)
 
 	//Making the operand port mutex
 	if ((p->getName() == "P") ||
-		(p->getName().find("_P") != std::string::npos) ||
-		(p->getName().find("I1") != std::string::npos) ||
-		(p->getName().find("I2") != std::string::npos))
+			(p->getName().find("_P") != std::string::npos) ||
+			(p->getName().find("I1") != std::string::npos) ||
+			(p->getName().find("I2") != std::string::npos))
 	{
 		return true;
 	}
@@ -354,7 +483,7 @@ bool DFG::isMutexNodes(DFGNode *a, DFGNode *b, Port *p)
 }
 
 std::vector<DFGNode *> removeDuplicates(std::vector<DFGNode *> vec_in)
-{
+		{
 	std::vector<DFGNode *> res;
 	for (DFGNode *n : vec_in)
 	{
@@ -364,11 +493,11 @@ std::vector<DFGNode *> removeDuplicates(std::vector<DFGNode *> vec_in)
 		}
 	}
 	return res;
-}
+		}
 
 std::vector<DFGNode *> DFG::mergeAncestoryASAP(const std::vector<DFGNode *> &in1,
-											   const std::vector<DFGNode *> &in2,
-											   const std::map<BackEdge, std::set<DFGNode *>> &RecCycles)
+		const std::vector<DFGNode *> &in2,
+		const std::map<BackEdge, std::set<DFGNode *>> &RecCycles)
 {
 
 	std::map<DFGNode *, std::vector<DFGNode *>> beParentAncestors;
@@ -473,7 +602,7 @@ std::vector<DFGNode *> DFG::mergeAncestoryASAP(const std::vector<DFGNode *> &in1
 }
 
 std::vector<DFGNode *> DFG::mergeAncestoryALAP(const std::vector<DFGNode *> &in1,
-											   const std::vector<DFGNode *> &in2)
+		const std::vector<DFGNode *> &in2)
 {
 
 	std::map<int, std::vector<DFGNode *>> alapLevelNodeList;
@@ -544,12 +673,12 @@ std::vector<DFGNode *> DFG::getAncestoryALAP(const DFGNode *node)
 }
 
 void DFG::strongconnect(DFGNode *v,
-						std::map<DFGNode *, int> &v_idx,
-						std::map<DFGNode *, int> &v_lowlink,
-						std::map<DFGNode *, bool> &v_onstack,
-						int &idx,
-						std::stack<DFGNode *> &S,
-						std::vector<std::set<DFGNode *>> &result)
+		std::map<DFGNode *, int> &v_idx,
+		std::map<DFGNode *, int> &v_lowlink,
+		std::map<DFGNode *, bool> &v_onstack,
+		int &idx,
+		std::stack<DFGNode *> &S,
+		std::vector<std::set<DFGNode *>> &result)
 {
 
 	v_idx[v] = idx;
@@ -615,7 +744,7 @@ std::vector<DFGNode *> DFG::getAncestoryASAP(const DFGNode *node)
 				continue; //ignore backedges
 			if (parent->childNextIter[(DFGNode *)top] == 1)
 				continue; //ignore backedges
-						  //			std::cout << parent->idx << ",";
+			//			std::cout << parent->idx << ",";
 			ancestors.push(parent);
 			q.push(parent);
 		}
@@ -632,7 +761,7 @@ std::vector<DFGNode *> DFG::getAncestoryASAP(const DFGNode *node)
 }
 
 bool DFG::getAncestoryASAPUntil(DFGNode *beParent, DFGNode *beChild,
-								std::set<DFGNode *> &result)
+		std::set<DFGNode *> &result)
 {
 
 	std::map<int, std::set<DFGNode *>> asapOrderSet;
@@ -669,6 +798,144 @@ bool DFG::getAncestoryASAPUntil(DFGNode *beParent, DFGNode *beChild,
 	}
 
 	return true;
+}
+
+void DFG::printDOT(std::string fileName) {
+	std::ofstream ofs;
+	ofs.open(fileName.c_str());
+
+	//Write the initial info
+	ofs << "digraph Region_18 {\n";
+	ofs << "\tgraph [ nslimit = \"1000.0\",\n";
+	ofs <<	"\torientation = landscape,\n";
+	ofs <<	"\t\tcenter = true,\n";
+	ofs <<	"\tpage = \"8.5,11\",\n";
+	ofs << "\tcompound=true,\n";
+	ofs <<	"\tsize = \"10,7.5\" ] ;" << std::endl;
+
+	assert(nodeList.size() != 0);
+
+		for(DFGNode &node : nodeList){
+			ofs << "\""; //BEGIN NODE NAME
+			ofs << "Op_" << node.idx;
+			ofs << "\" [ fontname = \"Helvetica\" shape = box, ";
+			ofs << "color = ";
+
+						if(node.in_rec_cycle){
+							ofs << "red";
+						}
+						else{
+							ofs << "black";
+						}
+						ofs << ", ";
+			ofs << "label = \" ";
+//			if(node->getNode() != NULL){
+				ofs << node.op;
+//				ofs << " " << node->getNode()->getName().str() << " ";
+//
+//				if(node->hasConstantVal()){
+//					ofs << " C=" << "0x" << std::hex << node->getConstantVal() << std::dec;
+//				}
+//
+//				if(node->isGEP()){
+//					ofs << " C=" << "0x" << std::hex << node->getGEPbaseAddr() << std::dec;
+//				}
+
+//			}
+//			else{
+//				ofs << node->getNameType();
+//
+//				if(node->getNameType() == "OuterLoopLOAD"){
+//					ofs << " " << OutLoopNodeMapReverse[node]->getName().str() << " ";
+//				}
+//
+//				if(node->isOutLoop()){
+//					ofs << " C=" << "0x" << node->getoutloopAddr() << std::dec;
+//				}
+//
+//				if(node->hasConstantVal()){
+//					ofs << " C=" << "0x" << node->getConstantVal() << std::dec;
+//				}
+//			}
+
+//			ofs << "BB=" << node->BB->getName().str();
+
+//			if(!mutexNodes[node].empty()){
+//				ofs << ",mutex={";
+//				for(dfgNode* m : mutexNodes[node]){
+//					ofs << m->getIdx() << ",";
+//				}
+//				ofs << "}";
+//			}
+
+//			if(node->getFinalIns() != NOP){
+//				ofs << " HyIns=" << HyCUBEInsStrings[node->getFinalIns()];
+//			}
+			ofs << ",\n";
+			ofs << node.idx <<", ASAP=" << node.ASAP;
+			ofs << ", ALAP=" << node.ALAP;
+
+			ofs << "\"]\n"; //END NODE NAME
+		}
+
+	//The EDGES
+
+	for(DFGNode &node : nodeList){
+
+		for(DFGNode* child : node.children){
+			bool isCondtional=false;
+			bool condition=true;
+
+//			isCondtional= node->childConditionalMap[child] != UNCOND;
+//			condition = (node->childConditionalMap[child] == TRUE);
+
+//		bool isBackEdge = node->childBackEdgeMap[child];
+
+
+			ofs << "\"" << "Op_" << node.idx << "\"";
+			ofs << " -> ";
+			ofs << "\"" << "Op_" << child->idx << "\"";
+			ofs << " [style = ";
+
+//			if(isBackEdge){
+//				ofs << "dashed";
+//			}
+//			else{
+				ofs << "bold";
+//			}
+			ofs << ", ";
+
+			ofs << "color = ";
+//			if(isCondtional){
+//				if(findEdge(node,child)->getType() == EDGE_TYPE_PS){
+//					ofs << "cyan";
+//				}
+//				else if(condition==true){
+//					ofs << "blue";
+//				}
+//				else{
+//					ofs << "red";
+//				}
+//			}
+//			else{
+				ofs << "black";
+
+//			}
+
+//			ofs << ", headport=n, tailport=s";
+			ofs << "];\n";
+		}
+
+//		for(dfgNode* recChild : node->getRecChildren()){
+//			ofs << "\"" << "Op_" << node->getIdx() << "\"";
+//			ofs << " -> ";
+//			ofs << "\"" << "Op_" << recChild->getIdx() << "\"";
+//			ofs << "[style = bold, color = green];\n";
+//		}
+	}
+
+	ofs << "}" << std::endl;
+	ofs.close();
 }
 
 } /* namespace CGRAXMLCompile */

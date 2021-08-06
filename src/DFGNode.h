@@ -32,6 +32,8 @@ public:
 	int ALAP;
 #ifdef HIERARCHICAL
 	int TILE;
+	int DFG_CLUSTER;
+	std::vector<std::string> CGRA_CLUSTERS;
 #endif
 	int constant;
 	bool hasConst = false;
@@ -53,6 +55,7 @@ public:
 
 	std::map<DFGNode *, std::string> childrenOPType;
 	std::map<DFGNode *, int> childNextIter;
+	std::map<DFGNode *, std::string> childrenEdgeType;//INTRA-intra cluster (within the cluster), INTER - inter cluster (between clusters)
 
 	std::string BB;
 
@@ -68,6 +71,8 @@ public:
 	std::set<DataPath *> blacklistDest;
 	std::string getBinaryString();
 	std::string get27bitConstantBinaryString();
+
+    bool in_rec_cycle = false;
 
 private:
 };

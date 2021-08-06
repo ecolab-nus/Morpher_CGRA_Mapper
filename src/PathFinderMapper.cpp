@@ -551,7 +551,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::map<DFGNode *, std::vector<Port *>> possibleStarts;
 	std::map<DFGNode *, Port *> alreadyMappedChildPorts;
 
-	bool detailedDebug = true;
+	bool detailedDebug = false;//true;
 	// if(node->idx==1)detailedDebug=true;
 
 	//	std::cout << "EstimateEouting begin...\n";
@@ -584,6 +584,12 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				std::cout << "Skipping.....\n";
 				continue;
 			}
+#ifdef HIERARCHICAL
+			if(node->childrenEdgeType[child] == "INTER"){
+				std::cout << "Skipping inter edge.....\n";
+				continue;
+			}
+#endif
 			assert(child->rootDP->getInPort(node->childrenOPType[child]));
 			alreadyMappedChildPorts[child] = child->rootDP->getInPort(node->childrenOPType[child]);
 
@@ -605,8 +611,15 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	for (PE *currPE : allPEs)
 	{
 #ifdef HIERARCHICAL
-				if( ((currPE->X <= 3)&&(currPE->Y <= 3)&&(node->TILE == 0))  || ((currPE->X > 3)&&(currPE->Y <= 3)&&(node->TILE == 1))
-						|| ((currPE->X <= 3)&&(currPE->Y > 3)&&(node->TILE == 2))  || ((currPE->X > 3)&&(currPE->Y > 3)&&(node->TILE == 3)) ){
+//				if( ((currPE->X <= 3)&&(currPE->Y <= 3)&&(node->TILE == 0))  || ((currPE->X > 3)&&(currPE->Y <= 3)&&(node->TILE == 1))
+//						|| ((currPE->X <= 3)&&(currPE->Y > 3)&&(node->TILE == 2))  || ((currPE->X > 3)&&(currPE->Y > 3)&&(node->TILE == 3)) ){
+		bool map_on_this = false;
+		for(auto tile_name: node->CGRA_CLUSTERS){
+			if (currPE->tile_name == tile_name){
+				map_on_this = true;
+			}
+		}
+				if(map_on_this){
 					//Map on this tile
 				}
 				else{
@@ -692,7 +705,11 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 		}
 	}
 #ifdef HIERARCHICAL
-	std::cout << "Tile = " << node->TILE << "\n";
+	std::cout << "Tile = \n";
+	for(auto tile_name: node->CGRA_CLUSTERS){
+		std::cout << tile_name << "\t";
+			}
+	std::cout << "\n";
 #endif
 	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
 	if (candidateDests.empty())
@@ -743,6 +760,11 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				//Skip parent if the edge is pseudo
 				if (parent->getOPtype(node) == "PS")
 					continue;
+
+				if(parent->childrenEdgeType[node] == "INTER"){
+								std::cout << "Skipping inter edge route estimation.....\n";
+								continue;
+							}
 
 				Port *destPort = dest->getInPort(parent->getOPtype(node));
 				minLatDestVal = minLatDestVal_prime + parent->childNextIter[node] * ii;
@@ -1158,6 +1180,8 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 			}
 			std::cout << "routing info done.\n";
 			currDest.dest->assignNode(node, currDest.destLat, this->dfg);
+			mappingLog4 << node->idx << "," << currDest.dest->getPE()->X << ","<< currDest.dest->getPE()->Y << "," << currDest.destLat << "\n";
+			std::cout << "mappingLog4=" <<  node->idx << "," << currDest.dest->getPE()->X << ","<< currDest.dest->getPE()->Y << "," << currDest.destLat << "\n";
 			node->rootDP = currDest.dest;
 			break;
 		}
@@ -1334,7 +1358,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 	//	SortSCCDFG();
 	//	SortTopoGraphicalDFG();
+	/*Do something called merging based on backedges and the ancesstors of backedge parents*/
 	sortBackEdgePriorityASAP();
+	//exit(true);
 	//	sortBackEdgePriorityALAP();
 
 	std::string mappingLogFileName = fNameLog1 + cgra->getCGRAName() + "_MTP=" + std::to_string(enableMutexPaths);  // + ".mapping.csv";
@@ -1354,7 +1380,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		std::string mappingLog2FileName_withIter = mappingLog2FileName + "_Iter=" + std::to_string(i) + ".routeInfo.log";
 //#ifdef HIERARCHICAL
 		std::string mappingLog3FileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mappingwithlatency.csv";
+		std::string mappingLog4FileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mappingwithlatency.txt";
 		mappingLog3.open(mappingLog3FileName_withIter.c_str());
+		mappingLog4.open(mappingLog4FileName_withIter.c_str());
 //#endif
 		mappingLog.open(mappingLogFileName_withIter.c_str());
 		mappingLog2.open(mappingLog2FileName_withIter.c_str());
@@ -1365,6 +1393,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		assert(mappingLog.is_open());
 		assert(mappingLog2.is_open());
 		assert(mappingLog3.is_open());
+		assert(mappingLog4.is_open());
 
 		while (!mappedNodes.empty())
 		{
@@ -1514,6 +1543,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					mappingLog.close();
 					mappingLog2.close();
 					mappingLog3.close();
+					mappingLog4.close();
 					return false;
 				}
 			}
@@ -1529,6 +1559,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					mappingLog.close();
 					mappingLog2.close();
 					mappingLog3.close();
+					mappingLog4.close();
 					return false;
 				}
 
@@ -1541,6 +1572,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						mappingLog.close();
 						mappingLog2.close();
 						mappingLog3.close();
+						mappingLog4.close();
 						return false;
 					}
 					//					assert(failedNode!=NULL);
@@ -1575,6 +1607,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					mappingLog.close();
 					mappingLog2.close();
 					mappingLog3.close();
+					mappingLog4.close();
 					return false;
 				}
 			}
@@ -1594,6 +1627,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog.close();
 		mappingLog2.close();
 		mappingLog3.close();
+		mappingLog4.close();
 	}
 
 	//	congestionInfoFile.close();
@@ -1619,6 +1653,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog.close();
 		mappingLog2.close();
 		mappingLog3.close();
+		mappingLog4.close();
 #ifdef HIERARCHICAL
 		//return true;
 #endif
@@ -1644,6 +1679,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog.close();
 		mappingLog2.close();
 		mappingLog3.close();
+		mappingLog4.close();
 		return false;
 	}
 }
@@ -2197,6 +2233,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 	std::cout << "Populate Rec Cycles!\n";
 	RecCycles.clear();
 	//exit(0);
+	/*for each backedge, RecCycles keep the ancesstor nodes*/
 	for (BEDist be : backedges)
 	{
 		//		std::set<DFGNode*> backedgePath;
@@ -2210,6 +2247,13 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 			if (RecCycles[BackEdge(be.parent, be.child)].find(n) == RecCycles[BackEdge(be.parent, be.child)].end())
 			{
 				std::cout << n->idx << ",";
+				for (int i=0;i< dfg->nodeList.size();i++)
+					{
+						if (dfg->nodeList[i].idx == n->idx)
+						{
+							dfg->nodeList[i].in_rec_cycle = true;
+						}
+					}
 			}
 			RecCycles[BackEdge(be.parent, be.child)].insert(n);
 		}
@@ -2240,6 +2284,16 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 				if (RecCyclesLS[BackEdge(be_temp.parent, be_temp.child)].find(n) == RecCyclesLS[BackEdge(be_temp.parent, be_temp.child)].end())
 				{
 					std::cout << n->idx << ",";
+					//dfg->findNode(n->idx)->in_rec_cycle=true;
+
+					for (int i=0;i< dfg->nodeList.size();i++)
+						{
+							if (dfg->nodeList[i].idx == n->idx)
+							{
+								dfg->nodeList[i].in_rec_cycle = true;
+//								std::cout << "UPDATING";
+							}
+						}
 				}
 				RecCyclesLS[BackEdge(be_temp.parent, be_temp.child)].insert(n);
 			}
@@ -2249,6 +2303,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 		}
 	}
 
+	dfg->printDOT("rec_cycles_colored.dot");
 	std::map<DFGNode *, std::vector<DFGNode *>> beparentAncestors;
 	std::map<DFGNode *, std::vector<DFGNode *>> bechildAncestors;
 	//	std::map<DFGNode*,std::vector<DFGNode*>> bechildAncestors;
@@ -2908,14 +2963,23 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 		while (rit != asapOrder.rend())
 		{
 			int asap = (*rit).first;
+			std::cout << "asap:" << asap <<"\n";
+			for (DFGNode *n : (*rit).second)
+						{
+				std::cout << n->idx << "\t";
+						}
+			std::cout <<"\n";
 			asapMaxLat[asap] = prevLat - asapMaxOpLat[asap];
+
+			std::cout <<"asapMaxLat[asap]:" << asapMaxLat[asap] <<",prevLat:"<< prevLat << ",asapMaxOpLat[asap]:" << asapMaxOpLat[asap]<<"\n";
+
 			prevLat = asapMaxLat[asap];
 
 			if (asap > node->ASAP)
 			{
 				noDownStreamOps++;
 			}
-
+			std::cout <<"noDownStreamOps:" << noDownStreamOps <<"\n";
 			rit++;
 		}
 

@@ -49,6 +49,8 @@ public:
 	std::unordered_map<std::string,int> pointer_sizes;
 	std::unordered_map<std::string,int> ldst_pointer_sizes;
 
+	void printDOT(std::string fileName);
+
 private:
 	void strongconnect(DFGNode *v,
 					   std::map<DFGNode *, int> &v_idx,

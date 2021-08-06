@@ -253,6 +253,7 @@ public:
 	void printMappingLog2();
 //#ifdef HIERARCHICAL
 	void printMappingLog3();
+	int getRecMinimumII(DFG *dfg);
 //#endif
 
 	bool checkRecParentViolation(DFGNode *node, LatPort nextPort);
@@ -275,6 +276,7 @@ protected:
 	std::ofstream mappingLog2;
 //#ifdef HIERARCHICAL
 	std::ofstream mappingLog3;
+	std::ofstream mappingLog4;
 //#endif
 	std::vector<DFGNode *> sortedNodeList;
 
