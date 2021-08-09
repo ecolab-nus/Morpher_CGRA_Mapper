@@ -1,2 +1,6 @@
 /Debug/
 /Release/
+*.log
+*.csv
+*jsonmapping_i.txt
+*verbose.json

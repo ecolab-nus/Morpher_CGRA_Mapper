@@ -270,6 +270,7 @@ protected:
 
 	std::ofstream mappingLog;
 	std::ofstream mappingLog2;
+	std::ofstream mappingLog4;
 	std::vector<DFGNode *> sortedNodeList;
 
 	void removeFailedNode(std::stack<DFGNode *> &mappedNodes, std::stack<DFGNode *> &unmappedNodes, DFGNode *failedNode);
