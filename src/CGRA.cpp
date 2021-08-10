@@ -890,6 +890,15 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist(TimeDistInfo tdi)
 {
 	TimeDistBetweenPEMap = tdi.TimeDistBetweenPEMap;
 	TimeDistBetweenClosestMEMPEMap = tdi.TimeDistBetweenClosestMEMPEMap;
+	
+	if (get_t_max() == 1)
+	{
+		for (Module *m1 : subModArr[0])
+		{
+			PE *zeroth_pe = static_cast<PE *>(m1);
+			MapTzeroPE[zeroth_pe] = zeroth_pe;
+		}
+	}
 
 	if (get_t_max() > 1)
 	{
@@ -954,6 +963,14 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 			// if (pe1 == pe2)
 			// continue;
 			TimeDistBetweenPEMap[pe1->getName()][pe2->getName()] = getTimeDistBetweenPEs(pe1, pe2);
+		}
+	}
+	if (get_t_max() == 1)
+	{
+		for (Module *m1 : subModArr[0])
+		{
+			PE *zeroth_pe = static_cast<PE *>(m1);
+			MapTzeroPE[zeroth_pe] = zeroth_pe;
 		}
 	}
 
