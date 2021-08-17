@@ -245,7 +245,7 @@ public:
 
 	bool sanityCheck();
 
-	bool enableBackTracking = false;
+	bool enableBackTracking = true;
 	bool enableMutexPaths = false;
 	int backTrackLimit = 4;
 

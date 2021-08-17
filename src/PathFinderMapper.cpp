@@ -1343,7 +1343,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 		std::string mappingLogFileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mapping.csv";
 		std::string mappingLog2FileName_withIter = mappingLog2FileName + "_Iter=" + std::to_string(i) + ".routeInfo.log";
-		std::string mappingLog4FileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mappingwithlatency.txt";
+		std::string mappingLog4FileName_withIter = mappingLogFileName + "_II=" + std::to_string(cgra->get_t_max())+ "_Iter=" + std::to_string(i) + ".mappingwithlatency.txt";
 
 		mappingLog.open(mappingLogFileName_withIter.c_str());
 		mappingLog2.open(mappingLog2FileName_withIter.c_str());

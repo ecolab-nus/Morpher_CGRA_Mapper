@@ -15,6 +15,7 @@ from networkx.drawing.nx_pydot import to_pydot
 import pydot
 from _ast import If
 
+import numpy as np
 
 
 from mpl_toolkits import mplot3d#https://towardsdatascience.com/an-easy-introduction-to-3d-plotting-with-matplotlib-801561999725
@@ -97,7 +98,7 @@ def my_mkdir(dir):
         pass
 
 
-if __name__ == '__main__':
+def draw_3d():
     #xml_name = '/home/dmd/Workplace/HiMap2/Morpher_DFG_Generator/applications/aes/hycube_compilation/encrypt_INNERMOST_LN1_PartPred_DFG_without_clustering_1.xml'
     #xml_name = '//home/dmd/Workplace/Morphor/github_ecolab_repos/Morpher_DFG_Generator/applications/madgwick_fp_v2/MadgwickAHRSupdateIMU_INNERMOST_LN1_PartPred_DFG_1.xml'
     #xml_name = '/home/dmd/Workplace/HiMap2/Morpher_DFG_Generator/applications/edn/jpegdct_POST_LN111_PartPred_DFG_1.xml'
@@ -106,7 +107,7 @@ if __name__ == '__main__':
     #xml_name = '/home/dmd/Workplace/HiMap2/Morpher_DFG_Generator/applications/picojpeg/idctRows_INNERMOST_LN1_PartPred_DFG_1.xml'
     #xml_name = '/home/dmd/Workplace/HiMap2/Morpher_DFG_Generator/applications/picojpeg/idctCols_INNERMOST_LN1_PartPred_DFG_1.xml'
     mapping_file = "../applications/hycube/array_add/array_add_INNERMOST_LN1_PartPred_DFG.xmlhycube_original.json_MTP\=1_Iter\=0.mappingwithlatency.txt"
-    mapping_file = sys.argv[1]
+    
     # clustering_outcome = '/home/dmd/Workplace/HiMap2/HiMap2_Scikit_Clustering/applications/edn/clustering_outcome.txt'
     #all_edges = '/home/dmd/Workplace/HiMap2/HiMap2_Scikit_Clustering/applications/edn/all_edges.txt'
     # all_edges = '/home/dmd/Workplace/HiMap2/HiMap2_Scikit_Clustering/applications/edn/inter_cluster_edges.txt'
@@ -274,3 +275,61 @@ if __name__ == '__main__':
   
 
 
+def draw_hot_pe(mapping_file):
+    max_pe_x = 8
+    max_pe_y = 8
+    lat = []
+    node_id = []
+    pe_x = []
+    pe_y = []
+    mynumbers = []
+    pe_utilization = [ [0]*max_pe_x for i in range(max_pe_y)]
+
+    i=0
+    with open(mapping_file) as f:
+        for line in f:
+            # print(line)
+            mynumbers.append([int(n) for n in line.strip().split(',')])
+    for pair in mynumbers:
+        try:
+            #x,y = pair[0],pair[1]
+            node_id_,x_,y_,lat_ = pair[0],pair[1],pair[2],pair[3]
+            lat.append(lat_)
+            if node_id_ in node_id:
+                continue
+            node_id.append(node_id_)
+            # node_id_to_index_Dict[node_id_] = i
+            pe_x.append(x_)
+            pe_y.append(y_)
+            pe_utilization[x_][y_] +=1
+            # group.append("")
+            i = i+1
+            print(node_id_,x_,y_,lat_ )
+        # Do Something with x and y
+        except IndexError:
+            print("A line in the file doesn't have enough entries.")
+        
+    
+
+    print(pe_utilization)
+
+    fig, ax = plt.subplots()
+
+
+
+    ax.matshow(pe_utilization, cmap=plt.cm.Blues)
+
+    for i in range(max_pe_x):
+        for j in range(max_pe_y):
+            c = pe_utilization[i][j]
+            ax.text(j, i, str(c), va='center', ha='center')
+    
+
+    plt.show()
+    plt.savefig("temp.png")
+
+
+if __name__ == "__main__":
+    draw_hot_pe(sys.argv[1])
+
+    
