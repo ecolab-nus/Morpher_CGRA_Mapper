@@ -33,7 +33,7 @@ struct arguments
 	string json_file_name;
 	int userII = 0;
 	bool noMutexPaths=false;
-	int backtracklimit = 0;
+	int backtracklimit = 2; // do not set this for a high number.  
 	bool use_json = false;
 	int ndps = 1;
 	int maxiter = 30;

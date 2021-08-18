@@ -1145,6 +1145,8 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 			}
 			std::cout << "routing info done.\n";
 			currDest.dest->assignNode(node, currDest.destLat, this->dfg);
+			mappingLog4 << node->idx << "," << currDest.dest->getPE()->X << ","<< currDest.dest->getPE()->Y << "," << currDest.destLat << "\n";
+			std::cout << "mappingLog4=" << node->idx << "," << currDest.dest->getPE()->X << ","<< currDest.dest->getPE()->Y << "," << currDest.destLat << "\n";
 			node->rootDP = currDest.dest;
 			break;
 		}
@@ -1326,6 +1328,8 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 	std::string mappingLogFileName = fNameLog1 + cgra->getCGRAName() + "_MTP=" + std::to_string(enableMutexPaths);  // + ".mapping.csv";
 	std::string mappingLog2FileName = fNameLog1 + cgra->getCGRAName() + "_MTP=" + std::to_string(enableMutexPaths); // + ".routeInfo.log";
+	
+	
 
 	bool mapSuccess = false;
 
@@ -1339,15 +1343,18 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 		std::string mappingLogFileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mapping.csv";
 		std::string mappingLog2FileName_withIter = mappingLog2FileName + "_Iter=" + std::to_string(i) + ".routeInfo.log";
+		std::string mappingLog4FileName_withIter = mappingLogFileName + "_II=" + std::to_string(cgra->get_t_max())+ "_Iter=" + std::to_string(i) + ".mappingwithlatency.txt";
 
 		mappingLog.open(mappingLogFileName_withIter.c_str());
 		mappingLog2.open(mappingLog2FileName_withIter.c_str());
+		mappingLog4.open(mappingLog4FileName_withIter.c_str());
 
 		cout << "Opening mapping csv file : " << mappingLogFileName_withIter << "\n";
 		cout << "Opening routeInfo log file : " << mappingLog2FileName_withIter << "\n";
 
 		assert(mappingLog.is_open());
 		assert(mappingLog2.is_open());
+		assert(mappingLog4.is_open());
 
 		while (!mappedNodes.empty())
 		{
@@ -1422,6 +1429,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 							mappingLog.close();
 							mappingLog2.close();
+							mappingLog4.close();
 							return false;
 						}
 						backTrackCredits--;
@@ -1465,6 +1473,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						mappingLog << "Map Failed!.\n";
 						mappingLog.close();
 						mappingLog2.close();
+						mappingLog4.close();
 						return false;
 					}
 				}
@@ -1490,6 +1499,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					std::cout << "Map Failed!.\n";
 					mappingLog.close();
 					mappingLog2.close();
+					mappingLog4.close();
 					return false;
 				}
 			}
@@ -1504,6 +1514,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					std::cout << "Map Failed!.\n";
 					mappingLog.close();
 					mappingLog2.close();
+					mappingLog4.close();
 					return false;
 				}
 
@@ -1515,6 +1526,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						std::cout << "Map Failed!.\n";
 						mappingLog.close();
 						mappingLog2.close();
+						mappingLog4.close();
 						return false;
 					}
 					//					assert(failedNode!=NULL);
@@ -1548,6 +1560,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					std::cout << "Map Failed!.\n";
 					mappingLog.close();
 					mappingLog2.close();
+					mappingLog4.close();
 					return false;
 				}
 			}
@@ -1566,6 +1579,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		estimatedRouteInfo.clear();
 		mappingLog.close();
 		mappingLog2.close();
+		mappingLog4.close();
 	}
 
 	//	congestionInfoFile.close();
