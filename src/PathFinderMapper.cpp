@@ -228,6 +228,12 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 
 			if (nextLatPort.first > end.first)
 				continue; //continue if the next port has higher latency
+			
+			if((nextLatPort.second->getNode() == node))
+			{
+				if(nextLatPort.first != nextLatPort.second->getLat())
+					continue;
+			}
 			assert(nextLatPort.first - currPort.first <= 1);
 
 
@@ -551,7 +557,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::map<DFGNode *, std::vector<Port *>> possibleStarts;
 	std::map<DFGNode *, Port *> alreadyMappedChildPorts;
 
-	bool detailedDebug = true;
+	bool detailedDebug = false;
 	// if(node->idx==1)detailedDebug=true;
 
 	//	std::cout << "EstimateEouting begin...\n";
@@ -1073,6 +1079,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 				succ = LeastCostPathAstar(src, dest, currDest.dest, path, cost, parent, mutexPath, node);
 				if (succ)
 				{
+
 					//					bool routedParent=true;
 					//					if(parent->routingPorts.size()==0){ //unrouted parent
 					//						routedParent=false;
@@ -3502,7 +3509,6 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 							insF.southo = "100";
 						}
 						else{
-							//std::cout << "";
 							std::cout << "Port : " << southo->getFullName() << ",node = " << southo->getNode()->idx << ", source not found!\n";
 							assert(false);
 							insF.southo = "111";
