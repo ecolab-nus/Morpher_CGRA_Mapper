@@ -64,13 +64,17 @@ class PathFinderMapper : public HeuristicMapper
 {
 public:
 	PathFinderMapper(std::string fName) : HeuristicMapper(fName){
+		 for(int y=0;y<m;y++)
+		    {
+		        for(int x=0;x<n;x++) map_cgra[x][y]=0;
+		    }
 
 										  };
 
 	bool Map(CGRA *cgra, DFG *dfg);
 	//	bool LeastCostPathAstar(Port* start, Port* end, DataPath* endDP, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
 	bool LeastCostPathAstar(LatPort start, LatPort end, DataPath *endDP, std::vector<LatPort> &path, int &cost, DFGNode *node, std::map<Port *, std::set<DFGNode *>> &mutexPaths, DFGNode *currNode);
-
+    string AstarShortestPath(LatPort start, LatPort end);
 	bool estimateRouting(DFGNode *node, std::priority_queue<dest_with_cost> &estimatedRoutes, DFGNode **failedNode);
 	int predictiveRoute(DFGNode *node,
 						DataPath *dest,
@@ -114,6 +118,23 @@ public:
 
 	void printHyCUBEBinary(CGRA* cgra);
 	void printBinFile(const std::vector<std::vector<std::vector<InsFormat>>>& insFArr, std::string fName, CGRA* cgra);
+	std::string skip_inter_or_intra;//which edges to skip INTER (includes backedges) or INTRA
+
+	//https://code.activestate.com/recipes/577457-a-star-shortest-path-algorithm/
+
+	const int n=60; // horizontal size of the map
+	const int m=60; // vertical size size of the map
+	 int map_cgra[60][60];
+	 int closed_nodes_map[60][60]; // map of closed (tried-out) nodes
+	 int open_nodes_map[60][60]; // map of open (not-yet-tried) nodes
+	 int dir_map[60][60]; // map of directions
+	 int dir=4; // number of possible directions to go at any position
+	// if dir==4
+	 int dx[4]={1, 0, -1, 0};
+	 int dy[4]={0, 1, 0, -1};
+	// if dir==8
+	//static int dx[dir]={1, 1, 0, -1, -1, -1, 0, 1};
+	//static int dy[dir]={0, 1, 1, 1, 0, -1, -1, -1};
 
 
 private:

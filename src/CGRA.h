@@ -12,6 +12,7 @@
 #include "PE.h"
 #include "FU.h"
 #include "DataPath.h"
+#include "PE_abstract.h"
 #include <memory>
 #include <nlohmann/json.hpp>
 
@@ -100,6 +101,8 @@ public:
 	int get_t_max() { return t_max; }
 	int get_y_max() { return y_max; }
     int get_x_max() { return x_max; }
+	int get_y_max_clustered() { assert(tile_ydim*pe_ydim>0); return tile_ydim*pe_ydim; }
+    int get_x_max_clustered() { assert(tile_xdim*pe_xdim>0);return tile_xdim*pe_xdim; }
 
 	std::map<Port *, std::set<DFGNode *>> *getCongestedPortPtr() { return congestedPortPtr; }
 	void setCongestedPortPtr(std::map<Port *, std::set<DFGNode *>> *congestedPortPtr) { this->congestedPortPtr = congestedPortPtr; }
@@ -136,6 +139,7 @@ public:
 	bool PreprocessPattern(json& top);
 	bool PreprocessInterSubmodConns(json& top);
 	bool PreprocessTilePattern(json& top);
+	void ExpandTilePattern(json &top, json &input, json &connections, json &submods);
 	void printARCHI(std::string fileName,json &connections, json &submods);
 	json top_desc;
 
@@ -160,6 +164,8 @@ public:
 
 	void InsertVariable2SPMAddrInfo(json& output_json);
 	void checkMDPVars(unordered_set<Module *>& spms);
+
+	void createAbstractPEGrid();
 
 	// unordered_map<DataPath*,unordered_set<string>> datapath_accessible_vars;
 	unordered_map<string,Module*> Variable2SPM;
@@ -318,6 +324,8 @@ public:
 		// SourcePort.insert(pair<string, std::map<string, int>>("muxT", muxT));
 	}
 
+	std::vector<PE_abstract *> abstractPEgrid;
+
 private:
 	int x_max;
 	int y_max;
@@ -360,6 +368,7 @@ private:
 
     int pe_xdim=0;
 	int pe_ydim=0;
+
 
 };
 

@@ -11,6 +11,7 @@
 #include "DFG.h"
 #include "CGRA.h"
 #include "DataPath.h"
+#include "PE_abstract.h"
 #include <queue>
 #include <assert.h>
 #include <iostream>
@@ -261,6 +262,7 @@ public:
 	int upperboundII = 1000000;
 	int upperboundIter = -1;
 	int upperboundFoundBy = -1;
+	int astar_path_print_count=0;
 
 protected:
 	int regDiscourageFactor = 10;
@@ -277,6 +279,7 @@ protected:
 //#ifdef HIERARCHICAL
 	std::ofstream mappingLog3;
 	std::ofstream mappingLog4;
+	std::ofstream mappingLog5;
 //#endif
 	std::vector<DFGNode *> sortedNodeList;
 

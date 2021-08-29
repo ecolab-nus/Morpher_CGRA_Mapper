@@ -766,7 +766,7 @@ bool CGRAXMLCompile::CGRA::PreprocessPattern(json &top)
 	cout << "After JSON End :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
 }
 
-void ExpandTilePattern(json &top, json &input, json &connections, json &submods)
+void CGRAXMLCompile::CGRA::ExpandTilePattern(json &top, json &input, json &connections, json &submods)
 {
 
 	assert(input["PATTERN"] == "GRID");
@@ -864,6 +864,7 @@ void ExpandTilePattern(json &top, json &input, json &connections, json &submods)
 						string conn_from_str = submod_grid[src_x][src_y].second + "." + curr_port_str;
 						string conn_next_str = submod_grid[dest_x][dest_y].second + "." + to_port_str;
 						connections[conn_from_str].push_back(conn_next_str);
+						abstractPEgrid[src_x*(tile_ydim*pe_ydim)+src_y]->neighbors.insert(abstractPEgrid[dest_x*(tile_ydim*pe_ydim)+dest_y]);
 					}
 				}
 
@@ -881,6 +882,8 @@ void ExpandTilePattern(json &top, json &input, json &connections, json &submods)
 						string conn_from_str = submod_grid[src_x][src_y].second + "." + curr_port_str;
 						string conn_next_str = submod_grid[dest_x][dest_y].second + "." + to_port_str;
 						connections[conn_from_str].push_back(conn_next_str);
+
+						abstractPEgrid[src_x*(tile_ydim*pe_ydim)+src_y]->neighbors.insert(abstractPEgrid[dest_x*(tile_ydim*pe_ydim)+dest_y]);
 					}
 				}
 			}
@@ -935,6 +938,8 @@ void ExpandTilePattern(json &top, json &input, json &connections, json &submods)
 					string conn_from_str = submod_grid[src_x][src_y].second + "." + curr_port_str;
 					string conn_next_str = submod_grid[dest_x][dest_y].second + "." + to_port_str;
 					connections[conn_from_str].push_back(conn_next_str);
+
+					abstractPEgrid[src_x*(tile_ydim*pe_ydim)+src_y]->neighbors.insert(abstractPEgrid[dest_x*(tile_ydim*pe_ydim)+dest_y]);
 				}
 			}
 		}
@@ -957,6 +962,8 @@ bool CGRAXMLCompile::CGRA::PreprocessTilePattern(json &top)
 
 	pe_xdim = top["TILE"]["SUBMODS"][0]["DIMS"]["X"];
 	pe_ydim = top["TILE"]["SUBMODS"][0]["DIMS"]["Y"];
+
+	createAbstractPEGrid();
 
 	for (auto &el : top["CGRA"]["SUBMODS"])
 	{
@@ -1196,6 +1203,10 @@ void CGRAXMLCompile::CGRA::printARCHI(std::string fileName,json &connections, js
 	ofs << "}" << std::endl;
 	ofs.close();
 }
+
+
+
+
 
 unordered_set<PE *> CGRAXMLCompile::CGRA::getAllPEList()
 {
@@ -2214,4 +2225,14 @@ bool CGRAXMLCompile::CGRA::PreprocessInterSubmodConns(json &arch)
 			arch[mod_type]["CONNECTIONS"]["THIS." + new_internal_port_name].push_back(old_dest);
 		}
 	}
+}
+
+void CGRAXMLCompile::CGRA::createAbstractPEGrid(){
+for(int i=0;i<tile_xdim*pe_xdim ; i++){
+	for(int j=0;j<tile_ydim*pe_ydim ; j++){
+		PE_abstract* pe = new PE_abstract(i,j);
+		abstractPEgrid.push_back(pe);
+	}
+}
+
 }

@@ -58,10 +58,11 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 {
 
 	//	std::cout << "LeastCoastPath started with start=" << start->getFullName() << " to end=" << end->getFullName() << "\n";
-
 	std::unordered_map<LatPort, int, hash_LatPort> cost_to_port;
 	std::unordered_map<LatPort, LatPort, hash_LatPort> cameFrom;
 	std::unordered_map<LatPort, int, hash_LatPort> curr_hops_to_port;
+
+	std::vector<LatPort> openSet;
 
 	path.clear();
 	mutexPaths.clear();
@@ -225,6 +226,7 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 		for (LatPort nextLatPort : nextPorts)
 		{
 			Port *nextPort = nextLatPort.second;
+			openSet.push_back(nextLatPort);
 
 			if (nextLatPort.first > end.first)
 				continue; //continue if the next port has higher latency
@@ -470,6 +472,10 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 		//				std::cout << "\n";
 		//			}
 
+		//mappingLog5 << "start x,y, end x,y\n";
+		//mappingLog5 << start.second->getPE()->X << "," << start.second->getPE()->Y << ","<< end.second->getPE()->X << "," << end.second->getPE()->Y << "\n";
+		//mappingLog5<<"PATH:\n";
+		//mappingLog5<<"FAIL\n";
 		return false; //routing failure
 	}
 
@@ -540,6 +546,38 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 	//			assert(paths[end][i] == path[i].second);
 	//		}
 
+	mappingLog5 << "start x,y, end x,y\n";
+	mappingLog5 << start.second->getPE()->X << "," << start.second->getPE()->Y << ","<< end.second->getPE()->X << "," << end.second->getPE()->Y << "\n";
+	mappingLog5<<"PATH:\n";
+	for (LatPort lp : path)
+				{
+		mappingLog5 << lp.second->getPE()->X <<"," << lp.second->getPE()->Y <<"," << lp.first << "\n";
+
+			}
+
+	//mappingLog5<<"OPENSET:\n";
+	//for (LatPort lp : openSet)
+		//		{
+		//mappingLog5 << lp.second->getPE()->X <<"," << lp.second->getPE()->Y <<"," << lp.first << "\n";
+
+			//	}
+
+	string shortest_path_route = AstarShortestPath(start,end);
+	int j; char c;
+	mappingLog5<<"SHORTESTPATH:\n";
+    int x=start.second->getPE()->getPosition_X();
+    int y=start.second->getPE()->getPosition_Y();
+	for(int i=0;i<shortest_path_route.length();i++)
+	        {
+	            c =shortest_path_route.at(i);
+	            j=atoi(&c);
+	            x=x+dx[j];
+	            y=y+dy[j];
+	            mappingLog5 << x <<"," << y << "\n";
+	        }
+
+
+
 	return true;
 }
 
@@ -585,8 +623,12 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				continue;
 			}
 #ifdef HIERARCHICAL
-			if(node->childrenEdgeType[child] == "INTER"){
-				std::cout << "Skipping inter edge.....\n";
+			if(node->childrenEdgeType[child] == skip_inter_or_intra){
+				if(skip_inter_or_intra == "INTER"){
+					std::cout << "Skipping inter edge.....\n";
+				}else{
+					std::cout << "Skipping intra edge.....\n";
+				}
 				continue;
 			}
 #endif
@@ -761,8 +803,12 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				if (parent->getOPtype(node) == "PS")
 					continue;
 
-				if(parent->childrenEdgeType[node] == "INTER"){
-								std::cout << "Skipping inter edge route estimation.....\n";
+				if(parent->childrenEdgeType[node]  == skip_inter_or_intra){
+					if(skip_inter_or_intra == "INTER"){
+						std::cout << "Skipping inter edge.....\n";
+					}else{
+						std::cout << "Skipping intra edge.....\n";
+					}
 								continue;
 							}
 
@@ -807,6 +853,17 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					}
 
 					pathExist = pathExist & LeastCostPathAstar(startCandLat, destPortLat, dest, path, cost, parent, mutexPaths, node);
+//					if(pathExist && (startCand->getPE()->tile_name != destPort->getPE()->tile_name)){
+//						std::cout << "PATH:\n";
+//						for(LatPort port: path){
+//							std::cout << port.second->getFullName() <<"," << port.first<<"\n";
+//						}
+//						astar_path_print_count++;
+//						if(astar_path_print_count > 200){
+//						mappingLog5.close();
+//						exit(true);
+//						}
+//					}
 					path.clear();
 					if (!pathExist)
 					{
@@ -1381,9 +1438,15 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 //#ifdef HIERARCHICAL
 		std::string mappingLog3FileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mappingwithlatency.csv";
 		std::string mappingLog4FileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mappingwithlatency.txt";
+		std::string mappingLog5FileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".astar_search.txt";
 		mappingLog3.open(mappingLog3FileName_withIter.c_str());
 		mappingLog4.open(mappingLog4FileName_withIter.c_str());
-//#endif
+		mappingLog5.open(mappingLog5FileName_withIter.c_str());
+#ifdef HIERARCHICAL
+		mappingLog5 << cgra->get_x_max_clustered() <<","<<cgra->get_y_max_clustered() <<","<<cgra->get_t_max() <<"\n";
+#elif
+		mappingLog5 << cgra->get_x_max() <<","<<cgra->get_y_max() <<","<<cgra->get_t_max() <<"\n";
+#endif
 		mappingLog.open(mappingLogFileName_withIter.c_str());
 		mappingLog2.open(mappingLog2FileName_withIter.c_str());
 
@@ -1394,6 +1457,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		assert(mappingLog2.is_open());
 		assert(mappingLog3.is_open());
 		assert(mappingLog4.is_open());
+		assert(mappingLog5.is_open());
 
 		while (!mappedNodes.empty())
 		{
@@ -1408,6 +1472,16 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		{
 			unmappedNodes.push(node);
 		}
+
+//		for (PE_abstract * pe: cgra->abstractPEgrid){
+//			cout << "\nPE:" << pe->X <<"," << pe->Y << "\n";
+//			cout << "Neighbors:\n";
+//			for (PE_abstract *npe: pe->neighbors){
+//				cout << "PE:" << npe->X <<"," << npe->Y << "\n";
+//			}
+//		}
+
+//		exit(true);
 
 		std::cout << "MAP begin...\n";
 
@@ -1473,6 +1547,8 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 							mappingLog.close();
 							mappingLog2.close();
 							mappingLog3.close();
+							mappingLog4.close();
+							mappingLog5.close();
 							return false;
 						}
 						backTrackCredits--;
@@ -1517,6 +1593,8 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						mappingLog.close();
 						mappingLog2.close();
 						mappingLog3.close();
+						mappingLog4.close();
+						mappingLog5.close();
 						return false;
 					}
 				}
@@ -1544,6 +1622,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					mappingLog2.close();
 					mappingLog3.close();
 					mappingLog4.close();
+					mappingLog5.close();
 					return false;
 				}
 			}
@@ -1560,6 +1639,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					mappingLog2.close();
 					mappingLog3.close();
 					mappingLog4.close();
+					mappingLog5.close();
 					return false;
 				}
 
@@ -1573,6 +1653,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						mappingLog2.close();
 						mappingLog3.close();
 						mappingLog4.close();
+						mappingLog5.close();
 						return false;
 					}
 					//					assert(failedNode!=NULL);
@@ -1608,6 +1689,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					mappingLog2.close();
 					mappingLog3.close();
 					mappingLog4.close();
+					mappingLog5.close();
 					return false;
 				}
 			}
@@ -1628,6 +1710,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog2.close();
 		mappingLog3.close();
 		mappingLog4.close();
+		mappingLog5.close();
 	}
 
 	//	congestionInfoFile.close();
@@ -1654,6 +1737,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog2.close();
 		mappingLog3.close();
 		mappingLog4.close();
+		mappingLog5.close();
 #ifdef HIERARCHICAL
 		//return true;
 #endif
@@ -1680,6 +1764,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog2.close();
 		mappingLog3.close();
 		mappingLog4.close();
+		mappingLog5.close();
 		return false;
 	}
 }
@@ -4032,4 +4117,196 @@ void CGRAXMLCompile::PathFinderMapper::printBinFile(
 
 
 	binFile.close();
+}
+
+//https://code.activestate.com/recipes/577457-a-star-shortest-path-algorithm/
+
+
+
+class node
+{
+    // current position
+    int xPos;
+    int yPos;
+    // total distance already travelled to reach the node
+    int level;
+    // priority=level+remaining distance estimate
+    int priority;  // smaller: higher priority
+
+    public:
+        node(int xp, int yp, int d, int p)
+            {xPos=xp; yPos=yp; level=d; priority=p;}
+
+        int getxPos() const {return xPos;}
+        int getyPos() const {return yPos;}
+        int getLevel() const {return level;}
+        int getPriority() const {return priority;}
+
+        void updatePriority(const int & xDest, const int & yDest)
+        {
+             priority=level+estimate(xDest, yDest)*10; //A*
+        }
+
+        // give better priority to going strait instead of diagonally
+        void nextLevel(const int & i) // i: direction
+        {
+             level+=10;//(dir==8?(i%2==0?10:14):10);
+        }
+
+        // Estimation function for the remaining distance to the goal.
+        const int & estimate(const int & xDest, const int & yDest) const
+        {
+            static int xd, yd, d;
+            xd=xDest-xPos;
+            yd=yDest-yPos;
+
+            // Euclidian Distance
+            d=static_cast<int>(sqrt(xd*xd+yd*yd));
+
+            // Manhattan distance
+            //d=abs(xd)+abs(yd);
+
+            // Chebyshev distance
+            //d=max(abs(xd), abs(yd));
+
+            return(d);
+        }
+};
+// Determine priority (in the priority queue)
+bool operator<(const node & a, const node & b)
+{
+  return a.getPriority() > b.getPriority();
+}
+
+
+// A-star algorithm.
+// The route returned is a string of direction digits.
+string CGRAXMLCompile::PathFinderMapper::AstarShortestPath(LatPort start, LatPort end){
+
+	 int  xStart = start.second->getPE()->getPosition_X();
+	 int  yStart= start.second->getPE()->getPosition_Y();
+	 int  xFinish= end.second->getPE()->getPosition_X();
+	 int  yFinish= end.second->getPE()->getPosition_Y();
+
+	    static priority_queue<node> pq[2]; // list of open (not-yet-tried) nodes
+	    static int pqi; // pq index
+	    static node* n0;
+	    static node* m0;
+	    static int i, j, x, y, xdx, ydy;
+	    static char c;
+	    pqi=0;
+
+	    // reset the node maps
+	    for(y=0;y<m;y++)
+	    {
+	        for(x=0;x<n;x++)
+	        {
+	            closed_nodes_map[x][y]=0;
+	            open_nodes_map[x][y]=0;
+	        }
+	    }
+
+	    // create the start node and push into list of open nodes
+	    n0=new node(xStart, yStart, 0, 0);
+	    n0->updatePriority(xFinish, yFinish);
+	    pq[pqi].push(*n0);
+	    open_nodes_map[x][y]=n0->getPriority(); // mark it on the open nodes map
+
+	    // A* search
+	    while(!pq[pqi].empty())
+	    {
+	        // get the current node w/ the highest priority
+	        // from the list of open nodes
+	        n0=new node( pq[pqi].top().getxPos(), pq[pqi].top().getyPos(),
+	                     pq[pqi].top().getLevel(), pq[pqi].top().getPriority());
+
+	        x=n0->getxPos(); y=n0->getyPos();
+
+	        pq[pqi].pop(); // remove the node from the open list
+	        open_nodes_map[x][y]=0;
+	        // mark it on the closed nodes map
+	        closed_nodes_map[x][y]=1;
+
+	        // quit searching when the goal state is reached
+	        //if((*n0).estimate(xFinish, yFinish) == 0)
+	        if(x==xFinish && y==yFinish)
+	        {
+	            // generate the path from finish to start
+	            // by following the directions
+	            string path="";
+	            while(!(x==xStart && y==yStart))
+	            {
+	                j=dir_map[x][y];
+	                c='0'+(j+dir/2)%dir;
+	                cout <<"c : " << c <<"\n";
+	                path=c+path;
+	                x+=dx[j];
+	                y+=dy[j];
+	            }
+
+	            // garbage collection
+	            delete n0;
+	            // empty the leftover nodes
+	            while(!pq[pqi].empty()) pq[pqi].pop();
+	            return path;
+	        }
+
+	        // generate moves (child nodes) in all possible directions
+	        for(i=0;i<dir;i++)
+	        {
+	            xdx=x+dx[i]; ydy=y+dy[i];
+
+	            if(!(xdx<0 || xdx>n-1 || ydy<0 || ydy>m-1 || map_cgra[xdx][ydy]==1
+	                || closed_nodes_map[xdx][ydy]==1))
+	            {
+	                // generate a child node
+	                m0=new node( xdx, ydy, n0->getLevel(),
+	                             n0->getPriority());
+	                m0->nextLevel(i);
+	                m0->updatePriority(xFinish, yFinish);
+
+	                // if it is not in the open list then add into that
+	                if(open_nodes_map[xdx][ydy]==0)
+	                {
+	                    open_nodes_map[xdx][ydy]=m0->getPriority();
+	                    pq[pqi].push(*m0);
+	                    // mark its parent node direction
+	                    dir_map[xdx][ydy]=(i+dir/2)%dir;
+	                }
+	                else if(open_nodes_map[xdx][ydy]>m0->getPriority())
+	                {
+	                    // update the priority info
+	                    open_nodes_map[xdx][ydy]=m0->getPriority();
+	                    // update the parent direction info
+	                    dir_map[xdx][ydy]=(i+dir/2)%dir;
+
+	                    // replace the node
+	                    // by emptying one pq to the other one
+	                    // except the node to be replaced will be ignored
+	                    // and the new node will be pushed in instead
+	                    while(!(pq[pqi].top().getxPos()==xdx &&
+	                           pq[pqi].top().getyPos()==ydy))
+	                    {
+	                        pq[1-pqi].push(pq[pqi].top());
+	                        pq[pqi].pop();
+	                    }
+	                    pq[pqi].pop(); // remove the wanted node
+
+	                    // empty the larger size pq to the smaller one
+	                    if(pq[pqi].size()>pq[1-pqi].size()) pqi=1-pqi;
+	                    while(!pq[pqi].empty())
+	                    {
+	                        pq[1-pqi].push(pq[pqi].top());
+	                        pq[pqi].pop();
+	                    }
+	                    pqi=1-pqi;
+	                    pq[pqi].push(*m0); // add the better node instead
+	                }
+	                else delete m0; // garbage collection
+	            }
+	        }
+	        delete n0; // garbage collection
+	    }
+	    return ""; // no route found
+
 }
