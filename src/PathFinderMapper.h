@@ -6,6 +6,7 @@
  */
 
 #include "HeuristicMapper.h"
+#include "debug.h"
 #include <string>
 
 #ifndef PATHFINDERMAPPER_H_
@@ -115,16 +116,20 @@ public:
 	void printHyCUBEBinary(CGRA* cgra);
 	void printBinFile(const std::vector<std::vector<std::vector<InsFormat>>>& insFArr, std::string fName, CGRA* cgra);
 
+protected:
+	int getlatMinStartsPHI(const DFGNode *currNode, const std::map<DFGNode *, std::vector<Port *>> &possibleStarts);
 
-private:
 	std::map<Port *, std::set<DFGNode *>> congestedPorts;
 	std::map<Port *, std::set<DFGNode *>> conflictedPorts;
+
+// private:
+	
 	int maxIter = 30;
 
 	std::map<int, int> conflictedTimeStepMap;
 
 	std::set<DFGNode *> RecPHIs;
-	int getlatMinStartsPHI(const DFGNode *currNode, const std::map<DFGNode *, std::vector<Port *>> &possibleStarts);
+	
 	std::set<DFGNode *> getElders(DFGNode *node);
 
 	std::map<BackEdge, std::set<DFGNode *>> RecCycles;

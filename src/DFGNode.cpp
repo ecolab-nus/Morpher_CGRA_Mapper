@@ -185,13 +185,13 @@ void CGRAXMLCompile::DFGNode::clear(DFG *dfg)
 				delPorts.insert(pair);
 			}
 		}
-		std::cout << "delPorts.size = " << delPorts.size() << "\n";
-		std::cout << "parentRoutingPort size(before) = " << parent->routingPorts.size() << "\n";
+		// std::cout << "delPorts.size = " << delPorts.size() << "\n";
+		// std::cout << "parentRoutingPort size(before) = " << parent->routingPorts.size() << "\n";
 		for (std::pair<Port *, int> pair : delPorts)
 		{
 			parent->routingPorts.erase(std::find(parent->routingPorts.begin(), parent->routingPorts.end(), pair));
 		}
-		std::cout << "parentRoutingPort size(after) = " << parent->routingPorts.size() << "\n";
+		// std::cout << "parentRoutingPort size(after) = " << parent->routingPorts.size() << "\n";
 	}
 }
 

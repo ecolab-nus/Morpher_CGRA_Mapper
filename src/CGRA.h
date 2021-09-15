@@ -8,6 +8,7 @@
 #ifndef CGRA_H_
 #define CGRA_H_
 
+#include "debug.h"
 #include "Module.h"
 #include "PE.h"
 #include "FU.h"

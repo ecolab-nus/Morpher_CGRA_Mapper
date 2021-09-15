@@ -1628,7 +1628,7 @@ void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode *src, DFGNode *dest,
 												  std::vector<LatPort> path)
 {
 
-	std::cout << "assigning path from:" << src->idx << " to:" << dest->idx << "\n";
+	LOG(ROUTE) << "assigning path from:" << src->idx << " to:" << dest->idx << "\n";
 
 	int srcPortCount = 0;
 
@@ -1678,7 +1678,7 @@ void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode *src, DFGNode *dest,
 		}
 		//		src->routingPortDestMap[p]=dest->idx;
 	}
-	std::cout << "srcPortCount = " << srcPortCount << "\n";
+	LOG(ROUTE) << "srcPortCount = " << srcPortCount << "\n";
 }
 
 bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts(int iter)
@@ -2665,7 +2665,7 @@ int CGRAXMLCompile::PathFinderMapper::getlatMinStartsPHI(const DFGNode *currNode
 		{
 			max = pair.second;
 		}
-		std::cout << "getlatMinStartsPHI :: minLat = " << max << "\n";
+		LOG(ROUTE) << "getlatMinStartsPHI :: minLat = " << max << "\n";
 	}
 
 	//	std::map<std::string,int> oplatencyMap;

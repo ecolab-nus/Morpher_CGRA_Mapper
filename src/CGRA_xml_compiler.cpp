@@ -14,6 +14,7 @@
 #include "CGRA.h"
 #include "HeuristicMapper.h"
 #include "PathFinderMapper.h"
+#include "SimulatedAnnealingMapper.h"
 #include <math.h>
 
 #include <ctype.h>
@@ -33,11 +34,12 @@ struct arguments
 	string json_file_name;
 	int userII = 0;
 	bool noMutexPaths=false;
-	int backtracklimit = 2; // do not set this for a high number.  
+	int backtracklimit = 2; // for PathFinderMapper, do not set this for a high number.  
 	bool use_json = false;
 	int ndps = 1;
-	int maxiter = 30;
-	int max_hops = 4;
+	int maxiter = 30;  // for PathFinderMapper,
+	int max_hops = 4;  // for HyCUBE
+	int mapping_method = 0; // 0: PathFinderMapper, 1: SAMapper (SimulatedAnnealing),  HeuristicMapper will not be used
 };
 
 arguments parse_arguments(int argn, char *argc[])
@@ -52,7 +54,7 @@ arguments parse_arguments(int argn, char *argc[])
 
 	opterr = 0;
 
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:")) != -1)
+	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:r:h:")) != -1)
 		switch (c)
 		{
 		case 'd':
@@ -83,8 +85,10 @@ arguments parse_arguments(int argn, char *argc[])
 		case 'b':
 			ret.backtracklimit = atoi(optarg);
 			break;
-		case 'm':
+		case 'r':
 			ret.maxiter = atoi(optarg);
+		case 'm':
+			ret.mapping_method = atoi(optarg);
 			break;
 		case 'h':
 			ret.max_hops = atoi(optarg);
@@ -166,12 +170,15 @@ int main(int argn, char *argc[])
 	int numberOfDPs = args.ndps;
 	string json_file_name = args.json_file_name;
 	int initUserII = args.userII;
+	int mapping_method = args.mapping_method;
 	
 	DFG currDFG;
 	currDFG.parseXML(inputDFG_filename);
 	currDFG.printDFG();
 
 	bool isGenericPE;
+
+	std::cout<<"mapping method:"<<mapping_method<<"\n";
 
 	// CGRA testCGRA(NULL, "testCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
 
@@ -185,26 +192,39 @@ int main(int argn, char *argc[])
 		testCGRA = new CGRA(json_file_name, 1,xdim,ydim);
 	}
 
-	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
+	
 
-	//	HeuristicMapper hm(inputDFG_filename);
-	PathFinderMapper hm(inputDFG_filename);
-	hm.setMaxIter(args.maxiter);
+	//	HeuristicMapper mapper(inputDFG_filename);
+	TimeDistInfo tdi;
+	PathFinderMapper * mapper;
+	if (mapping_method == 0){
+		mapper = new PathFinderMapper(inputDFG_filename);
+		tdi = testCGRA->analyzeTimeDist();
+	}else if(mapping_method  == 1){
+		mapper = new SAMapper(inputDFG_filename);
+		
+		// assert(false && "convert to SA");
+	}else{
+		assert(false && "did not set a valid mapping method");
+	}
 
-	int II = hm.getMinimumII(testCGRA, &currDFG);
+	
+	mapper->setMaxIter(args.maxiter);
+
+	int II = mapper->getMinimumII(testCGRA, &currDFG);
 	std::cout << "Minimum II = " << II << "\n";
 
 	II = std::max(initUserII, II);
 
 	std::cout << "Using II = " << II << "\n";
 
-	hm.enableMutexPaths = true;
+	mapper->enableMutexPaths = true;
 	if (args.noMutexPaths)
 	{
-		hm.enableMutexPaths = false;
+		mapper->enableMutexPaths = false;
 	}
-	hm.enableBackTracking = true;
-	hm.backTrackLimit = args.backtracklimit;
+	mapper->enableBackTracking = true;
+	mapper->backTrackLimit = args.backtracklimit;
 
 	cout << "json_file_name = " << json_file_name << "\n";
 	// exit(EXIT_SUCCESS);
@@ -219,11 +239,11 @@ int main(int argn, char *argc[])
 		CGRA *tempCGRA;
 		if (json_file_name.empty())
 		{
-			tempCGRA = new CGRA(NULL, "coreCGRA", II, ydim, xdim, &tempDFG, PEType, numberOfDPs, hm.getcongestedPortsPtr());
+			tempCGRA = new CGRA(NULL, "coreCGRA", II, ydim, xdim, &tempDFG, PEType, numberOfDPs, mapper->getcongestedPortsPtr());
 		}
 		else
 		{
-			tempCGRA = new CGRA(json_file_name, II,xdim,ydim, hm.getcongestedPortsPtr());
+			tempCGRA = new CGRA(json_file_name, II,xdim,ydim, mapper->getcongestedPortsPtr());
 		}
 
 		std::set<Port*>  ports; std::set<port_edge>  port_edges;
@@ -234,15 +254,25 @@ int main(int argn, char *argc[])
 		std::cout << "Using II = " << II << "\n";
 		std::cout<<"number of ports: "<<ports.size()<<" number of edge: "<<port_edges.size();
 		// return 0;
-		tempCGRA->analyzeTimeDist(tdi);
+		// tempCGRA->analyzeTimeDist(tdi);
 		tempCGRA->max_hops = args.max_hops;
 
 		// return 0;
 
-		hm.getcongestedPortsPtr()->clear();
-		hm.getconflictedPortsPtr()->clear();
-		mappingSuccess = hm.Map(tempCGRA, &tempDFG);
-		hm.congestionInfoFile.close();
+		mapper->getcongestedPortsPtr()->clear();
+		mapper->getconflictedPortsPtr()->clear();
+		// mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
+		if (mapping_method == 0){
+			tempCGRA->analyzeTimeDist(tdi);
+			mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
+		}else if(mapping_method  == 1){
+			SAMapper * sa_mapper = static_cast<SAMapper*>(mapper);
+			mappingSuccess = sa_mapper->SAMap(tempCGRA, &tempDFG);
+		}else{
+			assert(false && "did not set a valid mapping method");
+		}
+
+		mapper->congestionInfoFile.close();
 		if (!mappingSuccess)
 		{
 
@@ -260,10 +290,10 @@ int main(int argn, char *argc[])
 				// return 0;
 			}
 
-			if (II > hm.upperboundII)
+			if (II > mapper->upperboundII)
 			{
-				std::cout << "upperbound II reached : " << hm.upperboundII << "\n";
-				std::cout << "Please use the mapping with II = " << hm.upperboundFoundBy << ",with Iter = " << hm.upperboundIter << "\n";
+				std::cout << "upperbound II reached : " << mapper->upperboundII << "\n";
+				std::cout << "Please use the mapping with II = " << mapper->upperboundFoundBy << ",with Iter = " << mapper->upperboundIter << "\n";
 				//return 0;
 			}
 
@@ -271,11 +301,11 @@ int main(int argn, char *argc[])
 		}
 		else
 		{
-			hm.sanityCheck();
-			//hm.assignLiveInOutAddr(&tempDFG);
+			mapper->sanityCheck();
+			//mapper.assignLiveInOutAddr(&tempDFG);
 			if(PEType == "HyCUBE_4REG"){
 				std::cout << "Printing HyCUBE Binary...\n";
-				hm.printHyCUBEBinary(tempCGRA);
+				mapper->printHyCUBEBinary(tempCGRA);
 			}
 			
 		}

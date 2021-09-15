@@ -259,7 +259,7 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 			}
 			if (!src_mod)
 			{
-				cout << "src mod =" << src_mod_str << ", cannot be found.\n";
+				LOG(JSONARCH) << "src mod =" << src_mod_str << ", cannot be found.\n";
 			}
 			assert(src_mod);
 
@@ -278,7 +278,7 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 					dest_mod_str = dest_mod_str + "-T" + to_string(t);
 					dest_mod = Name2SubMod[dest_mod_str];
 				}
-				cout << "dest mod str = " << dest_mod_str << "\n";
+				LOG(JSONARCH)  << "dest mod str = " << dest_mod_str << "\n";
 				assert(dest_mod);
 
 				Port *src_p;
@@ -347,7 +347,7 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, string module_name, string type, int t, int x, int y)
 {
 	// module_name = module_name + "-T" + to_string(t);
-	cout << "Parsing module  :: module name = " << module_name << ", type = " << type << "\n";
+	LOG(JSONARCH)  << "Parsing module  :: module name = " << module_name << ", type = " << type << "\n";
 	assert(!top_desc.empty());
 	Module *ret;
 
@@ -502,8 +502,8 @@ Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, str
 					{
 						for (auto &el : module_desc["DATA_LAYOUT"].items())
 						{
-							cout << "Inserting to module = " << submod->getName() << ", data_layout var name = " << static_cast<std::string>(el.key());
-							cout << ",size = " << (int)el.value() << "\n";
+							LOG(JSONARCH)  << "Inserting to module = " << submod->getName() << ", data_layout var name = " << static_cast<std::string>(el.key());
+							LOG(JSONARCH)  << ",size = " << (int)el.value() << "\n";
 							submod->data_layout.insert(static_cast<std::string>(el.key()));
 							this->Variable2SPM[static_cast<std::string>(el.key())] = submod;
 							this->Variable2SPMAddr[static_cast<std::string>(el.key())] = (int)el.value();
@@ -575,10 +575,10 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 		cont.push_back(token);
 	}
 	string cgra_json_name = *cont.rbegin();
-	cout << "cgra_json_name = " << cgra_json_name << "\n";
+	LOG(JSONARCH)  << "cgra_json_name = " << cgra_json_name << "\n";
 
 	string filename_extention = cgra_json_name.substr(cgra_json_name.find("."));
-	cout << "filename_extention = " << filename_extention << "\n";
+	LOG(JSONARCH)  << "filename_extention = " << filename_extention << "\n";
 	assert(filename_extention == ".json");
 	string filename_withoutext = cgra_json_name.substr(0, cgra_json_name.size() - 5);
 
@@ -598,9 +598,9 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 
 	top_desc = json;
 
-	cout << "TOP_ARCH :: begin %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
-	std::cout << setw(4) << top_desc << std::endl;
-	cout << "TOP_ARCH :: end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+	LOG(JSONARCH)  << "TOP_ARCH :: begin %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+	// std::cout<< setw(4) << top_desc << std::endl;
+	LOG(JSONARCH)  << "TOP_ARCH :: end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
 
 	//just creating CGRA instance for t
 	// ParseModule(json["ARCH"]["CGRA"], NULL, "CGRA_Ins", "CGRA", 0);
@@ -677,10 +677,10 @@ void ExpandPattern(json &input, json &connections, json &submods)
 
 		string to_port_str = el["TO_PORT"];
 
-		cout << "fromx = " << fromx << ",";
-		cout << "fromy = " << fromy << ",";
-		cout << "tox = " << tox << ",";
-		cout << "toy = " << toy << "\n";
+		LOG(JSONARCH)  << "fromx = " << fromx << ",";
+		LOG(JSONARCH)  << "fromy = " << fromy << ",";
+		LOG(JSONARCH)  << "tox = " << tox << ",";
+		LOG(JSONARCH)  << "toy = " << toy << "\n";
 
 		for (int y = 0; y < ydim; y++)
 		{
@@ -711,9 +711,9 @@ bool CGRAXMLCompile::CGRA::PreprocessPattern(json &top)
 	json submods;
 	json connections;
 
-	cout << "Before JSON Begin :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
-	std::cout << setw(4) << top << std::endl;
-	cout << "Before JSON End :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+	LOG(JSONARCH)  << "Before JSON Begin :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+	// std::cout << setw(4) << top << std::endl;
+	LOG(JSONARCH)  << "Before JSON End :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
 
 	for (auto &el : top["SUBMODS"])
 	{
@@ -743,9 +743,9 @@ bool CGRAXMLCompile::CGRA::PreprocessPattern(json &top)
 		top["CONNECTIONS"][key] = value;
 	}
 
-	cout << "After JSON Begin :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
-	std::cout << setw(4) << top << std::endl;
-	cout << "After JSON End :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+	LOG(JSONARCH)  << "After JSON Begin :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+	// std::cout << setw(4) << top << std::endl;
+	LOG(JSONARCH)  << "After JSON End :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
 }
 
 unordered_set<PE *> CGRAXMLCompile::CGRA::getAllPEList()
@@ -851,7 +851,7 @@ void CGRAXMLCompile::CGRA::insertGlobalOP(string OP, int lat)
 	{
 		if (lat != GlobalOPMinLatencyMap[OP])
 		{
-			cout << "op = " << OP << ", old lat = " << GlobalOPMinLatencyMap[OP] << ", new lat = " << lat << "\n";
+			LOG(JSONARCH)  << "op = " << OP << ", old lat = " << GlobalOPMinLatencyMap[OP] << ", new lat = " << lat << "\n";
 			if (lat < GlobalOPMinLatencyMap[OP])
 			{
 				GlobalOPMinLatencyMap[OP] = lat;
@@ -1194,7 +1194,7 @@ void CGRAXMLCompile::CGRA::PrintMappedJSON(string fileName)
 		output_json["CGRA_INS"]["TYPE"] = "CGRA";
 		string pe_name = pe->getName();
 		string spatial_pe_name = pe_name.substr(0, pe_name.size() - 3); //remove the last "-T0" component;
-		cout <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
+		LOG(JSONARCH)  <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
 		
 		PrintMappedJSONModule(pe, output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name]);
 	}
@@ -1223,7 +1223,7 @@ void CGRAXMLCompile::CGRA::PrintMappingForPillars(string fileName_i, string file
 		output_json["CGRA_INS"]["TYPE"] = "CGRA";
 		string pe_name = pe->getName();
 		string spatial_pe_name = pe_name.substr(0, pe_name.size() - 3); //remove the last "-T0" component;
-		cout <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
+		LOG(JSONARCH)  <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
 
 		PrintMappedPillarsModule(pe, output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name], outFile_i);
 	}
