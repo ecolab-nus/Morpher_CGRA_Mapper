@@ -255,7 +255,7 @@ int main(int argn, char *argc[])
 
 #ifdef HIERARCHICAL
 		tempCGRA->analyzeTimeDist(tdi);
-		hm.skip_inter_or_intra = "INTRA";
+		hm.skip_inter_or_intra = "INTER";
 #endif
 
 		tempCGRA->max_hops = args.max_hops;

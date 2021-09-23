@@ -136,6 +136,8 @@ public:
 	//static int dx[dir]={1, 1, 0, -1, -1, -1, 0, 1};
 	//static int dy[dir]={0, 1, 1, 1, 0, -1, -1, -1};
 
+	std::set<std::pair<int,int>> astar_abstract_open_set; // open set generated from abstract aster routing
+
 
 private:
 	std::map<Port *, std::set<DFGNode *>> congestedPorts;

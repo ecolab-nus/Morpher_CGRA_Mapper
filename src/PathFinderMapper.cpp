@@ -44,23 +44,26 @@ namespace CGRAXMLCompile
 } /* namespace CGRAXMLCompile */
 
 struct hash_LatPort { 
-    size_t operator()(const pair<int, CGRAXMLCompile::Port*>& p) const
-    { 
-        auto hash1 = hash<int>{}(p.first); 
-        auto hash2 = hash<CGRAXMLCompile::Port*>{}(p.second); 
-        return hash1 ^ hash2; 
-    } 
+	size_t operator()(const pair<int, CGRAXMLCompile::Port*>& p) const
+	{
+		auto hash1 = hash<int>{}(p.first);
+		auto hash2 = hash<CGRAXMLCompile::Port*>{}(p.second);
+		return hash1 ^ hash2;
+	}
 }; 
 
 bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
-														  LatPort end, DataPath *endDP, std::vector<LatPort> &path, int &cost, DFGNode *node,
-														  std::map<Port *, std::set<DFGNode *>> &mutexPaths, DFGNode *currNode)
+		LatPort end, DataPath *endDP, std::vector<LatPort> &path, int &cost, DFGNode *node,
+		std::map<Port *, std::set<DFGNode *>> &mutexPaths, DFGNode *currNode)
 {
 
 	//	std::cout << "LeastCoastPath started with start=" << start->getFullName() << " to end=" << end->getFullName() << "\n";
 	std::unordered_map<LatPort, int, hash_LatPort> cost_to_port;
 	std::unordered_map<LatPort, LatPort, hash_LatPort> cameFrom;
 	std::unordered_map<LatPort, int, hash_LatPort> curr_hops_to_port;
+
+	bool open_set_limit_1 = true;// openset contains the neighbors of original abstract astart search openset
+	bool open_set_limit_2 = false;//limit openset to original abstract astart search openset (this cannot be true if limit 1 is false)
 
 	std::vector<LatPort> openSet;
 
@@ -76,6 +79,36 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 	int latDiff = end.first - start.first;
 	if (latDiff < II)
 		lessthanII = true;
+
+	/** ASTAR abstract open set ****/
+	if(open_set_limit_1){
+		AstarShortestPath(start,end); // does not return path since we only need the open set
+
+		std::pair<int, int> start_xy, end_xy;
+		start_xy.first = start.second->getPE()->getPosition_X();
+		start_xy.second = start.second->getPE()->getPosition_Y();
+		end_xy.first = end.second->getPE()->getPosition_X();
+		end_xy.second = end.second->getPE()->getPosition_Y();
+		astar_abstract_open_set.clear();
+
+		//mappingLog5<<"OPENSET:\n";
+		for(int y=0;y<start.second->getPE()->getCGRA()->get_y_max_clustered();y++)
+		{
+			for(int x=0;x<start.second->getPE()->getCGRA()->get_x_max_clustered();x++)
+			{
+				if(closed_nodes_map[x][y]==1){
+					//mappingLog5 << x <<"," << y << "\n";
+					astar_abstract_open_set.insert(std::pair<int,int>(x,y));
+				}
+			}
+		}
+
+		//cout << "start x,y :" << start.second->getPE()->getPosition_X() <<"," <<start.second->getPE()->getPosition_Y() << "  end x,y " <<end.second->getPE()->getPosition_X() <<"," <<end.second->getPE()->getPosition_Y() << "\n";
+		//cout << "openset size:" << astar_abstract_open_set.size() << "\n";
+		//assert(shortest_path_route!="");
+		assert(astar_abstract_open_set.size() > 0);
+	}
+	/**************/
 
 	struct port_heuristic
 	{
@@ -222,130 +255,185 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 
 		//		std::cout << "nextPorts size = " << nextPorts.size() << "\n";
 		int q_len = q.size();
-
-		for (LatPort nextLatPort : nextPorts)
-		{
-			Port *nextPort = nextLatPort.second;
-			openSet.push_back(nextLatPort);
-
-			if (nextLatPort.first > end.first)
-				continue; //continue if the next port has higher latency
-			assert(nextLatPort.first - currPort.first <= 1);
-
-
-			//visiting the past port but if the latency is different then its not usable
-			//need to check whether its visited on the same path
-			//				if(std::find(paths[currPort].begin(),paths[currPort].end(),nextPort) != paths[currPort].end()){
-			//					continue;
-			//				}
-			//				assert(paths.find(currPort)!=paths.end());
-			//				assert(paths[currPort].size() == pathsLatPort[currPort].size());
-
-			if (!lessthanII)
+		int currPort_x = currPort.second->getPE()->getPosition_X();
+		int currPort_y = currPort.second->getPE()->getPosition_Y();
+		bool currport_is_in_abstract_open_set = false;
+		if(open_set_limit_1){
+			currport_is_in_abstract_open_set = (astar_abstract_open_set.find(std::pair<int,int>(currPort_x, currPort_y)) != astar_abstract_open_set.end());
+		}
+		else{
+			currport_is_in_abstract_open_set = true;
+		}
+		if(currport_is_in_abstract_open_set){
+			for (LatPort nextLatPort : nextPorts)
 			{
-				if (currPath->find(nextPort) != currPath->end())
-				{
+
+				int nextPort_x = nextLatPort.second->getPE()->getPosition_X();
+				int nextPort_y = nextLatPort.second->getPE()->getPosition_Y();
+				bool nextPort_is_in_abstract_open_set = (astar_abstract_open_set.find(std::pair<int,int>(nextPort_x, nextPort_y)) != astar_abstract_open_set.end());
+				if(nextPort_is_in_abstract_open_set==false && open_set_limit_2)
 					continue;
-				}
-				for (Port *cp : nextPort->getMod()->getConflictPorts(nextPort))
+
+				Port *nextPort = nextLatPort.second;
+				openSet.push_back(nextLatPort);
+
+				if (nextLatPort.first > end.first)
+					continue; //continue if the next port has higher latency
+				assert(nextLatPort.first - currPort.first <= 1);
+
+
+				//visiting the past port but if the latency is different then its not usable
+				//need to check whether its visited on the same path
+				//				if(std::find(paths[currPort].begin(),paths[currPort].end(),nextPort) != paths[currPort].end()){
+				//					continue;
+				//				}
+				//				assert(paths.find(currPort)!=paths.end());
+				//				assert(paths[currPort].size() == pathsLatPort[currPort].size());
+
+				if (!lessthanII)
 				{
-					if (currPath->find(cp) != currPath->end())
+					if (currPath->find(nextPort) != currPath->end())
 					{
 						continue;
 					}
-				}
-			}
-
-			if (newNodeDPOutCP.find(nextPort) != newNodeDPOutCP.end())
-			{
-				continue;
-			}
-
-			if (endPortCP.find(nextPort) != endPortCP.end())
-			{
-				continue;
-			}
-
-			//				NodeLat nl = std::make_pair(node,nextLatPort.first);
-			//				if(conflictedPorts[nextPort].find(nl) != conflictedPorts[nextPort].end()){
-			//					continue;
-			//				}
-
-			//				bool isNextPortFree=false;
-			//				bool isNextPortMutex=false;
-			//				if(enableMutexPaths){
-			//					if(nextPort->getNode()==NULL){
-			//						isNextPortFree=true;
-			//					}
-			//					else if(dfg->mutexBBs[nextPort->getNode()->BB].find(node->BB)!=dfg->mutexBBs[nextPort->getNode()->BB].end()){
-			//						// next BB is mutually exclusive with current nodes BB, then this can be mapped.
-			//						isNextPortFree=true;
-			//						isNextPortMutex=true;
-			//						mutexPaths[nextPort].insert(nextPort->getNode());
-			//						mutexPaths[nextPort].insert(node);
-			//					}
-			//				}
-			//				else{
-			//					if(nextPort->getNode()==NULL){
-			//						isNextPortFree=true;
-			//					}
-			//				}
-
-			if (currPort.second->getMod()->regCons[std::make_pair(currPort.second, nextLatPort.second)])
-			{
-				assert(nextLatPort.first != currPort.first);
-			}
-
-			bool isRegConType1 = currPort.second->getName().find("REG_O") != std::string::npos &&
-								 nextLatPort.second->getName().find("REG_I") != std::string::npos;
-			bool isRegConType2 = currPort.second->getName().find("_RO") != std::string::npos &&
-								 nextLatPort.second->getName().find("_RI") != std::string::npos;
-
-			if (isRegConType1 || isRegConType2)
-			{
-				// std::cout << "src=" << currPort.second->getFullName() << ",dest=" << nextLatPort.second->getFullName() << "\n";
-				if (nextLatPort.first == currPort.first)
-				{
-					nextLatPort.first = nextLatPort.first + 1;
-				}
-			}
-
-			if (true)
-			{ // unmapped port
-				if (detailedDebug)
-					std::cout << "\tnextPort=" << nextPort->getFullName() << ",";
-				if (detailedDebug)
-					std::cout << "latency = " << nextLatPort.first << ",";
-				int nextPortCost = cost_to_port[currPort] + calculateCost(currPort, nextLatPort, end);
-			
-
-				if (nextPort->getNode() == node)
-				{
-					nextPortCost = cost_to_port[currPort];
+					for (Port *cp : nextPort->getMod()->getConflictPorts(nextPort))
+					{
+						if (currPath->find(cp) != currPath->end())
+						{
+							continue;
+						}
+					}
 				}
 
-				if (checkRecParentViolation(currNode, nextLatPort))
+				if (newNodeDPOutCP.find(nextPort) != newNodeDPOutCP.end())
 				{
-					std::cout << "Port is not inserted, since it violated recurrence parent..\n";
 					continue;
 				}
-				if (detailedDebug)
-					std::cout << "cost=" << nextPortCost << "\n";
-				//					if(isNextPortMutex){
-				//						//no cost is added in using mutually exclusive routes
-				//						nextPortCost = cost_to_port[currPort];
-				//					}
 
-				if (nextPortCost < cost_to_port[currPort])
+				if (endPortCP.find(nextPort) != endPortCP.end())
 				{
-					std::cout << "nextPortCost = " << nextPortCost << "\n";
-					std::cout << "cost_to_port[currPort] = " << cost_to_port[currPort] << "\n";
+					continue;
 				}
-				assert(nextPortCost >= cost_to_port[currPort]);
 
-				if (cost_to_port.find(nextLatPort) != cost_to_port.end())
+				//				NodeLat nl = std::make_pair(node,nextLatPort.first);
+				//				if(conflictedPorts[nextPort].find(nl) != conflictedPorts[nextPort].end()){
+				//					continue;
+				//				}
+
+				//				bool isNextPortFree=false;
+				//				bool isNextPortMutex=false;
+				//				if(enableMutexPaths){
+				//					if(nextPort->getNode()==NULL){
+				//						isNextPortFree=true;
+				//					}
+				//					else if(dfg->mutexBBs[nextPort->getNode()->BB].find(node->BB)!=dfg->mutexBBs[nextPort->getNode()->BB].end()){
+				//						// next BB is mutually exclusive with current nodes BB, then this can be mapped.
+				//						isNextPortFree=true;
+				//						isNextPortMutex=true;
+				//						mutexPaths[nextPort].insert(nextPort->getNode());
+				//						mutexPaths[nextPort].insert(node);
+				//					}
+				//				}
+				//				else{
+				//					if(nextPort->getNode()==NULL){
+				//						isNextPortFree=true;
+				//					}
+				//				}
+
+				if (currPort.second->getMod()->regCons[std::make_pair(currPort.second, nextLatPort.second)])
 				{
-					if (cost_to_port[nextLatPort] > nextPortCost)
+					assert(nextLatPort.first != currPort.first);
+				}
+
+				bool isRegConType1 = currPort.second->getName().find("REG_O") != std::string::npos &&
+						nextLatPort.second->getName().find("REG_I") != std::string::npos;
+				bool isRegConType2 = currPort.second->getName().find("_RO") != std::string::npos &&
+						nextLatPort.second->getName().find("_RI") != std::string::npos;
+
+				if (isRegConType1 || isRegConType2)
+				{
+					// std::cout << "src=" << currPort.second->getFullName() << ",dest=" << nextLatPort.second->getFullName() << "\n";
+					if (nextLatPort.first == currPort.first)
+					{
+						nextLatPort.first = nextLatPort.first + 1;
+					}
+				}
+
+				if (true)
+				{ // unmapped port
+					if (detailedDebug)
+						std::cout << "\tnextPort=" << nextPort->getFullName() << ",";
+					if (detailedDebug)
+						std::cout << "latency = " << nextLatPort.first << ",";
+					int nextPortCost = cost_to_port[currPort] + calculateCost(currPort, nextLatPort, end);
+
+
+					if (nextPort->getNode() == node)
+					{
+						nextPortCost = cost_to_port[currPort];
+					}
+
+					if (checkRecParentViolation(currNode, nextLatPort))
+					{
+						std::cout << "Port is not inserted, since it violated recurrence parent..\n";
+						continue;
+					}
+					if (detailedDebug)
+						std::cout << "cost=" << nextPortCost << "\n";
+					//					if(isNextPortMutex){
+					//						//no cost is added in using mutually exclusive routes
+					//						nextPortCost = cost_to_port[currPort];
+					//					}
+
+					if (nextPortCost < cost_to_port[currPort])
+					{
+						std::cout << "nextPortCost = " << nextPortCost << "\n";
+						std::cout << "cost_to_port[currPort] = " << cost_to_port[currPort] << "\n";
+					}
+					assert(nextPortCost >= cost_to_port[currPort]);
+
+					if (cost_to_port.find(nextLatPort) != cost_to_port.end())
+					{
+						if (cost_to_port[nextLatPort] > nextPortCost)
+						{
+							cost_to_port[nextLatPort] = nextPortCost;
+							cameFrom[nextLatPort] = currPort;
+
+							if(nextLatPort.first == currPort.first && nextLatPort.second->getPE() != currPort.second->getPE()){
+								//next latport is inter-PE connection and it is not increasing latency
+								//therefore it should be a hop
+								curr_hops_to_port[nextLatPort] = curr_hops_to_port[currPort] + 1;
+							}
+							else if(nextLatPort.first != currPort.first){
+								curr_hops_to_port[nextLatPort] = 0;
+							}
+							else{
+								curr_hops_to_port[nextLatPort] = curr_hops_to_port[currPort];
+							}
+
+							//							paths[nextLatPort]=paths[currPort];
+							//							paths[nextLatPort].insert(nextLatPort.second);
+							//							currPath.insert(currPort.second);
+
+							//							pathsLatPort[nextLatPort]=pathsLatPort[currPort];
+							//							pathsLatPort[nextLatPort].push_back(currPort);
+							if (!lessthanII)
+							{
+								std::shared_ptr<std::unordered_set<Port *>> newPath = std::shared_ptr<std::unordered_set<Port *>>(new std::unordered_set<Port *>(*currPath));
+								newPath->insert(currPort.second);
+								port_heuristic ph(nextLatPort, end, nextPortCost, newPath);
+								ph.pathVec = std::shared_ptr<std::vector<LatPort>>(new std::vector<LatPort>(*currPathVec));
+								ph.pathVec->push_back(currPort);
+								q.push(ph);
+							}
+						}
+						else
+						{
+							if (detailedDebug)
+								std::cout << "Port is not inserted..\n";
+						}
+					}
+					else
 					{
 						cost_to_port[nextLatPort] = nextPortCost;
 						cameFrom[nextLatPort] = currPort;
@@ -362,12 +450,15 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 							curr_hops_to_port[nextLatPort] = curr_hops_to_port[currPort];
 						}	
 
-						//							paths[nextLatPort]=paths[currPort];
-						//							paths[nextLatPort].insert(nextLatPort.second);
-						//							currPath.insert(currPort.second);
+						//						assert(paths.find(nextLatPort)==paths.end());
+						//						paths[nextLatPort]=paths[currPort];
+						//						paths[nextLatPort].insert(nextLatPort.second);
+						//						paths[nextLatPort].insert(currPort.second);
+						//						currPath.insert(currPort.second);
 
-						//							pathsLatPort[nextLatPort]=pathsLatPort[currPort];
-						//							pathsLatPort[nextLatPort].push_back(currPort);
+						//						pathsLatPort[nextLatPort]=pathsLatPort[currPort];
+						//						pathsLatPort[nextLatPort].push_back(currPort);
+
 						if (!lessthanII)
 						{
 							std::shared_ptr<std::unordered_set<Port *>> newPath = std::shared_ptr<std::unordered_set<Port *>>(new std::unordered_set<Port *>(*currPath));
@@ -377,59 +468,18 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 							ph.pathVec->push_back(currPort);
 							q.push(ph);
 						}
-					}
-					else
-					{
-						if (detailedDebug)
-							std::cout << "Port is not inserted..\n";
+						else
+						{
+							q.push(port_heuristic(nextLatPort, end, nextPortCost));
+						}
 					}
 				}
 				else
 				{
-					cost_to_port[nextLatPort] = nextPortCost;
-					cameFrom[nextLatPort] = currPort;
-
-					if(nextLatPort.first == currPort.first && nextLatPort.second->getPE() != currPort.second->getPE()){
-						//next latport is inter-PE connection and it is not increasing latency
-						//therefore it should be a hop
-						curr_hops_to_port[nextLatPort] = curr_hops_to_port[currPort] + 1;
-					}
-					else if(nextLatPort.first != currPort.first){
-						curr_hops_to_port[nextLatPort] = 0;
-					}	
-					else{
-						curr_hops_to_port[nextLatPort] = curr_hops_to_port[currPort];
-					}	
-
-					//						assert(paths.find(nextLatPort)==paths.end());
-					//						paths[nextLatPort]=paths[currPort];
-					//						paths[nextLatPort].insert(nextLatPort.second);
-					//						paths[nextLatPort].insert(currPort.second);
-					//						currPath.insert(currPort.second);
-
-					//						pathsLatPort[nextLatPort]=pathsLatPort[currPort];
-					//						pathsLatPort[nextLatPort].push_back(currPort);
-
-					if (!lessthanII)
-					{
-						std::shared_ptr<std::unordered_set<Port *>> newPath = std::shared_ptr<std::unordered_set<Port *>>(new std::unordered_set<Port *>(*currPath));
-						newPath->insert(currPort.second);
-						port_heuristic ph(nextLatPort, end, nextPortCost, newPath);
-						ph.pathVec = std::shared_ptr<std::vector<LatPort>>(new std::vector<LatPort>(*currPathVec));
-						ph.pathVec->push_back(currPort);
-						q.push(ph);
-					}
-					else
-					{
-						q.push(port_heuristic(nextLatPort, end, nextPortCost));
-					}
+					assert(false);
+					if (detailedDebug)
+						std::cout << "\t[MAPPED=" << nextPort->getNode()->idx << "]nextPort=" << nextPort->getFullName() << "\n";
 				}
-			}
-			else
-			{
-				assert(false);
-				if (detailedDebug)
-					std::cout << "\t[MAPPED=" << nextPort->getNode()->idx << "]nextPort=" << nextPort->getFullName() << "\n";
 			}
 		}
 		if (q.size() == q_len)
@@ -550,40 +600,49 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 	mappingLog5 << start.second->getPE()->X << "," << start.second->getPE()->Y << ","<< end.second->getPE()->X << "," << end.second->getPE()->Y << "\n";
 	mappingLog5<<"PATH:\n";
 	for (LatPort lp : path)
-				{
+	{
 		mappingLog5 << lp.second->getPE()->X <<"," << lp.second->getPE()->Y <<"," << lp.first << "\n";
 
-			}
+	}
 
-	//mappingLog5<<"OPENSET:\n";
-	//for (LatPort lp : openSet)
-		//		{
-		//mappingLog5 << lp.second->getPE()->X <<"," << lp.second->getPE()->Y <<"," << lp.first << "\n";
+	mappingLog5<<"OPENSET:\n";
+	for (LatPort lp : openSet)
+	{
+		mappingLog5 << lp.second->getPE()->X <<"," << lp.second->getPE()->Y <<"," << lp.first << "\n";
 
-			//	}
+	}
 
-	string shortest_path_route = AstarShortestPath(start,end);
-	int j; char c;
-	mappingLog5<<"SHORTESTPATH:\n";
-    int x=start.second->getPE()->getPosition_X();
-    int y=start.second->getPE()->getPosition_Y();
-	for(int i=0;i<shortest_path_route.length();i++)
-	        {
-	            c =shortest_path_route.at(i);
-	            j=atoi(&c);
-	            x=x+dx[j];
-	            y=y+dy[j];
-	            mappingLog5 << x <<"," << y << "\n";
-	        }
-
+	//	string shortest_path_route = AstarShortestPath(start,end);
+	//	int j; char c;
+	////	mappingLog5<<"SHORTESTPATH:\n";
+	////    int x=start.second->getPE()->getPosition_X();
+	////    int y=start.second->getPE()->getPosition_Y();
+	////	for(int i=0;i<shortest_path_route.length();i++)
+	////	        {
+	////	            c =shortest_path_route.at(i);
+	////	            j=atoi(&c);
+	////	            x=x+dx[j];
+	////	            y=y+dy[j];
+	////	            mappingLog5 << x <<"," << y << "\n";
+	////	        }
+	//	mappingLog5<<"OPENSET:\n";
+	//	for(int y=0;y<start.second->getPE()->getCGRA()->get_y_max_clustered();y++)
+	//		    {
+	//		        for(int x=0;x<start.second->getPE()->getCGRA()->get_x_max_clustered();x++)
+	//		        {
+	//		            if(closed_nodes_map[x][y]==1){
+	//		            	mappingLog5 << x <<"," << y << "\n";
+	//		            }
+	//		        }
+	//		    }
 
 
 	return true;
 }
 
 bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
-													   std::priority_queue<dest_with_cost> &estimatedRoutes,
-													   DFGNode **failedNode)
+		std::priority_queue<dest_with_cost> &estimatedRoutes,
+		DFGNode **failedNode)
 {
 
 	std::map<DFGNode *, std::vector<Port *>> possibleStarts;
@@ -653,20 +712,20 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	for (PE *currPE : allPEs)
 	{
 #ifdef HIERARCHICAL
-//				if( ((currPE->X <= 3)&&(currPE->Y <= 3)&&(node->TILE == 0))  || ((currPE->X > 3)&&(currPE->Y <= 3)&&(node->TILE == 1))
-//						|| ((currPE->X <= 3)&&(currPE->Y > 3)&&(node->TILE == 2))  || ((currPE->X > 3)&&(currPE->Y > 3)&&(node->TILE == 3)) ){
+		//				if( ((currPE->X <= 3)&&(currPE->Y <= 3)&&(node->TILE == 0))  || ((currPE->X > 3)&&(currPE->Y <= 3)&&(node->TILE == 1))
+		//						|| ((currPE->X <= 3)&&(currPE->Y > 3)&&(node->TILE == 2))  || ((currPE->X > 3)&&(currPE->Y > 3)&&(node->TILE == 3)) ){
 		bool map_on_this = false;
 		for(auto tile_name: node->CGRA_CLUSTERS){
 			if (currPE->tile_name == tile_name){
 				map_on_this = true;
 			}
 		}
-				if(map_on_this){
-					//Map on this tile
-				}
-				else{
-					continue;
-				}
+		if(map_on_this){
+			//Map on this tile
+		}
+		else{
+			continue;
+		}
 #endif
 		for (Module *submod : currPE->subModules)
 		{
@@ -695,7 +754,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 									}
 								}
 							}
-							
+
 							if (checkDPFree(dp, node, penalty))
 							{
 								//									if(dp->getMappedNode()==NULL){
@@ -750,7 +809,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::cout << "Tile = \n";
 	for(auto tile_name: node->CGRA_CLUSTERS){
 		std::cout << tile_name << "\t";
-			}
+	}
 	std::cout << "\n";
 #endif
 	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
@@ -782,14 +841,14 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 		bool pathFromParentExist = false;
 		bool pathExistMappedChild = false;
 		if (detailedDebug)
-				std::cout << "iteration:" << i << endl;
+			std::cout << "iteration:" << i << endl;
 		for (DataPath *dest : candidateDests)
 		{
 			int minLatDestVal_prime = minLatDests[dest] + ii * i;
-//					std::cout << "Candidate Dest =" ;
-//					std::cout << dest->getPE()->getName() << ".";
-//					std::cout << dest->getFU()->getName() << ".";
-//					std::cout << dest->getName() << "\n";
+			//					std::cout << "Candidate Dest =" ;
+			//					std::cout << dest->getPE()->getName() << ".";
+			//					std::cout << dest->getFU()->getName() << ".";
+			//					std::cout << dest->getName() << "\n";
 
 			//		std::map<DFGNode*,std::priority_queue<cand_src_with_cost>> parentStartLocs;
 			std::priority_queue<parent_cand_src_with_cost> parentStartLocs;
@@ -809,8 +868,8 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					}else{
 						std::cout << "Skipping intra edge.....\n";
 					}
-								continue;
-							}
+					continue;
+				}
 
 				Port *destPort = dest->getInPort(parent->getOPtype(node));
 				minLatDestVal = minLatDestVal_prime + parent->childNextIter[node] * ii;
@@ -824,8 +883,8 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					std::map<Port *, std::set<DFGNode *>> mutexPaths;
 					if (detailedDebug)
 						std::cout << "par Estimating Path" << startCand->getFullName() << "," << startCand->getLat() << ","
-								  << "--->" << destPort->getFullName() << "," << minLatDestVal << "," << ",parent_node = " << parent->idx
-								  << "\n";
+						<< "--->" << destPort->getFullName() << "," << minLatDestVal << "," << ",parent_node = " << parent->idx
+						<< "\n";
 
 					LatPort startCandLat = std::make_pair(startCand->getLat(), startCand);
 					assert(startCand->getLat() != -1);
@@ -853,17 +912,17 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					}
 
 					pathExist = pathExist & LeastCostPathAstar(startCandLat, destPortLat, dest, path, cost, parent, mutexPaths, node);
-//					if(pathExist && (startCand->getPE()->tile_name != destPort->getPE()->tile_name)){
-//						std::cout << "PATH:\n";
-//						for(LatPort port: path){
-//							std::cout << port.second->getFullName() <<"," << port.first<<"\n";
-//						}
-//						astar_path_print_count++;
-//						if(astar_path_print_count > 200){
-//						mappingLog5.close();
-//						exit(true);
-//						}
-//					}
+					//					if(pathExist && (startCand->getPE()->tile_name != destPort->getPE()->tile_name)){
+					//						std::cout << "PATH:\n";
+					//						for(LatPort port: path){
+					//							std::cout << port.second->getFullName() <<"," << port.first<<"\n";
+					//						}
+					//						astar_path_print_count++;
+					//						if(astar_path_print_count > 200){
+					//						mappingLog5.close();
+					//						exit(true);
+					//						}
+					//					}
 					path.clear();
 					if (!pathExist)
 					{
@@ -924,8 +983,8 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				std::map<Port *, std::set<DFGNode *>> mutexPaths;
 				if (detailedDebug)
 					std::cout << "already child Estimating Path" << destPort->getFullName() << "," << minLatDestVal + latency << ","
-							  << "--->" << childDestPort->getFullName() << "," << childDestPort->getLat() << "," << "exist_child = " << child->idx  
-							  << "\n";
+					<< "--->" << childDestPort->getFullName() << "," << childDestPort->getLat() << "," << "exist_child = " << child->idx
+					<< "\n";
 				if (detailedDebug)
 					std::cout << "lat = " << childDestPort->getLat() << ",PE=" << childDestPort->getMod()->getPE()->getName() << ",t=" << childDestPort->getMod()->getPE()->T << "\n";
 
@@ -980,8 +1039,8 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 }
 
 bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
-											 std::priority_queue<dest_with_cost> &estimatedRoutes,
-											 DFGNode **failedNode)
+		std::priority_queue<dest_with_cost> &estimatedRoutes,
+		DFGNode **failedNode)
 {
 
 	std::cout << "Route begin...\n";
@@ -1301,7 +1360,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 }
 
 int CGRAXMLCompile::PathFinderMapper::calculateCost(LatPort src,
-													LatPort next_to_src, LatPort dest)
+		LatPort next_to_src, LatPort dest)
 {
 
 	std::string srcName = src.second->getName();
@@ -1425,7 +1484,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 	bool mapSuccess = false;
 
-	std::string congestionInfoFileName = mappingLogFileName + ".congestion.info";
+	std::string congestionInfoFileName = mappingLogFileName + "_II="+std::to_string(this->cgra->get_t_max()) + ".congestion.info";
 	cout << "Opening congestion file : " << congestionInfoFileName << "!\n";
 	congestionInfoFile.open(congestionInfoFileName.c_str());
 	assert(congestionInfoFile.is_open());
@@ -1435,7 +1494,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 		std::string mappingLogFileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mapping.csv";
 		std::string mappingLog2FileName_withIter = mappingLog2FileName + "_Iter=" + std::to_string(i) + ".routeInfo.log";
-//#ifdef HIERARCHICAL
+		//#ifdef HIERARCHICAL
 		std::string mappingLog3FileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mappingwithlatency.csv";
 		std::string mappingLog4FileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mappingwithlatency.txt";
 		std::string mappingLog5FileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".astar_search.txt";
@@ -1473,15 +1532,15 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 			unmappedNodes.push(node);
 		}
 
-//		for (PE_abstract * pe: cgra->abstractPEgrid){
-//			cout << "\nPE:" << pe->X <<"," << pe->Y << "\n";
-//			cout << "Neighbors:\n";
-//			for (PE_abstract *npe: pe->neighbors){
-//				cout << "PE:" << npe->X <<"," << npe->Y << "\n";
-//			}
-//		}
+		//		for (PE_abstract * pe: cgra->abstractPEgrid){
+		//			cout << "\nPE:" << pe->X <<"," << pe->Y << "\n";
+		//			cout << "Neighbors:\n";
+		//			for (PE_abstract *npe: pe->neighbors){
+		//				cout << "PE:" << npe->X <<"," << npe->Y << "\n";
+		//			}
+		//		}
 
-//		exit(true);
+		//		exit(true);
 
 		std::cout << "MAP begin...\n";
 
@@ -1724,9 +1783,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog2 << "Map Success!.\n";
 		this->printMappingLog();
 		this->printMappingLog2();
-//#ifdef HIERARCHICAL
+		//#ifdef HIERARCHICAL
 		this->printMappingLog3();
-//#endif
+		//#endif
 
 		// by Yujie
 		// cgra->PrintMappedJSON(fNameLog1 + cgra->getCGRAName() + "mapping.json");
@@ -1770,7 +1829,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 }
 
 void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode *src, DFGNode *dest,
-												  std::vector<LatPort> path)
+		std::vector<LatPort> path)
 {
 
 	std::cout << "assigning path from:" << src->idx << " to:" << dest->idx << "\n";
@@ -2129,7 +2188,7 @@ bool CGRAXMLCompile::PathFinderMapper::checkRegALUConflicts()
 			std::cout << "\n";
 		}
 		std::cout << "t=" << t << ","
-			  << "timeslice=" << timeslice_count << "\n";
+				<< "timeslice=" << timeslice_count << "\n";
 	}
 }
 
@@ -2249,7 +2308,7 @@ bool CGRAXMLCompile::PathFinderMapper::checkDPFree(DataPath *dp, DFGNode *node, 
 }
 
 bool CGRAXMLCompile::PathFinderMapper::updateConflictedTimeSteps(int timeStep,
-																 int conflicts)
+		int conflicts)
 {
 
 	int presentConflicts = conflictedTimeStepMap[timeStep];
@@ -2333,12 +2392,12 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 			{
 				std::cout << n->idx << ",";
 				for (int i=0;i< dfg->nodeList.size();i++)
+				{
+					if (dfg->nodeList[i].idx == n->idx)
 					{
-						if (dfg->nodeList[i].idx == n->idx)
-						{
-							dfg->nodeList[i].in_rec_cycle = true;
-						}
+						dfg->nodeList[i].in_rec_cycle = true;
 					}
+				}
 			}
 			RecCycles[BackEdge(be.parent, be.child)].insert(n);
 		}
@@ -2372,13 +2431,13 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 					//dfg->findNode(n->idx)->in_rec_cycle=true;
 
 					for (int i=0;i< dfg->nodeList.size();i++)
+					{
+						if (dfg->nodeList[i].idx == n->idx)
 						{
-							if (dfg->nodeList[i].idx == n->idx)
-							{
-								dfg->nodeList[i].in_rec_cycle = true;
-//								std::cout << "UPDATING";
-							}
+							dfg->nodeList[i].in_rec_cycle = true;
+							//								std::cout << "UPDATING";
 						}
+					}
 				}
 				RecCyclesLS[BackEdge(be_temp.parent, be_temp.child)].insert(n);
 			}
@@ -2400,14 +2459,14 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 		std::cout << "BE CHILD = " << be.child->idx << "\n";
 
 		std::cout << "Ancestory : "
-				  << "\n";
+				<< "\n";
 		beparentAncestors[be.parent] = dfg->getAncestoryASAP(be.parent);
 		bechildAncestors[be.child] = dfg->getAncestoryASAP(be.child);
 		std::cout << "\n";
 
 		if (std::find(beparentAncestors[be.parent].begin(),
-					  beparentAncestors[be.parent].end(),
-					  be.child) == beparentAncestors[be.parent].end())
+				beparentAncestors[be.parent].end(),
+				be.child) == beparentAncestors[be.parent].end())
 		{
 			std::cout << "BE CHILD does not belong BE Parent's Ancestory\n";
 
@@ -2673,13 +2732,13 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityALAP()
 		std::cout << "BE CHILD = " << be.child->idx << "\n";
 
 		std::cout << "Ancestory : "
-				  << "\n";
+				<< "\n";
 		beparentAncestors[be.parent] = dfg->getAncestoryALAP(be.parent);
 		std::cout << "\n";
 
 		if (std::find(beparentAncestors[be.parent].begin(),
-					  beparentAncestors[be.parent].end(),
-					  be.child) == beparentAncestors[be.parent].end())
+				beparentAncestors[be.parent].end(),
+				be.child) == beparentAncestors[be.parent].end())
 		{
 			std::cout << "BE CHILD does not belong BE Parent's Ancestory\n";
 		}
@@ -2801,7 +2860,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityALAP()
 }
 
 int CGRAXMLCompile::PathFinderMapper::getlatMinStartsPHI(const DFGNode *currNode,
-														 const std::map<DFGNode *, std::vector<Port *>> &possibleStarts)
+		const std::map<DFGNode *, std::vector<Port *>> &possibleStarts)
 {
 
 	int min;
@@ -2930,7 +2989,7 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 			if (be.second->rootDP != NULL)
 			{
 				std::cout << "RecSet(" << be.first->idx << "," << be.second->idx << ")"
-						  << " : ";
+						<< " : ";
 				for (DFGNode *n : rec_nodes)
 				{
 					std::cout << n->idx << ",";
@@ -2950,7 +3009,7 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 			if (be.second->rootDP != NULL)
 			{
 				std::cout << "RecSet(" << be.first->idx << "," << be.second->idx << ")"
-						  << " : ";
+						<< " : ";
 				for (DFGNode *n : rec_nodes)
 				{
 					std::cout << n->idx << ",";
@@ -3011,24 +3070,24 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 		for (std::pair<int, std::set<DFGNode *>> pair : asapOrder)
 		{
 			int maxOplatency = 0;
-//			std::cout << "ops : ";
+			//			std::cout << "ops : ";
 			for (DFGNode *n : pair.second)
 			{
-//				std::cout << "idx=" << n->idx << "[" << n->op << "]"
-//						  << "(" << OpLatency[n->op] << ")"
-//						  << ",";
+				//				std::cout << "idx=" << n->idx << "[" << n->op << "]"
+				//						  << "(" << OpLatency[n->op] << ")"
+				//						  << ",";
 				int new_lat = OpLatency[n->op];
 				if (new_lat > maxOplatency)
 					maxOplatency = new_lat;
 			}
-//			std::cout << "\n";
-//			std::cout << "ASAP=" << pair.first << ",OPLAT=" << maxOplatency << "\n";
+			//			std::cout << "\n";
+			//			std::cout << "ASAP=" << pair.first << ",OPLAT=" << maxOplatency << "\n";
 
 			if ((bpi.dsMEMfound == false) && (node->ASAP < pair.first))
 			{
 				if (maxOplatency == 2)
 				{
-//					std::cout << "MEM FOUND SET TRUE!\n";
+					//					std::cout << "MEM FOUND SET TRUE!\n";
 					bpi.dsMEMfound = true;
 					bpi.uptoMEMops = upstreamOPs;
 				}
@@ -3050,9 +3109,9 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 			int asap = (*rit).first;
 			std::cout << "asap:" << asap <<"\n";
 			for (DFGNode *n : (*rit).second)
-						{
+			{
 				std::cout << n->idx << "\t";
-						}
+			}
 			std::cout <<"\n";
 			asapMaxLat[asap] = prevLat - asapMaxOpLat[asap];
 
@@ -3083,7 +3142,7 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 
 	if (maxLat != LARGE_VALUE)
 	{
-//		std::cout << "getMaxLatencyBE :: node=" << node->idx << " maxLat = " << maxLat << "\n";
+		//		std::cout << "getMaxLatencyBE :: node=" << node->idx << " maxLat = " << maxLat << "\n";
 		//		assert(false);
 	}
 	std::cout << "getMaxLatencyBE done!\n";
@@ -3144,7 +3203,7 @@ void CGRAXMLCompile::PathFinderMapper::addPseudoEdgesOrphans(DFG *dfg)
 }
 
 std::vector<CGRAXMLCompile::DFGNode *> CGRAXMLCompile::PathFinderMapper::getLongestDFGPath(
-	DFGNode *src, DFGNode *dest)
+		DFGNode *src, DFGNode *dest)
 {
 
 	std::vector<DFGNode *> result;
@@ -3218,7 +3277,7 @@ int CGRAXMLCompile::PathFinderMapper::getFreeMEMPeDist(PE *currPE)
 }
 
 std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modifyMaxLatCandDest(
-	std::map<DataPath *, int> candDestIn, DFGNode *node, bool &changed)
+		std::map<DataPath *, int> candDestIn, DFGNode *node, bool &changed)
 {
 
 	std::vector<DataPath *> res;
@@ -3260,9 +3319,9 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 				//				if(pair.second.isLDST == false){
 				PE *bePE = pair.first->getPE();
 #ifdef NOTIMEDISTANCEFUNC
-				 int dx = std::abs(bePE->X - pe->X);
-				 int dy = std::abs(bePE->Y - pe->Y);
-				 int dist = dx + dy;
+				int dx = std::abs(bePE->X - pe->X);
+				int dy = std::abs(bePE->Y - pe->Y);
+				int dist = dx + dy;
 #else
 				int dist = cgra->getQuickTimeDistBetweenPEs(bePE,pe);
 #endif
@@ -3276,20 +3335,20 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 				if (pair.second.dsMEMfound)
 				{
 #ifdef NOTIMEDISTANCEFUNC
-				    dist = pe->X;
+					dist = pe->X;
 #else
 					dist = cgra->getTimeClosestMEMPE(pe);
 #endif
 					dsOps = pair.second.uptoMEMops;
-//					std::cout << "**MEM FOUND DOWN**\n";
+					//					std::cout << "**MEM FOUND DOWN**\n";
 				}
 
 				if (maxLat != LARGE_VALUE)
 				{
-//					std::cout << "pe=" << pe->getName() << ",";
-//					std::cout << "dist=" << dist << ",";
-//					std::cout << "slack=" << pair.second.lat - maxLat << ",";
-//					std::cout << "downstreamOps=" << dsOps << "\n";
+					//					std::cout << "pe=" << pe->getName() << ",";
+					//					std::cout << "dist=" << dist << ",";
+					//					std::cout << "slack=" << pair.second.lat - maxLat << ",";
+					//					std::cout << "downstreamOps=" << dsOps << "\n";
 				}
 
 				int lat_slack = pair.second.lat - maxLat;
@@ -3495,384 +3554,384 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 	for (int t = 0; t < cgra->get_t_max(); ++t) {
 		vector<PE *> peList = this->cgra->getSpatialPEList(t);
 		//	for (int y = 0; y < cgra->get_y_max(); ++y) {
-			//		for (int x = 0; x < cgra->get_x_max(); ++x) {
-				int iter=0;
-				for (PE *pe : peList)
-				{
+		//		for (int x = 0; x < cgra->get_x_max(); ++x) {
+		int iter=0;
+		for (PE *pe : peList)
+		{
 
-					Port* northo = pe->getOutPort("NORTH_O"); assert(northo);
-					Port* easto = pe->getOutPort("EAST_O"); assert(easto);
-					Port* westo = pe->getOutPort("WEST_O"); assert(westo);
-					Port* southo = pe->getOutPort("SOUTH_O"); assert(southo);
+			Port* northo = pe->getOutPort("NORTH_O"); assert(northo);
+			Port* easto = pe->getOutPort("EAST_O"); assert(easto);
+			Port* westo = pe->getOutPort("WEST_O"); assert(westo);
+			Port* southo = pe->getOutPort("SOUTH_O"); assert(southo);
 
-					DFGNode* north_o_node = northo->getNode();
-					DFGNode* east_o_node = easto->getNode();
-					DFGNode* west_o_node = westo->getNode();
-					DFGNode* south_o_node = southo->getNode();
+			DFGNode* north_o_node = northo->getNode();
+			DFGNode* east_o_node = easto->getNode();
+			DFGNode* west_o_node = westo->getNode();
+			DFGNode* south_o_node = southo->getNode();
 
-					//RegFile* RFT = static_cast<RegFile*>(pe->getSubMod("RF0")); assert(RFT);
-					FU* fu = static_cast<FU*>(pe->getSubMod("FU0")); assert(fu);
-					DataPath* dp = static_cast<DataPath*>(fu->getSubMod("DP0")); assert(dp);
+			//RegFile* RFT = static_cast<RegFile*>(pe->getSubMod("RF0")); assert(RFT);
+			FU* fu = static_cast<FU*>(pe->getSubMod("FU0")); assert(fu);
+			DataPath* dp = static_cast<DataPath*>(fu->getSubMod("DP0")); assert(dp);
 
-					DFGNode* currentMappedOP = dp->getMappedNode();
-					//}
+			DFGNode* currentMappedOP = dp->getMappedNode();
+			//}
 
-					int prev_t;
-					int X;
-					int Y;
-					X = pe->X;
-					Y = pe->Y;
-					prev_t = (t + 2*cgra->get_t_max() - 1)%cgra->get_t_max();
-					vector<PE *> prevPEList = this->cgra->getSpatialPEList(prev_t);
-					//PE* prevPE = cgra->PEArr[prev_t][y][x];
-					PE* prevPE = prevPEList.at(iter);
-					FU* prevFU = static_cast<FU*>(prevPE->getSubMod("FU0")); assert(prevFU);
-					DataPath* prevDP = static_cast<DataPath*>(prevFU->getSubMod("DP0"));
-					DFGNode* mappedOP = prevDP->getMappedNode();
+			int prev_t;
+			int X;
+			int Y;
+			X = pe->X;
+			Y = pe->Y;
+			prev_t = (t + 2*cgra->get_t_max() - 1)%cgra->get_t_max();
+			vector<PE *> prevPEList = this->cgra->getSpatialPEList(prev_t);
+			//PE* prevPE = cgra->PEArr[prev_t][y][x];
+			PE* prevPE = prevPEList.at(iter);
+			FU* prevFU = static_cast<FU*>(prevPE->getSubMod("FU0")); assert(prevFU);
+			DataPath* prevDP = static_cast<DataPath*>(prevFU->getSubMod("DP0"));
+			DFGNode* mappedOP = prevDP->getMappedNode();
 
 
-					iter++;
-					//if(!north_o_node->op.empty())
-					//Port* northcon = [northo];
-					Module* mod =  westo->getMod();
-					DataPath *mod_dp = static_cast<DataPath *>(mod);
-					//				Port* i1_ip = fu->getInPort("DP0_I1"); assert(i1_ip);
-					//				Port* i2_ip = fu->getInPort("DP0_I2"); assert(i2_ip);
-					//				Port* p_ip = fu->getInPort("DP0_P"); assert(p_ip);
+			iter++;
+			//if(!north_o_node->op.empty())
+			//Port* northcon = [northo];
+			Module* mod =  westo->getMod();
+			DataPath *mod_dp = static_cast<DataPath *>(mod);
+			//				Port* i1_ip = fu->getInPort("DP0_I1"); assert(i1_ip);
+			//				Port* i2_ip = fu->getInPort("DP0_I2"); assert(i2_ip);
+			//				Port* p_ip = fu->getInPort("DP0_P"); assert(p_ip);
 
-					Port* i1_ip = dp->getInPort("I1"); assert(i1_ip);
-					Port* i2_ip = dp->getInPort("I2"); assert(i2_ip);
-					Port* p_ip = dp->getInPort("P"); assert(p_ip);
+			Port* i1_ip = dp->getInPort("I1"); assert(i1_ip);
+			Port* i2_ip = dp->getInPort("I2"); assert(i2_ip);
+			Port* p_ip = dp->getInPort("P"); assert(p_ip);
 
-					InsFormat insF;
-					//PE* prevPE = pe;
+			InsFormat insF;
+			//PE* prevPE = pe;
 
-					//XBar
-					if(north_o_node){
-						//	Port* In_n = mod->getJSONPort("NORTH_XBARI",true);
-						//Port* In_n = pe->getInPort("NORTH_I");
-						if(north_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
-								northo->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
-							insF.northo = "011";
-						}
-						else if(north_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
-								northo->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
-							insF.northo = "000";
-						}
-						else if(north_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
-								northo->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
-							insF.northo = "010";
-						}
-						else if(north_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
-								northo->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
-							insF.northo = "001";
-						}
-						else if(north_o_node == pe->getSingleRegPort("TREG_RI")->getNode() &&
-								northo->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
-							insF.northo = "101";
-						}
+			//XBar
+			if(north_o_node){
+				//	Port* In_n = mod->getJSONPort("NORTH_XBARI",true);
+				//Port* In_n = pe->getInPort("NORTH_I");
+				if(north_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+						northo->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+					insF.northo = "011";
+				}
+				else if(north_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
+						northo->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+					insF.northo = "000";
+				}
+				else if(north_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
+						northo->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+					insF.northo = "010";
+				}
+				else if(north_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+						northo->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+					insF.northo = "001";
+				}
+				else if(north_o_node == pe->getSingleRegPort("TREG_RI")->getNode() &&
+						northo->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+					insF.northo = "101";
+				}
 
-						else if(north_o_node == fu->getOutPort("DP0_T")->getNode() && northo->getLat() == fu->getOutPort("DP0_T")->getLat()){
-							insF.northo = "100";
-						}
-						else{
-							std::cout << "Port : " << northo->getFullName() << ",node = " << northo->getNode()->idx << ", source not found!\n";
-							assert(false);
-							insF.northo = "111";
-						}
+				else if(north_o_node == fu->getOutPort("DP0_T")->getNode() && northo->getLat() == fu->getOutPort("DP0_T")->getLat()){
+					insF.northo = "100";
+				}
+				else{
+					std::cout << "Port : " << northo->getFullName() << ",node = " << northo->getNode()->idx << ", source not found!\n";
+					assert(false);
+					insF.northo = "111";
+				}
+			}
+
+
+			else{
+				insF.northo = "111";
+			}
+
+			if(east_o_node){
+				if(east_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+						easto->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+					insF.easto = "011";
+				}
+				else if(east_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
+						easto->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+					insF.easto = "000";
+				}
+				else if(east_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
+						easto->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+					insF.easto = "010";
+				}
+				else if(east_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+						easto->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+					insF.easto = "001";
+				}
+				else if(east_o_node == pe->getSingleRegPort("TREG_RI")->getNode() &&
+						easto->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+					insF.easto = "101";
+				}
+				else if(east_o_node == fu->getOutPort("DP0_T")->getNode() && easto->getLat() == fu->getOutPort("DP0_T")->getLat()){
+					insF.easto = "100";
+				}
+				else{
+					std::cout << "Port : " << easto->getFullName() << ",node = " << easto->getNode()->idx << ", source not found!\n";
+					assert(false);
+					insF.easto = "111";
+				}
+			}
+			else{
+				insF.easto = "111";
+			}
+
+			if(west_o_node){
+				if(west_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+						westo->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+					insF.westo = "011";
+				}
+				else if(west_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
+						westo->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+					insF.westo = "000";
+				}
+				else if(west_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
+						westo->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+					insF.westo = "010";
+				}
+				else if(west_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+						westo->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+					insF.westo = "001";
+				}
+				else if(west_o_node ==  pe->getSingleRegPort("TREG_RI")->getNode() &&
+						westo->getLat() ==  pe->getSingleRegPort("TREG_RI")->getLat()){
+					insF.westo = "101";
+				}
+
+				else if(west_o_node == fu->getOutPort("DP0_T")->getNode() && westo->getLat() == fu->getOutPort("DP0_T")->getLat()){
+					insF.westo = "100";
+				}
+				else{
+					std::cout << "Port : " << westo->getFullName() << ",node = " << westo->getNode()->idx << ", source not found!\n";
+					assert(false);
+					insF.westo = "111";
+				}
+			}
+			else{
+				insF.westo = "111";
+			}
+
+			if(south_o_node){
+				if(south_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+						southo->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+					insF.southo = "011";
+				}
+				else if(south_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
+						southo->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+					insF.southo = "000";
+				}
+				else if(south_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
+						southo->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+					insF.southo = "010";
+				}
+				else if(south_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+						southo->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+					insF.southo = "001";
+				}
+				else if(south_o_node == pe->getSingleRegPort("TREG_RI")->getNode() &&
+						southo->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+					insF.southo = "101";
+				}
+				else if(south_o_node == fu->getOutPort("DP0_T")->getNode() && southo->getLat() == fu->getOutPort("DP0_T")->getLat()){
+					insF.southo = "100";
+				}
+				else{
+					//std::cout << "";
+					std::cout << "Port : " << southo->getFullName() << ",node = " << southo->getNode()->idx << ", source not found!\n";
+					assert(false);
+					insF.southo = "111";
+				}
+			}
+			else{
+				insF.southo = "111";
+			}
+
+
+			if(p_ip->getNode()){
+				if(p_ip->getNode() == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+						p_ip->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+					insF.alu_p = "011";
+				}
+				else if(p_ip->getNode() == pe->getInternalPort("EAST_XBARI")->getNode() &&
+						p_ip->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+					insF.alu_p = "000";
+				}
+				else if(p_ip->getNode() == pe->getInternalPort("WEST_XBARI")->getNode() &&
+						p_ip->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+					insF.alu_p = "010";
+				}
+				else if(p_ip->getNode() == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+						p_ip->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+					insF.alu_p = "001";
+				}
+				else if(p_ip->getNode() == pe->getSingleRegPort("TREG_RI")->getNode() &&
+						p_ip->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+					insF.alu_p = "101";
+				}
+				else if(p_ip->getNode() == fu->getOutPort("DP0_T")->getNode() && p_ip->getLat() == fu->getOutPort("DP0_T")->getLat()){
+					insF.alu_p = "100";
+				}
+				else if(p_ip->getNode()  == dp->getOutPort("T")->getNode() && p_ip->getLat() == dp->getOutPort("T")->getLat()){
+					insF.alu_p = "100";
+				}
+				else{
+					std::cout << "Port : " << p_ip->getFullName() << ",node = " << p_ip->getNode()->idx << ", source not found!\n";
+					assert(false);
+					insF.alu_p = "111";
+				}
+			}
+			else{
+				insF.alu_p = "111";
+			}
+
+			if(i1_ip->getNode()){
+				if(i1_ip->getNode() == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+						i1_ip->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+					insF.alu_i1 = "011";
+					if(currentMappedOP &&currentMappedOP->type_i1i2){
+						insF.alu_i2 = "011";
 					}
-
-
-					else{
-						insF.northo = "111";
+				}
+				else if(i1_ip->getNode() == pe->getInternalPort("EAST_XBARI")->getNode() &&
+						i1_ip->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+					insF.alu_i1 = "000";
+					if(currentMappedOP && currentMappedOP->type_i1i2){
+						insF.alu_i2 = "000";
 					}
+				}
+				else if(i1_ip->getNode() == pe->getInternalPort("WEST_XBARI")->getNode() &&
+						i1_ip->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+					insF.alu_i1 = "010";
+					if(currentMappedOP && currentMappedOP->type_i1i2){
+						insF.alu_i2 = "010";
+					}
+				}
+				else if(i1_ip->getNode() == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+						i1_ip->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+					insF.alu_i1 = "001";
+					if(currentMappedOP && currentMappedOP->type_i1i2){
+						insF.alu_i2 = "001";
+					}
+				}
+				else if(i1_ip->getNode() == pe->getSingleRegPort("TREG_RI")->getNode() &&
+						i1_ip->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+					insF.alu_i1 = "101";
+					if(currentMappedOP && currentMappedOP->type_i1i2){
+						insF.alu_i2 = "101";
+					}
+				}
+				else if(i1_ip->getNode() == fu->getOutPort("DP0_T")->getNode() && i1_ip->getLat() == fu->getOutPort("DP0_T")->getLat()){
+					insF.alu_i1 = "100";
+					if(currentMappedOP && currentMappedOP->type_i1i2){
+						insF.alu_i2 = "100";
+					}
+				}
+				//THILINI:: check with RTl for correct config
+				//					else if(i1_ip->getNode() == fu->getInPort("DP0_I1")->getNode() && i1_ip->getLat() == fu->getInPort("DP0_I1")->getLat()){
+				//						insF.alu_i1 = "110";
+				//					}
 
-					if(east_o_node){
-						if(east_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
-								easto->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
-							insF.easto = "011";
-						}
-						else if(east_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
-								easto->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
-							insF.easto = "000";
-						}
-						else if(east_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
-								easto->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
-							insF.easto = "010";
-						}
-						else if(east_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
-								easto->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
-							insF.easto = "001";
-						}
-						else if(east_o_node == pe->getSingleRegPort("TREG_RI")->getNode() &&
-								easto->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
-							insF.easto = "101";
-						}
-						else if(east_o_node == fu->getOutPort("DP0_T")->getNode() && easto->getLat() == fu->getOutPort("DP0_T")->getLat()){
-							insF.easto = "100";
-						}
-						else{
-							std::cout << "Port : " << easto->getFullName() << ",node = " << easto->getNode()->idx << ", source not found!\n";
-							assert(false);
-							insF.easto = "111";
-						}
+				else if(i1_ip->getNode() == dp->getOutPort("T")->getNode() && i1_ip->getLat() == dp->getOutPort("T")->getLat()){
+					insF.alu_i1 = "100";
+					if(currentMappedOP && currentMappedOP->type_i1i2){
+						insF.alu_i2 = "100";
 					}
-					else{
-						insF.easto = "111";
-					}
-
-					if(west_o_node){
-						if(west_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
-								westo->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
-							insF.westo = "011";
-						}
-						else if(west_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
-								westo->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
-							insF.westo = "000";
-						}
-						else if(west_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
-								westo->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
-							insF.westo = "010";
-						}
-						else if(west_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
-								westo->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
-							insF.westo = "001";
-						}
-						else if(west_o_node ==  pe->getSingleRegPort("TREG_RI")->getNode() &&
-								westo->getLat() ==  pe->getSingleRegPort("TREG_RI")->getLat()){
-							insF.westo = "101";
-						}
-
-						else if(west_o_node == fu->getOutPort("DP0_T")->getNode() && westo->getLat() == fu->getOutPort("DP0_T")->getLat()){
-							insF.westo = "100";
-						}
-						else{
-							std::cout << "Port : " << westo->getFullName() << ",node = " << westo->getNode()->idx << ", source not found!\n";
-							assert(false);
-							insF.westo = "111";
-						}
-					}
-					else{
-						insF.westo = "111";
-					}
-
-					if(south_o_node){
-						if(south_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
-								southo->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
-							insF.southo = "011";
-						}
-						else if(south_o_node == pe->getInternalPort("EAST_XBARI")->getNode() &&
-								southo->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
-							insF.southo = "000";
-						}
-						else if(south_o_node == pe->getInternalPort("WEST_XBARI")->getNode() &&
-								southo->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
-							insF.southo = "010";
-						}
-						else if(south_o_node == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
-								southo->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
-							insF.southo = "001";
-						}
-						else if(south_o_node == pe->getSingleRegPort("TREG_RI")->getNode() &&
-								southo->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
-							insF.southo = "101";
-						}
-						else if(south_o_node == fu->getOutPort("DP0_T")->getNode() && southo->getLat() == fu->getOutPort("DP0_T")->getLat()){
-							insF.southo = "100";
-						}
-						else{
-							//std::cout << "";
-							std::cout << "Port : " << southo->getFullName() << ",node = " << southo->getNode()->idx << ", source not found!\n";
-							assert(false);
-							insF.southo = "111";
-						}
-					}
-					else{
-						insF.southo = "111";
-					}
-
-
-					if(p_ip->getNode()){
-						if(p_ip->getNode() == pe->getInternalPort("NORTH_XBARI")->getNode() &&
-								p_ip->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
-							insF.alu_p = "011";
-						}
-						else if(p_ip->getNode() == pe->getInternalPort("EAST_XBARI")->getNode() &&
-								p_ip->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
-							insF.alu_p = "000";
-						}
-						else if(p_ip->getNode() == pe->getInternalPort("WEST_XBARI")->getNode() &&
-								p_ip->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
-							insF.alu_p = "010";
-						}
-						else if(p_ip->getNode() == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
-								p_ip->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
-							insF.alu_p = "001";
-						}
-						else if(p_ip->getNode() == pe->getSingleRegPort("TREG_RI")->getNode() &&
-								p_ip->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
-							insF.alu_p = "101";
-						}
-						else if(p_ip->getNode() == fu->getOutPort("DP0_T")->getNode() && p_ip->getLat() == fu->getOutPort("DP0_T")->getLat()){
-							insF.alu_p = "100";
-						}
-						else if(p_ip->getNode()  == dp->getOutPort("T")->getNode() && p_ip->getLat() == dp->getOutPort("T")->getLat()){
-							insF.alu_p = "100";
-						}
-						else{
-							std::cout << "Port : " << p_ip->getFullName() << ",node = " << p_ip->getNode()->idx << ", source not found!\n";
-							assert(false);
-							insF.alu_p = "111";
-						}
-					}
-					else{
-						insF.alu_p = "111";
-					}
-
-					if(i1_ip->getNode()){
-						if(i1_ip->getNode() == pe->getInternalPort("NORTH_XBARI")->getNode() &&
-								i1_ip->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
-							insF.alu_i1 = "011";
-							if(currentMappedOP &&currentMappedOP->type_i1i2){
-								insF.alu_i2 = "011";
-							}
-						}
-						else if(i1_ip->getNode() == pe->getInternalPort("EAST_XBARI")->getNode() &&
-								i1_ip->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
-							insF.alu_i1 = "000";
-							if(currentMappedOP && currentMappedOP->type_i1i2){
-								insF.alu_i2 = "000";
-							}
-						}
-						else if(i1_ip->getNode() == pe->getInternalPort("WEST_XBARI")->getNode() &&
-								i1_ip->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
-							insF.alu_i1 = "010";
-							if(currentMappedOP && currentMappedOP->type_i1i2){
-								insF.alu_i2 = "010";
-							}
-						}
-						else if(i1_ip->getNode() == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
-								i1_ip->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
-							insF.alu_i1 = "001";
-							if(currentMappedOP && currentMappedOP->type_i1i2){
-								insF.alu_i2 = "001";
-							}
-						}
-						else if(i1_ip->getNode() == pe->getSingleRegPort("TREG_RI")->getNode() &&
-								i1_ip->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
-							insF.alu_i1 = "101";
-							if(currentMappedOP && currentMappedOP->type_i1i2){
-								insF.alu_i2 = "101";
-							}
-						}
-						else if(i1_ip->getNode() == fu->getOutPort("DP0_T")->getNode() && i1_ip->getLat() == fu->getOutPort("DP0_T")->getLat()){
-							insF.alu_i1 = "100";
-							if(currentMappedOP && currentMappedOP->type_i1i2){
-								insF.alu_i2 = "100";
-							}
-						}
-						//THILINI:: check with RTl for correct config
-						//					else if(i1_ip->getNode() == fu->getInPort("DP0_I1")->getNode() && i1_ip->getLat() == fu->getInPort("DP0_I1")->getLat()){
-						//						insF.alu_i1 = "110";
-						//					}
-
-						else if(i1_ip->getNode() == dp->getOutPort("T")->getNode() && i1_ip->getLat() == dp->getOutPort("T")->getLat()){
-							insF.alu_i1 = "100";
-							if(currentMappedOP && currentMappedOP->type_i1i2){
-								insF.alu_i2 = "100";
-							}
-						}
-						else{
-							std::cout << "Port : " << i1_ip->getFullName() << ",node = " << i1_ip->getNode()->idx << ", source not found!\n";
-							assert(false);
-							insF.alu_i1 = "111";
-							if(currentMappedOP && currentMappedOP->type_i1i2){
-								insF.alu_i2 = "111";
-							}
-						}
-					}
-					else{
-						insF.alu_i1 = "111";
-					}
-
-
-					if(!(currentMappedOP && currentMappedOP->type_i1i2)){
-					if(i2_ip->getNode()){
-						if(i2_ip->getNode() == pe->getInternalPort("NORTH_XBARI")->getNode() &&
-								i2_ip->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
-							insF.alu_i2 = "011";
-						}
-						else if(i2_ip->getNode() == pe->getInternalPort("EAST_XBARI")->getNode() &&
-								i2_ip->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
-							insF.alu_i2 = "000";
-						}
-						else if(i2_ip->getNode() == pe->getInternalPort("WEST_XBARI")->getNode() &&
-								i2_ip->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
-							insF.alu_i2 = "010";
-						}
-						else if(i2_ip->getNode() == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
-								i2_ip->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
-							insF.alu_i2 = "001";
-						}
-						else if(i2_ip->getNode() == pe->getSingleRegPort("TREG_RI")->getNode() &&
-								i2_ip->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
-							insF.alu_i2 = "101";
-						}
-						else if(i2_ip->getNode() == fu->getOutPort("DP0_T")->getNode() &&
-								i2_ip->getLat() == fu->getOutPort("DP0_T")->getLat()){
-							insF.alu_i2 = "100";
-						}
-						//THILINI:: check with RTl for correct config
-						//					else if(i2_ip->getNode() == fu->getInPort("DP0_I2")->getNode() && i2_ip->getLat() == fu->getInPort("DP0_I2")->getLat()){
-						//						insF.alu_i2 = "110";
-						//					}
-						else if(i2_ip->getNode() == dp->getOutPort("T")->getNode() && i2_ip->getLat() == dp->getOutPort("T")->getLat()){
-							insF.alu_i2 = "100";
-						}
-						else{
-							std::cout << "Port : " << i2_ip->getFullName() << ",node = " << i2_ip->getNode()->idx << ", source not found!\n";
-							assert(false);
-							insF.alu_i2 = "111";
-						}
-					}
-					else{
+				}
+				else{
+					std::cout << "Port : " << i1_ip->getFullName() << ",node = " << i1_ip->getNode()->idx << ", source not found!\n";
+					assert(false);
+					insF.alu_i1 = "111";
+					if(currentMappedOP && currentMappedOP->type_i1i2){
 						insF.alu_i2 = "111";
 					}
-					}
+				}
+			}
+			else{
+				insF.alu_i1 = "111";
+			}
 
-					//TREG WE
-					if( pe->getSingleRegPort("TREG_RO")->getNode() &&
-							fu->getOutPort("DP0_T")->getNode() &&
-							pe->getSingleRegPort("TREG_RO")->getNode() == fu->getOutPort("DP0_T")->getNode() ){
-						insF.treg_we = "1";
+
+			if(!(currentMappedOP && currentMappedOP->type_i1i2)){
+				if(i2_ip->getNode()){
+					if(i2_ip->getNode() == pe->getInternalPort("NORTH_XBARI")->getNode() &&
+							i2_ip->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+						insF.alu_i2 = "011";
+					}
+					else if(i2_ip->getNode() == pe->getInternalPort("EAST_XBARI")->getNode() &&
+							i2_ip->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+						insF.alu_i2 = "000";
+					}
+					else if(i2_ip->getNode() == pe->getInternalPort("WEST_XBARI")->getNode() &&
+							i2_ip->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+						insF.alu_i2 = "010";
+					}
+					else if(i2_ip->getNode() == pe->getInternalPort("SOUTH_XBARI")->getNode() &&
+							i2_ip->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+						insF.alu_i2 = "001";
+					}
+					else if(i2_ip->getNode() == pe->getSingleRegPort("TREG_RI")->getNode() &&
+							i2_ip->getLat() == pe->getSingleRegPort("TREG_RI")->getLat()){
+						insF.alu_i2 = "101";
+					}
+					else if(i2_ip->getNode() == fu->getOutPort("DP0_T")->getNode() &&
+							i2_ip->getLat() == fu->getOutPort("DP0_T")->getLat()){
+						insF.alu_i2 = "100";
+					}
+					//THILINI:: check with RTl for correct config
+					//					else if(i2_ip->getNode() == fu->getInPort("DP0_I2")->getNode() && i2_ip->getLat() == fu->getInPort("DP0_I2")->getLat()){
+					//						insF.alu_i2 = "110";
+					//					}
+					else if(i2_ip->getNode() == dp->getOutPort("T")->getNode() && i2_ip->getLat() == dp->getOutPort("T")->getLat()){
+						insF.alu_i2 = "100";
 					}
 					else{
-						insF.treg_we = "0";
+						std::cout << "Port : " << i2_ip->getFullName() << ",node = " << i2_ip->getNode()->idx << ", source not found!\n";
+						assert(false);
+						insF.alu_i2 = "111";
 					}
+				}
+				else{
+					insF.alu_i2 = "111";
+				}
+			}
 
-					// Register write enables
+			//TREG WE
+			if( pe->getSingleRegPort("TREG_RO")->getNode() &&
+					fu->getOutPort("DP0_T")->getNode() &&
+					pe->getSingleRegPort("TREG_RO")->getNode() == fu->getOutPort("DP0_T")->getNode() ){
+				insF.treg_we = "1";
+			}
+			else{
+				insF.treg_we = "0";
+			}
 
-					Port* northi = pe->getInPort("NORTH_I"); assert(northi);
-					Port* easti = pe->getInPort("EAST_I"); assert(easti);
-					Port* westi = pe->getInPort("WEST_I"); assert(westi);
-					Port* southi = pe->getInPort("SOUTH_I"); assert(southi);
+			// Register write enables
 
-					//				RegFile* RF0 = static_cast<RegFile*>(pe->getSubMod("RF0"));
-					//				RegFile* RF1 = static_cast<RegFile*>(pe->getSubMod("RF1"));
-					//				RegFile* RF2 = static_cast<RegFile*>(pe->getSubMod("RF2"));
-					//				RegFile* RF3 = static_cast<RegFile*>(pe->getSubMod("RF3"));
+			Port* northi = pe->getInPort("NORTH_I"); assert(northi);
+			Port* easti = pe->getInPort("EAST_I"); assert(easti);
+			Port* westi = pe->getInPort("WEST_I"); assert(westi);
+			Port* southi = pe->getInPort("SOUTH_I"); assert(southi);
+
+			//				RegFile* RF0 = static_cast<RegFile*>(pe->getSubMod("RF0"));
+			//				RegFile* RF1 = static_cast<RegFile*>(pe->getSubMod("RF1"));
+			//				RegFile* RF2 = static_cast<RegFile*>(pe->getSubMod("RF2"));
+			//				RegFile* RF3 = static_cast<RegFile*>(pe->getSubMod("RF3"));
 
 
-					if(pe->getSingleRegPort("NR_RO")->getNode() &&
-							northi->getNode() &&
-							pe->getSingleRegPort("NR_RO")->getNode() == northi->getNode()){
-						insF.north_reg_we = "1";
-					}
-					else{
-						insF.north_reg_we = "0";
-					}
-					//THILINI:: check with RTL
-					/*		if(RF0->getInPort("WP1")->getNode() &&
+			if(pe->getSingleRegPort("NR_RO")->getNode() &&
+					northi->getNode() &&
+					pe->getSingleRegPort("NR_RO")->getNode() == northi->getNode()){
+				insF.north_reg_we = "1";
+			}
+			else{
+				insF.north_reg_we = "0";
+			}
+			//THILINI:: check with RTL
+			/*		if(RF0->getInPort("WP1")->getNode() &&
 				   northi->getNode() &&
 				   RF0->getInPort("WP1")->getNode() == northi->getNode()){
 					insF.north_reg_we = "1";
@@ -3881,126 +3940,126 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					insF.north_reg_we = "0";
 				}*/
 
-					/*THILINI:: There are WP1 port as wess(two port RF) how to handle that??*/
+			/*THILINI:: There are WP1 port as wess(two port RF) how to handle that??*/
 
-					if(pe->getSingleRegPort("ER_RO")->getNode() &&
-							easti->getNode() &&
-							pe->getSingleRegPort("ER_RO")->getNode() == easti->getNode()){
-						insF.east_reg_we = "1";
-					}
-					else{
-						insF.east_reg_we = "0";
-					}
+			if(pe->getSingleRegPort("ER_RO")->getNode() &&
+					easti->getNode() &&
+					pe->getSingleRegPort("ER_RO")->getNode() == easti->getNode()){
+				insF.east_reg_we = "1";
+			}
+			else{
+				insF.east_reg_we = "0";
+			}
 
-					if(pe->getSingleRegPort("WR_RO")->getNode() &&
-							westi->getNode() &&
-							pe->getSingleRegPort("WR_RO")->getNode() == westi->getNode()){
-						insF.west_reg_we = "1";
-					}
-					else{
-						insF.west_reg_we = "0";
-					}
+			if(pe->getSingleRegPort("WR_RO")->getNode() &&
+					westi->getNode() &&
+					pe->getSingleRegPort("WR_RO")->getNode() == westi->getNode()){
+				insF.west_reg_we = "1";
+			}
+			else{
+				insF.west_reg_we = "0";
+			}
 
-					if(pe->getSingleRegPort("SR_RO")->getNode() &&
-							southi->getNode() &&
-							pe->getSingleRegPort("SR_RO")->getNode() == southi->getNode()){
-						insF.south_reg_we = "1";
-					}
-					else{
-						insF.south_reg_we = "0";
-					}
-
-
-					//setting bypass bits
-					DFGNode* northi_node = northi->getNode();
-					DFGNode* easti_node = easti->getNode();
-					DFGNode* westi_node = westi->getNode();
-					DFGNode* southi_node = southi->getNode();
+			if(pe->getSingleRegPort("SR_RO")->getNode() &&
+					southi->getNode() &&
+					pe->getSingleRegPort("SR_RO")->getNode() == southi->getNode()){
+				insF.south_reg_we = "1";
+			}
+			else{
+				insF.south_reg_we = "0";
+			}
 
 
-					if(northi_node &&
-							northi_node == pe->getInternalPort("NORTH_XBARI")->getNode() && northi->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
-						if(pe->getSingleRegPort("NR_RI")->getNode()){
-							std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("NR_RI")->getNode()->idx << ",portnode=" << northi_node->idx << "\n";
-							assert(pe->getSingleRegPort("NR_RI")->getNode() != pe->getInternalPort("NORTH_XBARI")->getNode());
-						}
-						insF.north_reg_bypass = "0";
-					}
-					else{
-						insF.north_reg_bypass = "1";
-					}
-
-					if(easti_node &&
-							easti_node == pe->getInternalPort("EAST_XBARI")->getNode() && easti->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
-						if(pe->getSingleRegPort("ER_RI")->getNode()){
-							std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("ER_RI")->getNode()->idx << ",portnode=" << easti_node->idx << "\n";
-							assert(pe->getSingleRegPort("ER_RI")->getNode() != pe->getInternalPort("EAST_XBARI")->getNode());
-						}
-						insF.east_reg_bypass = "0";
-					}
-					else{
-						insF.east_reg_bypass = "1";
-					}
-
-					if(westi_node &&
-							westi_node == pe->getInternalPort("WEST_XBARI")->getNode() && westi->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
-						if(pe->getSingleRegPort("WR_RI")->getNode()){
-							std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("WR_RI")->getNode()->idx << ",portnode=" << westi_node->idx << "\n";
-							assert(pe->getSingleRegPort("WR_RI")->getNode() != pe->getInternalPort("WEST_XBARI")->getNode());
-						}
-						insF.west_reg_bypass = "0";
-					}
-					else{
-						insF.west_reg_bypass = "1";
-					}
-
-					if(southi_node &&
-							southi_node == pe->getInternalPort("SOUTH_XBARI")->getNode() && southi->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
-						if(pe->getSingleRegPort("SR_RI")->getNode()){
-							std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("SR_RI")->getNode()->idx << ",portnode=" << southi_node->idx << "\n";
-							assert(pe->getSingleRegPort("SR_RI")->getNode() != pe->getInternalPort("SOUTH_XBARI")->getNode());
-						}
-						insF.south_reg_bypass = "0";
-					}
-					else{
-						insF.south_reg_bypass = "1";
-					}
+			//setting bypass bits
+			DFGNode* northi_node = northi->getNode();
+			DFGNode* easti_node = easti->getNode();
+			DFGNode* westi_node = westi->getNode();
+			DFGNode* southi_node = southi->getNode();
 
 
-
-					if(mappedOP){
-						insF.opcode = mappedOP->getBinaryString();
-						if(mappedOP->npb){
-							insF.negated_predicate = "1";
-						}
-					}
-					else{
-						insF.opcode = "00000";
-					}
-
-					if(mappedOP && mappedOP->hasConst){
-						insF.constant_valid = "1";
-						insF.constant = mappedOP->get27bitConstantBinaryString();
-					}
-					else{
-						insF.constant_valid = "0";
-						//					insF.constant = "123456789012345678901234567";
-						insF.constant = "000000000000000000000000000";
-					}
-
-					if( mappedOP && mappedOP->npb){
-						insF.negated_predicate = "1";
-						//					assert(false);
-					}
-					else{
-						insF.negated_predicate = "0";
-					}
-
-					InsFArr[t+1][Y][X] = insF;
-
-					//		}
-					//	}
+			if(northi_node &&
+					northi_node == pe->getInternalPort("NORTH_XBARI")->getNode() && northi->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
+				if(pe->getSingleRegPort("NR_RI")->getNode()){
+					std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("NR_RI")->getNode()->idx << ",portnode=" << northi_node->idx << "\n";
+					assert(pe->getSingleRegPort("NR_RI")->getNode() != pe->getInternalPort("NORTH_XBARI")->getNode());
 				}
+				insF.north_reg_bypass = "0";
+			}
+			else{
+				insF.north_reg_bypass = "1";
+			}
+
+			if(easti_node &&
+					easti_node == pe->getInternalPort("EAST_XBARI")->getNode() && easti->getLat() == pe->getInternalPort("EAST_XBARI")->getLat()){
+				if(pe->getSingleRegPort("ER_RI")->getNode()){
+					std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("ER_RI")->getNode()->idx << ",portnode=" << easti_node->idx << "\n";
+					assert(pe->getSingleRegPort("ER_RI")->getNode() != pe->getInternalPort("EAST_XBARI")->getNode());
+				}
+				insF.east_reg_bypass = "0";
+			}
+			else{
+				insF.east_reg_bypass = "1";
+			}
+
+			if(westi_node &&
+					westi_node == pe->getInternalPort("WEST_XBARI")->getNode() && westi->getLat() == pe->getInternalPort("WEST_XBARI")->getLat()){
+				if(pe->getSingleRegPort("WR_RI")->getNode()){
+					std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("WR_RI")->getNode()->idx << ",portnode=" << westi_node->idx << "\n";
+					assert(pe->getSingleRegPort("WR_RI")->getNode() != pe->getInternalPort("WEST_XBARI")->getNode());
+				}
+				insF.west_reg_bypass = "0";
+			}
+			else{
+				insF.west_reg_bypass = "1";
+			}
+
+			if(southi_node &&
+					southi_node == pe->getInternalPort("SOUTH_XBARI")->getNode() && southi->getLat() == pe->getInternalPort("SOUTH_XBARI")->getLat()){
+				if(pe->getSingleRegPort("SR_RI")->getNode()){
+					std::cout << "pe=" << pe->getName() << ",node=" << pe->getSingleRegPort("SR_RI")->getNode()->idx << ",portnode=" << southi_node->idx << "\n";
+					assert(pe->getSingleRegPort("SR_RI")->getNode() != pe->getInternalPort("SOUTH_XBARI")->getNode());
+				}
+				insF.south_reg_bypass = "0";
+			}
+			else{
+				insF.south_reg_bypass = "1";
+			}
+
+
+
+			if(mappedOP){
+				insF.opcode = mappedOP->getBinaryString();
+				if(mappedOP->npb){
+					insF.negated_predicate = "1";
+				}
+			}
+			else{
+				insF.opcode = "00000";
+			}
+
+			if(mappedOP && mappedOP->hasConst){
+				insF.constant_valid = "1";
+				insF.constant = mappedOP->get27bitConstantBinaryString();
+			}
+			else{
+				insF.constant_valid = "0";
+				//					insF.constant = "123456789012345678901234567";
+				insF.constant = "000000000000000000000000000";
+			}
+
+			if( mappedOP && mappedOP->npb){
+				insF.negated_predicate = "1";
+				//					assert(false);
+			}
+			else{
+				insF.negated_predicate = "0";
+			}
+
+			InsFArr[t+1][Y][X] = insF;
+
+			//		}
+			//	}
+		}
 	}
 	InsFormat jumpl;
 	jumpl.negated_predicate = "0";
@@ -4125,188 +4184,189 @@ void CGRAXMLCompile::PathFinderMapper::printBinFile(
 
 class node
 {
-    // current position
-    int xPos;
-    int yPos;
-    // total distance already travelled to reach the node
-    int level;
-    // priority=level+remaining distance estimate
-    int priority;  // smaller: higher priority
+	// current position
+	int xPos;
+	int yPos;
+	// total distance already travelled to reach the node
+	int level;
+	// priority=level+remaining distance estimate
+	int priority;  // smaller: higher priority
 
-    public:
-        node(int xp, int yp, int d, int p)
-            {xPos=xp; yPos=yp; level=d; priority=p;}
+public:
+	node(int xp, int yp, int d, int p)
+{xPos=xp; yPos=yp; level=d; priority=p;}
 
-        int getxPos() const {return xPos;}
-        int getyPos() const {return yPos;}
-        int getLevel() const {return level;}
-        int getPriority() const {return priority;}
+	int getxPos() const {return xPos;}
+	int getyPos() const {return yPos;}
+	int getLevel() const {return level;}
+	int getPriority() const {return priority;}
 
-        void updatePriority(const int & xDest, const int & yDest)
-        {
-             priority=level+estimate(xDest, yDest)*10; //A*
-        }
+	void updatePriority(const int & xDest, const int & yDest)
+	{
+		priority=level+estimate(xDest, yDest)*10; //A*
+	}
 
-        // give better priority to going strait instead of diagonally
-        void nextLevel(const int & i) // i: direction
-        {
-             level+=10;//(dir==8?(i%2==0?10:14):10);
-        }
+	// give better priority to going strait instead of diagonally
+	void nextLevel(const int & i) // i: direction
+	{
+		level+=10;//(dir==8?(i%2==0?10:14):10);
+	}
 
-        // Estimation function for the remaining distance to the goal.
-        const int & estimate(const int & xDest, const int & yDest) const
-        {
-            static int xd, yd, d;
-            xd=xDest-xPos;
-            yd=yDest-yPos;
+	// Estimation function for the remaining distance to the goal.
+	const int & estimate(const int & xDest, const int & yDest) const
+	{
+		static int xd, yd, d;
+		xd=xDest-xPos;
+		yd=yDest-yPos;
 
-            // Euclidian Distance
-            d=static_cast<int>(sqrt(xd*xd+yd*yd));
+		// Euclidian Distance
+		d=static_cast<int>(sqrt(xd*xd+yd*yd));
 
-            // Manhattan distance
-            //d=abs(xd)+abs(yd);
+		// Manhattan distance
+		//d=abs(xd)+abs(yd);
 
-            // Chebyshev distance
-            //d=max(abs(xd), abs(yd));
+		// Chebyshev distance
+		//d=max(abs(xd), abs(yd));
 
-            return(d);
-        }
+		return(d);
+	}
 };
 // Determine priority (in the priority queue)
 bool operator<(const node & a, const node & b)
 {
-  return a.getPriority() > b.getPriority();
+	return a.getPriority() > b.getPriority();
 }
 
 
-// A-star algorithm.
+// A-star algorithm. //https://code.activestate.com/recipes/577457-a-star-shortest-path-algorithm/
 // The route returned is a string of direction digits.
 string CGRAXMLCompile::PathFinderMapper::AstarShortestPath(LatPort start, LatPort end){
 
-	 int  xStart = start.second->getPE()->getPosition_X();
-	 int  yStart= start.second->getPE()->getPosition_Y();
-	 int  xFinish= end.second->getPE()->getPosition_X();
-	 int  yFinish= end.second->getPE()->getPosition_Y();
+	int  xStart = start.second->getPE()->getPosition_X();
+	int  yStart= start.second->getPE()->getPosition_Y();
+	int  xFinish= end.second->getPE()->getPosition_X();
+	int  yFinish= end.second->getPE()->getPosition_Y();
 
-	    static priority_queue<node> pq[2]; // list of open (not-yet-tried) nodes
-	    static int pqi; // pq index
-	    static node* n0;
-	    static node* m0;
-	    static int i, j, x, y, xdx, ydy;
-	    static char c;
-	    pqi=0;
+	static priority_queue<node> pq[2]; // list of open (not-yet-tried) nodes
+	static int pqi; // pq index
+	static node* n0;
+	static node* m0;
+	static int i, j, x, y, xdx, ydy;
+	static char c;
+	pqi=0;
 
-	    // reset the node maps
-	    for(y=0;y<m;y++)
-	    {
-	        for(x=0;x<n;x++)
-	        {
-	            closed_nodes_map[x][y]=0;
-	            open_nodes_map[x][y]=0;
-	        }
-	    }
+	// reset the node maps
+	for(y=0;y<m;y++)
+	{
+		for(x=0;x<n;x++)
+		{
+			closed_nodes_map[x][y]=0;
+			open_nodes_map[x][y]=0;
+		}
+	}
 
-	    // create the start node and push into list of open nodes
-	    n0=new node(xStart, yStart, 0, 0);
-	    n0->updatePriority(xFinish, yFinish);
-	    pq[pqi].push(*n0);
-	    open_nodes_map[x][y]=n0->getPriority(); // mark it on the open nodes map
+	// create the start node and push into list of open nodes
+	n0=new node(xStart, yStart, 0, 0);
+	n0->updatePriority(xFinish, yFinish);
+	pq[pqi].push(*n0);
+	open_nodes_map[x][y]=n0->getPriority(); // mark it on the open nodes map
 
-	    // A* search
-	    while(!pq[pqi].empty())
-	    {
-	        // get the current node w/ the highest priority
-	        // from the list of open nodes
-	        n0=new node( pq[pqi].top().getxPos(), pq[pqi].top().getyPos(),
-	                     pq[pqi].top().getLevel(), pq[pqi].top().getPriority());
+	// A* search
+	while(!pq[pqi].empty())
+	{
+		// get the current node w/ the highest priority
+		// from the list of open nodes
+		n0=new node( pq[pqi].top().getxPos(), pq[pqi].top().getyPos(),
+				pq[pqi].top().getLevel(), pq[pqi].top().getPriority());
 
-	        x=n0->getxPos(); y=n0->getyPos();
+		x=n0->getxPos(); y=n0->getyPos();
 
-	        pq[pqi].pop(); // remove the node from the open list
-	        open_nodes_map[x][y]=0;
-	        // mark it on the closed nodes map
-	        closed_nodes_map[x][y]=1;
+		pq[pqi].pop(); // remove the node from the open list
+		open_nodes_map[x][y]=0;
+		// mark it on the closed nodes map
+		closed_nodes_map[x][y]=1;
 
-	        // quit searching when the goal state is reached
-	        //if((*n0).estimate(xFinish, yFinish) == 0)
-	        if(x==xFinish && y==yFinish)
-	        {
-	            // generate the path from finish to start
-	            // by following the directions
-	            string path="";
-	            while(!(x==xStart && y==yStart))
-	            {
-	                j=dir_map[x][y];
-	                c='0'+(j+dir/2)%dir;
-	                cout <<"c : " << c <<"\n";
-	                path=c+path;
-	                x+=dx[j];
-	                y+=dy[j];
-	            }
+		// quit searching when the goal state is reached
+		//if((*n0).estimate(xFinish, yFinish) == 0)
+		if(x==xFinish && y==yFinish)
+		{
+			// generate the path from finish to start
+			// by following the directions
+			string path="";
+			//no need to return path
+			//			while(!(x==xStart && y==yStart))
+			//			{
+			//				j=dir_map[x][y];
+			//				c='0'+(j+dir/2)%dir;
+			//				//cout <<"c : " << c <<"\n";
+			//				path=c+path;
+			//				x+=dx[j];
+			//				y+=dy[j];
+			//			}
 
-	            // garbage collection
-	            delete n0;
-	            // empty the leftover nodes
-	            while(!pq[pqi].empty()) pq[pqi].pop();
-	            return path;
-	        }
+			// garbage collection
+			delete n0;
+			// empty the leftover nodes
+			while(!pq[pqi].empty()) pq[pqi].pop();
+			return path;
+		}
 
-	        // generate moves (child nodes) in all possible directions
-	        for(i=0;i<dir;i++)
-	        {
-	            xdx=x+dx[i]; ydy=y+dy[i];
+		// generate moves (child nodes) in all possible directions
+		for(i=0;i<dir;i++)
+		{
+			xdx=x+dx[i]; ydy=y+dy[i];
 
-	            if(!(xdx<0 || xdx>n-1 || ydy<0 || ydy>m-1 || map_cgra[xdx][ydy]==1
-	                || closed_nodes_map[xdx][ydy]==1))
-	            {
-	                // generate a child node
-	                m0=new node( xdx, ydy, n0->getLevel(),
-	                             n0->getPriority());
-	                m0->nextLevel(i);
-	                m0->updatePriority(xFinish, yFinish);
+			if(!(xdx<0 || xdx>n-1 || ydy<0 || ydy>m-1 || map_cgra[xdx][ydy]==1
+					|| closed_nodes_map[xdx][ydy]==1))
+			{
+				// generate a child node
+				m0=new node( xdx, ydy, n0->getLevel(),
+						n0->getPriority());
+				m0->nextLevel(i);
+				m0->updatePriority(xFinish, yFinish);
 
-	                // if it is not in the open list then add into that
-	                if(open_nodes_map[xdx][ydy]==0)
-	                {
-	                    open_nodes_map[xdx][ydy]=m0->getPriority();
-	                    pq[pqi].push(*m0);
-	                    // mark its parent node direction
-	                    dir_map[xdx][ydy]=(i+dir/2)%dir;
-	                }
-	                else if(open_nodes_map[xdx][ydy]>m0->getPriority())
-	                {
-	                    // update the priority info
-	                    open_nodes_map[xdx][ydy]=m0->getPriority();
-	                    // update the parent direction info
-	                    dir_map[xdx][ydy]=(i+dir/2)%dir;
+				// if it is not in the open list then add into that
+				if(open_nodes_map[xdx][ydy]==0)
+				{
+					open_nodes_map[xdx][ydy]=m0->getPriority();
+					pq[pqi].push(*m0);
+					// mark its parent node direction
+					dir_map[xdx][ydy]=(i+dir/2)%dir;
+				}
+				else if(open_nodes_map[xdx][ydy]>m0->getPriority())
+				{
+					// update the priority info
+					open_nodes_map[xdx][ydy]=m0->getPriority();
+					// update the parent direction info
+					dir_map[xdx][ydy]=(i+dir/2)%dir;
 
-	                    // replace the node
-	                    // by emptying one pq to the other one
-	                    // except the node to be replaced will be ignored
-	                    // and the new node will be pushed in instead
-	                    while(!(pq[pqi].top().getxPos()==xdx &&
-	                           pq[pqi].top().getyPos()==ydy))
-	                    {
-	                        pq[1-pqi].push(pq[pqi].top());
-	                        pq[pqi].pop();
-	                    }
-	                    pq[pqi].pop(); // remove the wanted node
+					// replace the node
+					// by emptying one pq to the other one
+					// except the node to be replaced will be ignored
+					// and the new node will be pushed in instead
+					while(!(pq[pqi].top().getxPos()==xdx &&
+							pq[pqi].top().getyPos()==ydy))
+					{
+						pq[1-pqi].push(pq[pqi].top());
+						pq[pqi].pop();
+					}
+					pq[pqi].pop(); // remove the wanted node
 
-	                    // empty the larger size pq to the smaller one
-	                    if(pq[pqi].size()>pq[1-pqi].size()) pqi=1-pqi;
-	                    while(!pq[pqi].empty())
-	                    {
-	                        pq[1-pqi].push(pq[pqi].top());
-	                        pq[pqi].pop();
-	                    }
-	                    pqi=1-pqi;
-	                    pq[pqi].push(*m0); // add the better node instead
-	                }
-	                else delete m0; // garbage collection
-	            }
-	        }
-	        delete n0; // garbage collection
-	    }
-	    return ""; // no route found
+					// empty the larger size pq to the smaller one
+					if(pq[pqi].size()>pq[1-pqi].size()) pqi=1-pqi;
+					while(!pq[pqi].empty())
+					{
+						pq[1-pqi].push(pq[pqi].top());
+						pq[pqi].pop();
+					}
+					pqi=1-pqi;
+					pq[pqi].push(*m0); // add the better node instead
+				}
+				else delete m0; // garbage collection
+			}
+		}
+		delete n0; // garbage collection
+	}
+	return ""; // no route found
 
 }
