@@ -198,6 +198,30 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 		DFGNode *node = unmappedNodes.top();
 		unmappedNodes.pop();
 
+		std::stringstream MapHeader;
+		MapHeader << "current node = " << node->idx;
+		MapHeader << ",op = " << node->op;
+		MapHeader << ",unmapped nodes = " << unmappedNodes.size();
+		MapHeader << ",mapped nodes = " << mappedNodes.size();
+		MapHeader << ",freeMemNodes = " << cgra->freeMemNodes;
+		MapHeader << ",unmappedMemNodes = " << dfg->unmappedMemOps;
+		MapHeader << ",II = " << cgra->get_t_max();
+		MapHeader << ",btCredits = " << backTrackCredits;
+
+		// MapHeader << ",PEType = " << this->cgra->peType;
+		// MapHeader << ",XDim = " << this->cgra->get_x_max();
+		// MapHeader << ",YDim = " << this->cgra->get_y_max();
+		// MapHeader << ",DPs = " << this->cgra->numberofDPs;
+
+		MapHeader << ",CGRA=" << this->cgra->getCGRAName();
+		MapHeader << ",MaxHops=" << this->cgra->max_hops;
+
+		MapHeader << ",BB = " << node->BB;
+		MapHeader << ",mutexPathEn = " << this->enableMutexPaths;
+		MapHeader << "\n";
+
+			std::cout << MapHeader.str();
+
 
 		bool isEstRouteSucc = false;
 
@@ -217,24 +241,12 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 					{
 						std::cout << "route estimation failed...\n";
 						std::cout << "Map Failed!.\n";
-						mappingLog << "route estimation failed...\n";
-						mappingLog << "Map Failed!.\n";
 
-						mappingLog.close();
-						mappingLog2.close();
-						mappingLog4.close();
 						return false;
 					}
 					backTrackCredits--;
 
-					//					DFGNode* prevNode = mappedNodes.top();
-					//					mappedNodes.pop();
-					//					unmappedNodes.push(node);
-					//					unmappedNodes.push(prevNode);
-					//					prevNode->clear(this->dfg);
-					//					std::cout << "route estimation failed...\n";
-					//					mappingLog << "route estimation failed...\n";
-					//					continue;
+	
 
 					DFGNode *prevNode = mappedNodes.top();
 					mappedNodes.pop();
@@ -243,14 +255,6 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 
 					prevNode->clear(this->dfg);
 					estimatedRouteInfo.erase(node);
-
-					//										assert(failedNode!=NULL);
-					//										unmappedNodes.push(node);
-					//										removeFailedNode(mappedNodes,unmappedNodes,failedNode);
-					//										failedNode->blacklistDest.insert(failedNode->rootDP);
-					//										(failedNode)->clear(this->dfg);
-					//										estimatedRouteInfo.erase(node);
-					//										estimatedRouteInfo.erase(failedNode);
 
 					continue;
 				}
