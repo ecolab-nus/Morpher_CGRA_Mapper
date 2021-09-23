@@ -32,11 +32,12 @@ public:
 
 	bool SAMap(CGRA *cgra, DFG *dfg);
 	float inner_map();
+	bool initMap();
 	port_util getRoutingAndCongestUtil();
 	std::vector<DataPath*> getRandomCandidate(DFGNode *node);
 	bool restoreMapping(DFGNode *node, 	std::map<DFGNode*, std::pair<DataPath*, int>> & dfg_node_placement, 
 										std::map<dfg_data, std::vector<LatPort>> & data_routing_path);
-	bool Route(DFGNode *node, DataPath * candidate);
+	bool SARoute(DFGNode *node, DataPath * candidate);
 	int getCost();
 	int getCongestionNumber();
 	int getPortUsage();

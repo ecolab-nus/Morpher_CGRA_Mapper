@@ -195,11 +195,10 @@ int main(int argn, char *argc[])
 	
 
 	//	HeuristicMapper mapper(inputDFG_filename);
-	TimeDistInfo tdi;
+	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
 	PathFinderMapper * mapper;
 	if (mapping_method == 0){
 		mapper = new PathFinderMapper(inputDFG_filename);
-		tdi = testCGRA->analyzeTimeDist();
 	}else if(mapping_method  == 1){
 		mapper = new SAMapper(inputDFG_filename);
 		
@@ -211,8 +210,12 @@ int main(int argn, char *argc[])
 	
 	mapper->setMaxIter(args.maxiter);
 
-	int II = mapper->getMinimumII(testCGRA, &currDFG);
-	std::cout << "Minimum II = " << II << "\n";
+	int resII = mapper->getMinimumII(testCGRA, &currDFG);
+	int recII  = mapper->getRecMinimumII(&currDFG);
+	std::cout << "Res Minimum II = " << resII << "\n";
+	std::cout << "Rec Minimum II = " << recII << "\n";
+	std::cout << "Init User II = " << initUserII << "\n";
+	int II = std::max(recII, resII);
 
 	II = std::max(initUserII, II);
 
@@ -261,9 +264,9 @@ int main(int argn, char *argc[])
 
 		mapper->getcongestedPortsPtr()->clear();
 		mapper->getconflictedPortsPtr()->clear();
+		tempCGRA->analyzeTimeDist(tdi);
 		// mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
 		if (mapping_method == 0){
-			tempCGRA->analyzeTimeDist(tdi);
 			mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
 		}else if(mapping_method  == 1){
 			SAMapper * sa_mapper = static_cast<SAMapper*>(mapper);

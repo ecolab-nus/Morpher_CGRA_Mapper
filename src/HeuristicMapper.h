@@ -228,6 +228,7 @@ public:
 	DFG *dfg;
 
 	int getMinimumII(CGRA *cgra, DFG *dfg);
+	int getRecMinimumII(DFG *dfg);
 	void SortTopoGraphicalDFG();
 	void SortSCCDFG();
 	bool Map(CGRA *cgra, DFG *dfg);

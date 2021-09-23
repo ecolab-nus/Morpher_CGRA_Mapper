@@ -1993,3 +1993,42 @@ std::map<CGRAXMLCompile::DataPath *, int> CGRAXMLCompile::HeuristicMapper::getLa
 	}
 	return res;
 }
+
+
+int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
+{
+	int recMinII = 0;
+	int number_of_backedges = 0;
+	int recDistance = 0;
+	for (DFGNode &node : dfg->nodeList)
+	{
+
+		for (DFGNode *child : node.children)
+		{
+
+			if (child->ASAP <= node.ASAP)
+			{
+				std::cout << "Backedge Parent: " << node.idx << ", Child: " << child->idx <<"\n";
+
+				std::cout << "Parent ASAP: " << node.ASAP << ", Child ASAP: " << child->ASAP <<"\n";
+
+				std::cout << "Parent ALAP: " << node.ALAP << ", Child ALAP: " << child->ALAP <<"\n";
+				number_of_backedges = number_of_backedges+ 1;
+				recDistance = node.ASAP - child->ASAP;
+				assert(recDistance>=0);
+				if(recDistance > recMinII){
+					recMinII = recDistance;
+				}
+				// cout << "node.childrenEdgeType[child]" << node.childrenEdgeType[child] <<"\n";
+				// assert(node.childrenEdgeType[child] == "INTER");
+
+			}
+		}
+	}
+
+
+	std::cout << "Number of Backedges: " << number_of_backedges <<"\n";
+	std::cout << "Recurrence Minimum II: " << recMinII <<"\n";
+	//exit(true);
+	return recMinII;
+}

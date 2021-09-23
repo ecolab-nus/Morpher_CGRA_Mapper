@@ -241,6 +241,8 @@ bool DFG::parseXML(std::string fileName)
 		}
 		std::cout << "\n";
 	}
+
+	return true;
 }
 
 void DFG::printDFG()

@@ -92,61 +92,62 @@ bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg){
 
   
   //create the initial mapping
-	for(int i = 0; i < 100; i++) {
-		while (!unmappedNodes.empty())
-		{
-			DFGNode *node = unmappedNodes.top();
-			unmappedNodes.pop();
+	// for(int i = 0; i < 100; i++) {
+	// 	while (!unmappedNodes.empty())
+	// 	{
+	// 		DFGNode *node = unmappedNodes.top();
+	// 		unmappedNodes.pop();
 
-			//try to map the current node
-			LOG(INIT)<<" *********initial mapping :  mapping node:"<<node->idx<<" no."<<i<<"\n";
-			int j = 0; bool isRouteSucc = false;
-			while(!isRouteSucc && j < 20){
-				auto candidateDP = getRandomCandidate(node).front();
-				isRouteSucc =  Route(node, candidateDP);
+	// 		//try to map the current node
+	// 		LOG(INIT)<<" *********initial mapping :  mapping node:"<<node->idx<<" no."<<i<<"\n";
+	// 		int j = 0; bool isRouteSucc = false;
+	// 		while(!isRouteSucc && j < 20){
+	// 			auto candidateDP = getRandomCandidate(node).front();
+	// 			isRouteSucc =  SARoute(node, candidateDP);
 				
-				if (!isRouteSucc){
-					node->clear(this->dfg);
-				} 
-				j++;
-			}
+	// 			if (!isRouteSucc){
+	// 				node->clear(this->dfg);
+	// 			} 
+	// 			j++;
+	// 		}
 
-			//re-do the map
-			if (!isRouteSucc){
-				DFGNode *prevNode = mappedNodes.top();
-				mappedNodes.pop();
-				unmappedNodes.push(node);
-				unmappedNodes.push(prevNode);
-				prevNode->clear(this->dfg);
-				backtrack_credit --;
-				if(backtrack_credit<0) break;
-			}else{
-				mappedNodes.push(node);
-			}
-		}
+	// 		//re-do the map
+	// 		if (!isRouteSucc){
+	// 			DFGNode *prevNode = mappedNodes.top();
+	// 			mappedNodes.pop();
+	// 			unmappedNodes.push(node);
+	// 			unmappedNodes.push(prevNode);
+	// 			prevNode->clear(this->dfg);
+	// 			backtrack_credit --;
+	// 			if(backtrack_credit<0) break;
+	// 		}else{
+	// 			mappedNodes.push(node);
+	// 		}
+	// 	}
 
 		
-		if(unmappedNodes.size()>0){
-			//cannot map in the i-th iteration
-			while (!mappedNodes.empty())
-			{
-				DFGNode *prevNode = mappedNodes.top();
-				mappedNodes.pop();
-				unmappedNodes.push(prevNode);
-				prevNode->clear(this->dfg);
-			}
+	// 	if(unmappedNodes.size()>0){
+	// 		//cannot map in the i-th iteration
+	// 		while (!mappedNodes.empty())
+	// 		{
+	// 			DFGNode *prevNode = mappedNodes.top();
+	// 			mappedNodes.pop();
+	// 			unmappedNodes.push(prevNode);
+	// 			prevNode->clear(this->dfg);
+	// 		}
 			
-		}else{
-			break;
-		}
+	// 	}else{
+	// 		break;
+	// 	}
+	// }
+	if(!initMap()){
+		std::cout<<"cannot find an initial mapping, exit....\n";
+		return false;
 	}
   
 	int overuse_number = getCongestionNumber();
 	LOG(SA)<<"Initial mapping done. Overuse:" <<overuse_number<<" \n";
-	if(unmappedNodes.size()>0){
-		std::cout<<"cannot find an initial mapping, exit....\n";
-		return false;
-	}
+	
 	else if(overuse_number == 0){
 		std::cout<<"find a valid mapping, exit....\n";
 		return true;
@@ -169,6 +170,185 @@ bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg){
 	return  true;
 }
 
+bool CGRAXMLCompile::SAMapper::initMap(){
+
+	std::stack<DFGNode *> mappedNodes;
+	std::stack<DFGNode *> unmappedNodes;
+	std::map<DFGNode *, std::priority_queue<dest_with_cost>> estimatedRouteInfo;
+	enableBackTracking = true;
+	int backTrackLimit = 4;
+	int backTrackCredits = 4;
+	while (!mappedNodes.empty())
+	{
+		mappedNodes.pop();
+	}
+	while (!unmappedNodes.empty())
+	{
+		unmappedNodes.pop();
+	}
+
+	for (DFGNode *node : sortedNodeList)
+	{
+		unmappedNodes.push(node);
+	}
+
+	while (!unmappedNodes.empty())
+	{
+
+		DFGNode *node = unmappedNodes.top();
+		unmappedNodes.pop();
+
+
+		bool isEstRouteSucc = false;
+
+		//fill the routing information
+		if (estimatedRouteInfo.find(node) == estimatedRouteInfo.end())
+		{
+			//the routes are not estimated.
+			std::priority_queue<dest_with_cost> estimatedRoutes;
+			DFGNode *failedNode;
+			isEstRouteSucc = estimateRouting(node, estimatedRoutes, &failedNode);
+
+			if (!isEstRouteSucc)
+			{
+				if (enableBackTracking)
+				{
+					if (backTrackCredits == 0 || failedNode == NULL)
+					{
+						std::cout << "route estimation failed...\n";
+						std::cout << "Map Failed!.\n";
+						mappingLog << "route estimation failed...\n";
+						mappingLog << "Map Failed!.\n";
+
+						mappingLog.close();
+						mappingLog2.close();
+						mappingLog4.close();
+						return false;
+					}
+					backTrackCredits--;
+
+					//					DFGNode* prevNode = mappedNodes.top();
+					//					mappedNodes.pop();
+					//					unmappedNodes.push(node);
+					//					unmappedNodes.push(prevNode);
+					//					prevNode->clear(this->dfg);
+					//					std::cout << "route estimation failed...\n";
+					//					mappingLog << "route estimation failed...\n";
+					//					continue;
+
+					DFGNode *prevNode = mappedNodes.top();
+					mappedNodes.pop();
+					unmappedNodes.push(node);
+					unmappedNodes.push(prevNode);
+
+					prevNode->clear(this->dfg);
+					estimatedRouteInfo.erase(node);
+
+					//										assert(failedNode!=NULL);
+					//										unmappedNodes.push(node);
+					//										removeFailedNode(mappedNodes,unmappedNodes,failedNode);
+					//										failedNode->blacklistDest.insert(failedNode->rootDP);
+					//										(failedNode)->clear(this->dfg);
+					//										estimatedRouteInfo.erase(node);
+					//										estimatedRouteInfo.erase(failedNode);
+
+					continue;
+				}
+				else
+				{
+					while (!mappedNodes.empty())
+					{
+						DFGNode *prevNode = mappedNodes.top();
+						mappedNodes.pop();
+						prevNode->clear(this->dfg);
+					}
+				
+					return false;
+				}
+			}
+			estimatedRouteInfo[node] = estimatedRoutes;
+		}
+
+		bool isRouteSucc = false;
+		DFGNode *failedNode = NULL;
+
+		std::cout << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
+		mappingLog << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
+		if (!estimatedRouteInfo[node].empty())
+		{
+			isRouteSucc = Route(node, estimatedRouteInfo[node], &failedNode);
+			if (!isRouteSucc)
+				std::cout << "BLAAAAAAAAAAA!\n";
+		}
+		else
+		{
+			if (mappedNodes.empty())
+			{
+				std::cout << "Map Failed!.\n";
+				return false;
+			}
+		}
+
+		if (!isRouteSucc)
+		{
+			if (mappedNodes.empty())
+			{
+				std::cout << "Map Failed!.\n";
+				return false;
+			}
+
+			if (enableBackTracking)
+			{
+				if (backTrackCredits == 0)
+				{
+					std::cout << "Map Failed!.\n";
+					return false;
+				}
+				//					assert(failedNode!=NULL);
+				backTrackCredits--;
+
+				DFGNode *prevNode = mappedNodes.top();
+				mappedNodes.pop();
+				unmappedNodes.push(node);
+				unmappedNodes.push(prevNode);
+
+				prevNode->clear(this->dfg);
+				estimatedRouteInfo.erase(node);
+
+				//					unmappedNodes.push(node);
+				//					removeFailedNode(mappedNodes,unmappedNodes,failedNode);
+				//					failedNode->blacklistDest.insert(failedNode->rootDP);
+				//					(failedNode)->clear(this->dfg);
+				//					estimatedRouteInfo.erase(node);
+				//					estimatedRouteInfo.erase(failedNode);
+				continue;
+			}
+			else
+			{
+				while (!mappedNodes.empty())
+				{
+					DFGNode *prevNode = mappedNodes.top();
+					mappedNodes.pop();
+					prevNode->clear(this->dfg);
+				}
+				std::cout << "Map Failed!.\n";
+				return false;
+			}
+		}
+
+		//		this->printMappingLog();
+		//		this->printMappingLog2();
+		backTrackCredits = std::min(this->backTrackLimit, backTrackCredits + 1);
+		mappedNodes.push(node);
+	}
+
+return true;
+
+
+
+}
+
+
 float CGRAXMLCompile::SAMapper::inner_map(){
 	int accepted_number = 0;
   std::random_device r;
@@ -186,7 +366,7 @@ float CGRAXMLCompile::SAMapper::inner_map(){
     auto dp_candidate = getRandomCandidate(selected_dfg_node).front();
 		LOG(INNERMAP)<<"********* NO."<<i<<" movement selected DFG node:"<<selected_dfg_node->idx<<" op:"<<selected_dfg_node->op<<" previous_pe:"
 		<<old_dfg_node_placement[selected_dfg_node].first->getPE()->getName()<<" current_pe:"<<dp_candidate->getPE()->getName()<<"\n";
-		bool route_succ = Route(selected_dfg_node, dp_candidate);
+		bool route_succ = SARoute(selected_dfg_node, dp_candidate);
     bool accept = false;
 		int attempted_cost = getCost();
 		if(route_succ){
@@ -282,7 +462,7 @@ int CGRAXMLCompile::SAMapper::getCost(){
 	return total_cost;
 }
 
-bool CGRAXMLCompile::SAMapper::Route(DFGNode *node, DataPath * candidateDP){
+bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath * candidateDP){
 	std::map<DFGNode *, std::vector<Port *>> parent_output_ports;
 	std::map<DFGNode *, Port *> alreadyMappedChildPorts;
 
