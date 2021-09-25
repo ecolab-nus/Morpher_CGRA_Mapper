@@ -300,10 +300,17 @@ int main(int argn, char *argc[])
 			delete tempCGRA;
 			II++;
 
-			if (II == 65)
+			if (II == 32)
 			{
-				std::cout << "II max of 65 has been reached and exiting...\n";
-				// return 0;
+				std::cout << "II max of 32 has been reached and exiting...\n";
+				// Stop measuring time and calculate the elapsed time
+			    gettimeofday(&end, 0);
+			    long seconds = end.tv_sec - begin.tv_sec;
+			    long microseconds = end.tv_usec - begin.tv_usec;
+			    double elapsed = seconds + microseconds*1e-6;
+
+			    std::cout << "Time measured:"<< elapsed<< "seconds.\n";
+				return 0;
 			}
 
 			if (II > hm.upperboundII)
