@@ -11,6 +11,7 @@
 #include <string.h>
 
 
+#include <sys/time.h>
 
 #include "DFG.h"
 #include "CGRA.h"
@@ -161,7 +162,9 @@ void find_routing_resource(Module * md, std::set<Port*> & ports, std::set<port_e
 int main(int argn, char *argc[])
 {
 	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
-
+	// Start measuring time
+	    struct timeval begin, end;
+	    gettimeofday(&begin, 0);
 	// if (argn < 7)
 	// {
 	// 	std::cout << "arguments : <DFG.xml> <peType::\nGENERIC_8REGF,\nHyCUBE_8REGF,\nHyCUBE_4REG,\nN2N_4REGF,\nN2N_8REGF,\nSTDNOC_8REGF,\nSTDNOC_4REGF,\nSTDNOC_4REG,\nSTDNOC_4REGF_1P\nMFU_HyCUBE_4REG\nMFU_HyCUBE_4REGF\nMFU_STDNOC_4REG\nMFU_STDNOC_4REGF> <XYDim> <numberofDPS> <backtracklimit> <initII> <-arch_json> <-noMTpath>\n";
@@ -326,5 +329,12 @@ int main(int argn, char *argc[])
 			
 		}
 	}
+	 // Stop measuring time and calculate the elapsed time
+	    gettimeofday(&end, 0);
+	    long seconds = end.tv_sec - begin.tv_sec;
+	    long microseconds = end.tv_usec - begin.tv_usec;
+	    double elapsed = seconds + microseconds*1e-6;
+
+	    std::cout << "Time measured:"<< elapsed<< "seconds.\n";
 	return 0;
 }
