@@ -62,8 +62,6 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 	std::unordered_map<LatPort, LatPort, hash_LatPort> cameFrom;
 	std::unordered_map<LatPort, int, hash_LatPort> curr_hops_to_port;
 
-	bool open_set_limit_1 = true;// openset contains the neighbors of original abstract astart search openset
-	bool open_set_limit_2 = false;//limit openset to original abstract astart search openset (this cannot be true if limit 1 is false)
 
 	std::vector<LatPort> openSet;
 

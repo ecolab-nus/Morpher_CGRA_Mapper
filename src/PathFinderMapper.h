@@ -137,6 +137,8 @@ public:
 	//static int dy[dir]={0, 1, 1, 1, 0, -1, -1, -1};
 
 	std::set<std::pair<int,int>> astar_abstract_open_set; // open set generated from abstract aster routing
+	bool open_set_limit_1 = false;// openset contains the neighbors of original abstract astart search openset
+	bool open_set_limit_2 = false;//limit openset to original abstract astart search openset (this cannot be true if limit 1 is false)
 
 
 private:

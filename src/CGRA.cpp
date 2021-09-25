@@ -1675,7 +1675,7 @@ void CGRAXMLCompile::CGRA::PrintMappedJSON(string fileName)
 		output_json["CGRA_INS"]["TYPE"] = "CGRA";
 		string pe_name = pe->getName();
 		string spatial_pe_name = pe_name.substr(0, pe_name.size() - 3); //remove the last "-T0" component;
-		cout <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
+		//cout <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
 
 		PrintMappedJSONModule(pe, output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name]);
 	}
@@ -1704,7 +1704,7 @@ void CGRAXMLCompile::CGRA::PrintMappingForPillars(string fileName_i, string file
 		output_json["CGRA_INS"]["TYPE"] = "CGRA";
 		string pe_name = pe->getName();
 		string spatial_pe_name = pe_name.substr(0, pe_name.size() - 3); //remove the last "-T0" component;
-		cout <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
+		//cout <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
 
 		PrintMappedPillarsModule(pe, output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name], outFile_i);
 	}
@@ -1756,7 +1756,7 @@ string CGRAXMLCompile::CGRA::getMuxName(string src_port_name, string desc_port_n
 			return descName;
 		}
 	}else{
-		std::cout<<"!!!!!!!!!!!!!!Wrong!!!!!!!!!!!!"<<std::endl;
+		//std::cout<<"!!!!!!!!!!!!!!Wrong!!!!!!!!!!!!"<<std::endl;
 	}
 	return descName;
 }
@@ -1768,7 +1768,7 @@ string CGRAXMLCompile::CGRA::getFUName(string operations, int* output_ID){
 		*output_ID = Op_iter->second;
 	}else{
 		interConnection = true; // to judge whether needs to add suffix to op
-		std::cout<<"!!!!!!!!!!!!!!Wrong!!!!!!!!!!!!"<<std::endl;
+		//std::cout<<"!!!!!!!!!!!!!!Wrong!!!!!!!!!!!!"<<std::endl;
 	}
 	if(*output_ID==18||*output_ID==19||(*output_ID>=27 && *output_ID<=32)){
 		return "loadStoreUnit";

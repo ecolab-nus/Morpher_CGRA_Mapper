@@ -40,6 +40,8 @@ struct arguments
 	int ndps = 1;
 	int maxiter = 30;
 	int max_hops = 4;
+	int open_set_limit = 0;
+	string SkipINTERorINTRA ="";
 };
 
 arguments parse_arguments(int argn, char *argc[])
@@ -54,7 +56,7 @@ arguments parse_arguments(int argn, char *argc[])
 
 	opterr = 0;
 
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:")) != -1)
+	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:l:s:")) != -1)
 		switch (c)
 		{
 		case 'd':
@@ -90,6 +92,12 @@ arguments parse_arguments(int argn, char *argc[])
 			break;
 		case 'h':
 			ret.max_hops = atoi(optarg);
+			break;
+		case 'l':
+			ret.open_set_limit = atoi(optarg);
+			break;
+		case 's':
+			ret.SkipINTERorINTRA = string(optarg);
 			break;
 		case '?':
 			if (optopt == 'c')
@@ -223,6 +231,17 @@ int main(int argn, char *argc[])
 	cout << "json_file_name = " << json_file_name << "\n";
 	// exit(EXIT_SUCCESS);
 
+	if(args.open_set_limit == 0){
+		hm.open_set_limit_1 = false;
+		hm.open_set_limit_2 = false;
+	}else if(args.open_set_limit == 1){
+		hm.open_set_limit_1 = true;
+		hm.open_set_limit_2 = false;
+	}else if(args.open_set_limit == 2) {
+		hm.open_set_limit_1 = true;
+		hm.open_set_limit_2 = true;
+	}
+
 	bool mappingSuccess = false;
 	while (!mappingSuccess)
 	{
@@ -255,7 +274,7 @@ int main(int argn, char *argc[])
 
 #ifdef HIERARCHICAL
 		tempCGRA->analyzeTimeDist(tdi);
-		hm.skip_inter_or_intra = "INTER";
+		hm.skip_inter_or_intra = args.SkipINTERorINTRA;//"INTER";
 #endif
 
 		tempCGRA->max_hops = args.max_hops;
@@ -264,6 +283,7 @@ int main(int argn, char *argc[])
 
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();
+
 		mappingSuccess = hm.Map(tempCGRA, &tempDFG);
 		hm.congestionInfoFile.close();
 		if (!mappingSuccess)
