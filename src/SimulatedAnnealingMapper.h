@@ -21,7 +21,7 @@ namespace CGRAXMLCompile
 
 
 using port_util = std::pair<int,int>;
-using dfg_data = std::pair<DFGNode*,DFGNode*>; // <parent, child>
+using dfg_data = std::pair<DFGNode*,DFGNode*>; // <src, des>
 
 class SAMapper : public PathFinderMapper
 {
@@ -37,6 +37,8 @@ public:
 	std::vector<DataPath*> getRandomCandidate(DFGNode *node);
 	bool restoreMapping(DFGNode *node, 	std::map<DFGNode*, std::pair<DataPath*, int>> & dfg_node_placement, 
 										std::map<dfg_data, std::vector<LatPort>> & data_routing_path);
+	bool Route(DFGNode *node, std::priority_queue<dest_with_cost> &estimatedRoutes, DFGNode **failedNode);
+
 	bool SARoute(DFGNode *node, DataPath * candidate);
 	int getCost();
 	int getCongestionNumber();

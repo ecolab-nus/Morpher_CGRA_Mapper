@@ -132,8 +132,8 @@ protected:
 	
 	std::set<DFGNode *> getElders(DFGNode *node);
 
-	std::map<BackEdge, std::set<DFGNode *>> RecCycles;
-	std::map<BackEdge, std::set<DFGNode *>> RecCyclesLS;
+	std::map<BackEdge, std::set<DFGNode *>> RecCycles; // real backedge
+	std::map<BackEdge, std::set<DFGNode *>> RecCyclesLS; // the recurrent edge for load store.
 	int getMaxLatencyBE(DFGNode *node, std::map<DataPath *, beParentInfo> &beParentDests, int &downStreamOps);
 	std::vector<DataPath *> modifyMaxLatCandDest(std::map<DataPath *, int> candDestIn, DFGNode *node, bool &changed);
 

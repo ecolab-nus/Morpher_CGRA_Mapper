@@ -175,7 +175,7 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 	std::stack<DFGNode *> mappedNodes;
 	std::stack<DFGNode *> unmappedNodes;
 	std::map<DFGNode *, std::priority_queue<dest_with_cost>> estimatedRouteInfo;
-	enableBackTracking = true;
+	enableBackTracking = false;
 	int backTrackLimit = 4;
 	int backTrackCredits = 4;
 	while (!mappedNodes.empty())
@@ -235,40 +235,43 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 
 			if (!isEstRouteSucc)
 			{
-				if (enableBackTracking)
-				{
-					if (backTrackCredits == 0 || failedNode == NULL)
-					{
-						std::cout << "route estimation failed...\n";
-						std::cout << "Map Failed!.\n";
+				if(estimatedRoutes.empty()){
+					return false;
+				}
+				// if (enableBackTracking)
+				// {
+				// 	if (backTrackCredits == 0 || failedNode == NULL)
+				// 	{
+				// 		std::cout << "route estimation failed...\n";
+				// 		std::cout << "Map Failed!.\n";
 
-						return false;
-					}
-					backTrackCredits--;
+				// 		return false;
+				// 	}
+				// 	backTrackCredits--;
 
 	
 
-					DFGNode *prevNode = mappedNodes.top();
-					mappedNodes.pop();
-					unmappedNodes.push(node);
-					unmappedNodes.push(prevNode);
+				// 	DFGNode *prevNode = mappedNodes.top();
+				// 	mappedNodes.pop();
+				// 	unmappedNodes.push(node);
+				// 	unmappedNodes.push(prevNode);
 
-					prevNode->clear(this->dfg);
-					estimatedRouteInfo.erase(node);
+				// 	prevNode->clear(this->dfg);
+				// 	estimatedRouteInfo.erase(node);
 
-					continue;
-				}
-				else
-				{
-					while (!mappedNodes.empty())
-					{
-						DFGNode *prevNode = mappedNodes.top();
-						mappedNodes.pop();
-						prevNode->clear(this->dfg);
-					}
+				// 	continue;
+				// }
+				// else
+				// {
+				// 	while (!mappedNodes.empty())
+				// 	{
+				// 		DFGNode *prevNode = mappedNodes.top();
+				// 		mappedNodes.pop();
+				// 		prevNode->clear(this->dfg);
+				// 	}
 				
-					return false;
-				}
+				// 	return false;
+				// }
 			}
 			estimatedRouteInfo[node] = estimatedRoutes;
 		}
@@ -281,8 +284,12 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 		if (!estimatedRouteInfo[node].empty())
 		{
 			isRouteSucc = Route(node, estimatedRouteInfo[node], &failedNode);
-			if (!isRouteSucc)
+			if (!isRouteSucc){
 				std::cout << "BLAAAAAAAAAAA!\n";
+			}
+			// else if(!estimatedRouteInfo[node].empty()){
+			// 	//route not successful
+			// }
 		}
 		else
 		{
@@ -346,7 +353,7 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 		mappedNodes.push(node);
 	}
 
-return true;
+	return true;
 
 
 
@@ -727,4 +734,331 @@ std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::SAMapper::getRandomCandid
   return candidateDests;
 
 
+}
+
+//compated to the PathFinderMapper one, add some additional information for SA 
+bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
+											 std::priority_queue<dest_with_cost> &estimatedRoutes,
+											 DFGNode **failedNode)
+{
+
+	std::cout << "Route begin...\n";
+
+	int parentRoutingPortCount = 0;
+	int routedParents = 0;
+
+	for (DFGNode *parent : node->parents)
+	{
+		int thisParentNodeCount = 0;
+		if (parent->rootDP != NULL)
+		{
+			thisParentNodeCount = parent->routingPorts.size();
+		}
+
+		//		if(thisParentNodeCount>0){
+		//			routedParents++;
+		//			thisParentNodeCount--; //remove the T port in the cout
+		//		}
+		parentRoutingPortCount += thisParentNodeCount;
+	}
+	//	if(parentRoutingPortCount>0){
+	//		parentRoutingPortCount-=1; //remove the T port in the cout
+	//	}
+
+	int addedRoutingParentPorts = 0;
+
+	bool routeSucc = false;
+	dest_with_cost currDest;
+	while (!estimatedRoutes.empty())
+	{
+		currDest = estimatedRoutes.top();
+		estimatedRoutes.pop();
+
+		if (currDest.dest->getMappedNode() != NULL)
+		{
+			std::cout << "currDest is not NULL \n";
+			std::cout << "currDP:" << currDest.dest->getName() << ",currPE:" << currDest.dest->getPE()->getName() << "\n";
+			std::cout << "currNode:" << currDest.dest->getMappedNode()->idx << "\n";
+		}
+		assert(currDest.dest->getMappedNode() == NULL);
+		std::cout << "alreadyMappedChilds = " << currDest.alreadyMappedChilds.size() << "\n";
+
+		bool alreadMappedChildRouteSucc = true; //this will change to false if failure in alreadyMappedChilds
+		std::map<DFGNode *, std::vector<LatPort>> mappedChildPaths;
+		std::map<DFGNode *, std::map<Port *, std::set<DFGNode *>>> mappedChildMutexPaths;
+		while (!currDest.alreadyMappedChilds.empty())
+		{
+			dest_child_with_cost dest_child_with_cost_ins = currDest.alreadyMappedChilds.top();
+			currDest.alreadyMappedChilds.pop();
+
+			std::vector<LatPort> possibleStarts;
+			possibleStarts.clear();
+			possibleStarts.push_back(dest_child_with_cost_ins.startPort);
+			for (std::pair<Port *, int> pair : node->routingPorts)
+			{
+				possibleStarts.push_back(std::make_pair(pair.first->getLat(), pair.first));
+				assert(pair.first->getLat() != -1);
+			}
+
+			std::priority_queue<cand_src_with_cost> q;
+			std::map<Port *, std::set<DFGNode *>> mutexPathsTmp;
+			std::vector<LatPort> pathTmp;
+			for (LatPort p : possibleStarts)
+			{
+				int cost;
+				if (LeastCostPathAstar(p, dest_child_with_cost_ins.childDest, dest_child_with_cost_ins.childDP, pathTmp, cost, node, mutexPathsTmp, dest_child_with_cost_ins.child))
+				{
+					pathTmp.clear();
+					q.push(cand_src_with_cost(p, dest_child_with_cost_ins.childDest, cost));
+				}
+			}
+
+			int cost;
+			std::vector<LatPort> path;
+			LatPort src = dest_child_with_cost_ins.startPort;
+			LatPort dest = dest_child_with_cost_ins.childDest;
+
+			while (!q.empty())
+			{
+				cand_src_with_cost head = q.top();
+				q.pop();
+				std::map<Port *, std::set<DFGNode *>> mutexPaths;
+				alreadMappedChildRouteSucc = LeastCostPathAstar(head.src, dest, dest_child_with_cost_ins.childDP, path, cost, node, mutexPaths, dest_child_with_cost_ins.child);
+				if (alreadMappedChildRouteSucc)
+				{
+					assignPath(node, dest_child_with_cost_ins.child, path);
+					data_routing_path.emplace(std::make_pair(node, dest_child_with_cost_ins.child),path );
+					mappedChildPaths[dest_child_with_cost_ins.child] = path;
+					mappedChildMutexPaths[dest_child_with_cost_ins.child] = mutexPaths;
+					std::cout << "Route success :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "|node=" << node->idx << "\n";
+					break;
+				}
+				else
+				{
+					std::cout << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
+					for (LatPort p : path)
+					{
+						if (p.second->getMod()->getPE())
+						{
+							std::cout << p.second->getMod()->getPE()->getName() << "-->";
+						}
+					}
+					std::cout << "\n";
+
+					for (LatPort p : path)
+					{
+						std::cout << p.second->getFullName() << "\n";
+					}
+				}
+				path.clear();
+			}
+			if (!alreadMappedChildRouteSucc)
+			{
+				*failedNode = dest_child_with_cost_ins.child;
+				break;
+			}
+		}
+
+		if (alreadMappedChildRouteSucc)
+		{
+			for (std::pair<Port *, int> pair : node->routingPorts)
+			{
+				Port *p = pair.first;
+				int destIdx = pair.second;
+				std::cout << "to:" << destIdx << "," << p->getFullName() << "\n";
+			}
+		}
+
+		if (!alreadMappedChildRouteSucc)
+		{
+			node->clear(this->dfg);
+			continue; //try the next dest
+		}
+		else
+		{
+			std::cout << "Already Mapped child Routes....\n";
+			for (std::pair<DFGNode *, std::vector<LatPort>> pair : mappedChildPaths)
+			{
+				DFGNode *child = pair.first;
+				for (LatPort lp : pair.second)
+				{
+					Port *p = lp.second;
+					std::cout << "to:" << child->idx << " :: ";
+					std::cout << p->getFullName();
+					if (mappedChildMutexPaths[child].find(p) != mappedChildMutexPaths[child].end())
+					{
+						std::cout << "|mutex(";
+						for (DFGNode *mutexnode : mappedChildMutexPaths[child][p])
+						{
+							std::cout << mutexnode->idx << ",";
+						}
+						std::cout << ")";
+					}
+					std::cout << "\n";
+				}
+				std::cout << "\n";
+			}
+			std::cout << "\n";
+		}
+
+		bool parentRoutSucc = true;
+		addedRoutingParentPorts = 0;
+		std::map<DFGNode *, std::map<Port *, std::set<DFGNode *>>> mappedParentMutexPaths;
+		while (!currDest.parentStartLocs.empty())
+		{
+			parent_cand_src_with_cost pcswc = currDest.parentStartLocs.top();
+			currDest.parentStartLocs.pop();
+			DFGNode *parent = pcswc.parent;
+			std::priority_queue<cand_src_with_cost> &q = pcswc.cswc;
+
+			bool succ = false;
+			while (!q.empty())
+			{
+				cand_src_with_cost cand_src_with_cost_ins = q.top();
+				q.pop();
+				LatPort src = cand_src_with_cost_ins.src;
+				LatPort dest = cand_src_with_cost_ins.dest;
+				std::vector<LatPort> path;
+				std::map<Port *, std::set<DFGNode *>> mutexPath;
+				int cost;
+				succ = LeastCostPathAstar(src, dest, currDest.dest, path, cost, parent, mutexPath, node);
+				if (succ)
+				{
+					//					bool routedParent=true;
+					//					if(parent->routingPorts.size()==0){ //unrouted parent
+					//						routedParent=false;
+					//					}
+					assignPath(parent, node, path);
+					data_routing_path.emplace(std::make_pair(parent, node),path );
+
+					mappedParentMutexPaths[parent] = mutexPath;
+					addedRoutingParentPorts += path.size();
+					//					if(routedParent){
+					addedRoutingParentPorts -= 1;
+					//					}
+					//					for(Port* p : path){
+					//						std::cout << p->getFullName() << ",\n";
+					//					}
+					//					std::cout << "\n";
+					break;
+				}
+				else
+				{
+					addedRoutingParentPorts = 0;
+					node->clear(this->dfg);
+					std::cout << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
+				}
+				path.clear();
+			}
+			if (!succ)
+			{
+				*failedNode = parent;
+				node->clear(this->dfg);
+				addedRoutingParentPorts = 0;
+				parentRoutSucc = false; // at least one parent failed to route, try a new dest
+				break;
+			}
+		}
+
+		if (parentRoutSucc)
+		{ //all parents routed succesfull + all mapped childs are connected
+			routeSucc = true;
+			std::cout << "node=" << node->idx << ",op=" << node->op << " is mapped to " << currDest.dest->getPE()->getName() << ",lat=" << currDest.destLat << "\n";
+			std::cout << "routing info ::\n";
+			for (DFGNode *parent : node->parents)
+			{
+				std::cout << "parent routing port size = " << parent->routingPorts.size() << "\n";
+				int prev_lat = -1;
+				for (std::pair<Port *, int> pair : parent->routingPorts)
+				{
+					Port *p = pair.first;
+					//					if(node.routingPortDestMap[p]==&node){
+					std::cout << "fr:" << parent->idx << " :: ";
+					std::cout << ",dest=" << pair.second << " :: ";
+					std::cout << p->getFullName();
+					std::cout << ",lat=" << p->getLat();
+
+					if (mappedParentMutexPaths[parent].find(p) != mappedParentMutexPaths[parent].end())
+					{
+						std::cout << "|mutex(";
+						for (DFGNode *mutexnode : mappedParentMutexPaths[parent][p])
+						{
+							std::cout << mutexnode->idx << ",";
+						}
+						std::cout << ")";
+					}
+					std::cout << std::endl;
+					//					}
+					if (prev_lat != -1)
+					{
+						//							assert(p->getLat() - prev_lat <= 1);
+					}
+					prev_lat = p->getLat();
+				}
+			}
+			std::cout << "routing info done.\n";
+			currDest.dest->assignNode(node, currDest.destLat, this->dfg);
+			dfg_node_placement.emplace(node, std::make_pair(currDest.dest, currDest.destLat));
+
+			mappingLog4 << node->idx << "," << currDest.dest->getPE()->X << ","<< currDest.dest->getPE()->Y << "," << currDest.destLat << "\n";
+			std::cout << "mappingLog4=" << node->idx << "," << currDest.dest->getPE()->X << ","<< currDest.dest->getPE()->Y << "," << currDest.destLat << "\n";
+			node->rootDP = currDest.dest;
+			break;
+		}
+		node->clear(this->dfg);
+	}
+
+	if (routeSucc)
+	{
+		std::cout << "Route success...\n";
+
+		int parentRoutingPortCountEnd = 0;
+		//		int mappedParentCount=0;
+		for (DFGNode *parent : node->parents)
+		{
+			if (parent->rootDP != NULL)
+			{
+				//				mappedParentCount++;
+				parentRoutingPortCountEnd += parent->routingPorts.size();
+			}
+		}
+		parentRoutingPortCountEnd = std::max(0, parentRoutingPortCountEnd - routedParents);
+		if (parentRoutingPortCountEnd != parentRoutingPortCount + addedRoutingParentPorts)
+		{
+			std::cout << "parentRoutingPortCountEnd=" << parentRoutingPortCountEnd << "\n";
+			std::cout << "addedRoutingParentPorts=" << addedRoutingParentPorts << "\n";
+			std::cout << "parentRoutingPortCount=" << parentRoutingPortCount << "\n";
+		}
+
+		//		assert(parentRoutingPortCountEnd==parentRoutingPortCount+addedRoutingParentPorts);
+		return true;
+	}
+	else
+	{
+		currDest.dest->assignNode(node, currDest.destLat, this->dfg);
+		node->rootDP = currDest.dest;
+		node->clear(this->dfg);
+		std::cout << "Route failed...\n";
+
+		int parentRoutingPortCountEnd = 0;
+		//		int mappedParentCount=0;
+		for (DFGNode *parent : node->parents)
+		{
+			if (parent->rootDP != NULL)
+			{
+				//				mappedParentCount++;
+				parentRoutingPortCountEnd += parent->routingPorts.size();
+			}
+		}
+		parentRoutingPortCountEnd = std::max(0, parentRoutingPortCountEnd - routedParents);
+		if (parentRoutingPortCountEnd != parentRoutingPortCount + addedRoutingParentPorts)
+		{
+			std::cout << "parentRoutingPortCountEnd=" << parentRoutingPortCountEnd << "\n";
+			std::cout << "addedRoutingParentPorts=" << addedRoutingParentPorts << "\n";
+			std::cout << "parentRoutingPortCount=" << parentRoutingPortCount << "\n";
+		}
+		//		assert(parentRoutingPortCountEnd==parentRoutingPortCount);
+		assert(*failedNode != NULL);
+		return false;
+	}
 }

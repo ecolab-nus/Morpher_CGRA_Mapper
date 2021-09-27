@@ -3082,6 +3082,7 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 		{
 			assert(cgra->minLatBetweenPEs == 1);
 			int max_dist = 0;
+			//be means backedge
 			for (std::pair<DataPath *, beParentInfo> pair : beParentDests)
 			{
 				//				if(pair.second.isLDST == false){
