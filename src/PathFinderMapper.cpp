@@ -859,7 +859,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				//Skip parent if the edge is pseudo
 				if (parent->getOPtype(node) == "PS")
 					continue;
-
+#ifdef HIERARCHICAL
 				if(parent->childrenEdgeType[node]  == skip_inter_or_intra){
 					if(skip_inter_or_intra == "INTER"){
 						std::cout << "Skipping inter edge.....\n";
@@ -868,7 +868,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					}
 					continue;
 				}
-
+#endif
 				Port *destPort = dest->getInPort(parent->getOPtype(node));
 				minLatDestVal = minLatDestVal_prime + parent->childNextIter[node] * ii;
 
@@ -1499,7 +1499,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog3.open(mappingLog3FileName_withIter.c_str());
 		mappingLog4.open(mappingLog4FileName_withIter.c_str());
 		mappingLog5.open(mappingLog5FileName_withIter.c_str());
-#ifdef HIERARCHICAL
+#ifdef CLUSTERED_ARCH
 		mappingLog5 << cgra->get_x_max_clustered() <<","<<cgra->get_y_max_clustered() <<","<<cgra->get_t_max() <<"\n";
 #elif
 		mappingLog5 << cgra->get_x_max() <<","<<cgra->get_y_max() <<","<<cgra->get_t_max() <<"\n";
@@ -1786,8 +1786,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		//#endif
 
 		// by Yujie
-		// cgra->PrintMappedJSON(fNameLog1 + cgra->getCGRAName() + "mapping.json");
-		cgra->PrintMappingForPillars(fNameLog1 + cgra->getCGRAName() + "mapping_i.txt", fNameLog1 + cgra->getCGRAName() + "mapping_r.txt");
+		//cgra->PrintMappingForPillars(fNameLog1 + cgra->getCGRAName() + "mapping_i.txt", fNameLog1 + cgra->getCGRAName() + "mapping_r.txt");
 
 		std::cout << "Map Success!.\n";
 		mappingLog.close();

@@ -112,7 +112,7 @@ public:
 
 		this->Y = y;
 		this->X = x;
-#ifdef HIERARCHICAL
+#ifdef CLUSTERED_ARCH
 		this->tile_name = name.substr(0,name.find("|_PE"));
 		this->pe_name_without_tile_prefix = name.substr(name.find("PE"), name.size()-1);
 #endif
@@ -121,7 +121,7 @@ public:
 	int X;
 	int Y;
 	int T;
-#ifdef HIERARCHICAL
+#ifdef CLUSTERED_ARCH
 	string tile_name;
 	string pe_name_without_tile_prefix;
 #endif

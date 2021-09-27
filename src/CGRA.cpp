@@ -600,7 +600,7 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 	// cout << json;
 
 	//PreprocessPattern(json["ARCH"]["CGRA"]);
-#ifdef HIERARCHICAL
+#ifdef CLUSTERED_ARCH
 	PreprocessTilePattern(json["ARCH"]);
 #else
 	PreprocessPattern(json["ARCH"]["CGRA"]);
@@ -1391,7 +1391,7 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist(TimeDistInfo tdi)
 
 TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 {
-#ifdef HIERARCHICAL
+#ifdef CLUSTERED_ARCH
 	unordered_map<string,unordered_map<string,int>> TimeDistBetweenPEMapInTile;
 #endif
 	for (Module *m1 : subModArr[0])
@@ -1414,7 +1414,7 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 			PE *pe2 = static_cast<PE *>(m2);
 			// if (pe1 == pe2)
 			// continue;
-#ifdef HIERARCHICAL
+#ifdef CLUSTERED_ARCH
 			if(pe1->tile_name == pe2->tile_name){
 				cout << "pe1_name: " << pe1->pe_name_without_tile_prefix <<" pe2_name:" << pe2->pe_name_without_tile_prefix <<"\n";
 
@@ -1517,7 +1517,7 @@ void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, 
 			 //cout << "fu = " << currFU->getFullName() << ",";
 			 //cout << "srcPE=" << srcPE->getName() << ",destPE=" << destPE->getName() << "\tcurrPort=" << currPort->getFullName() << ",time_dist=" << time_dist << "\n";
 			TimeDistBetweenClosestMEMPEMap[srcPE->getName()] = time_dist;
-#ifdef HIERARCHICAL
+#ifdef CLUSTERED_ARCH
 			TimeDistBetweenClosestMEMPEMapInTile[srcPE->pe_name_without_tile_prefix] = time_dist;
 #endif
 		}
@@ -1536,7 +1536,7 @@ void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, 
 	vector<Port *> nextPorts = currPort->getMod()->getNextPorts(currPort);
 	for (Port *p : nextPorts)
 	{
-#ifdef HIERARCHICAL
+#ifdef CLUSTERED_ARCH
 		PE *nextPE = p->getMod()->getPE();
 		if(nextPE->tile_name != srcPE->tile_name){
 			continue;

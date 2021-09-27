@@ -204,7 +204,7 @@ int main(int argn, char *argc[])
 	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
 #endif
 
-#ifdef HIERARCHICAL
+#ifdef CLUSTERED_ARCH
 	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
 #endif
 	//return 0;
@@ -275,11 +275,13 @@ int main(int argn, char *argc[])
 		tempCGRA->analyzeTimeDist(tdi);
 #endif
 
-#ifdef HIERARCHICAL
+#ifdef CLUSTERED_ARCH
 		tempCGRA->analyzeTimeDist(tdi);
-		hm.skip_inter_or_intra = args.SkipINTERorINTRA;//"INTER";
 #endif
 
+#ifdef HIERARCHICAL
+		hm.skip_inter_or_intra = args.SkipINTERorINTRA;//"INTER";
+#endif
 		tempCGRA->max_hops = args.max_hops;
 
 
@@ -341,7 +343,7 @@ int main(int argn, char *argc[])
 	    long seconds = end.tv_sec - begin.tv_sec;
 	    long microseconds = end.tv_usec - begin.tv_usec;
 	    double elapsed = seconds + microseconds*1e-6;
-
+	    std::cout << "Final II:"<< II<< "\n";
 	    std::cout << "Time measured:"<< elapsed<< "seconds.\n";
 	return 0;
 }

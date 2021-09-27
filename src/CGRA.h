@@ -345,7 +345,7 @@ private:
 	unordered_map<string,unordered_map<string,int>> TimeDistBetweenPEMap;
 	unordered_map<string,int> TimeDistBetweenClosestMEMPEMap;
 
-#ifdef HIERARCHICAL
+#ifdef CLUSTERED_ARCH
 
 	unordered_map<string,int> TimeDistBetweenClosestMEMPEMapInTile;
 #endif

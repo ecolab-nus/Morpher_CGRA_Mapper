@@ -13,7 +13,8 @@
 #include <map>
 #include <set>
 
-#define HIERARCHICAL
+//#define HIERARCHICAL
+#define CLUSTERED_ARCH
 #define NOTIMEDISTANCEFUNC
 
 namespace CGRAXMLCompile
