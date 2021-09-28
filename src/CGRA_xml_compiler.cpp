@@ -43,6 +43,8 @@ struct arguments
 	int max_hops = 4;
 	int open_set_limit = 0;
 	string SkipINTERorINTRA ="";
+	string summary_file_name = "summary.log";
+	int entry_id = -1;
 };
 
 arguments parse_arguments(int argn, char *argc[])
@@ -57,7 +59,7 @@ arguments parse_arguments(int argn, char *argc[])
 
 	opterr = 0;
 
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:l:s:")) != -1)
+	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:l:s:u:a:")) != -1)
 		switch (c)
 		{
 		case 'd':
@@ -99,6 +101,12 @@ arguments parse_arguments(int argn, char *argc[])
 			break;
 		case 's':
 			ret.SkipINTERorINTRA = string(optarg);
+			break;
+		case 'u':
+			ret.summary_file_name = string(optarg);
+			break;
+		case 'a':
+			ret.entry_id = atoi(optarg);
 			break;
 		case '?':
 			if (optopt == 'c')
@@ -178,6 +186,9 @@ int main(int argn, char *argc[])
 	string PEType = args.PEType;
 	int numberOfDPs = args.ndps;
 	string json_file_name = args.json_file_name;
+	string summary_file_name = args.summary_file_name;
+	std::ofstream summaryFile;
+	summaryFile.open(summary_file_name.c_str(), std::ios_base::app);
 	int initUserII = args.userII;
 	
 	DFG currDFG;
@@ -344,6 +355,11 @@ int main(int argn, char *argc[])
 	    long microseconds = end.tv_usec - begin.tv_usec;
 	    double elapsed = seconds + microseconds*1e-6;
 	    std::cout << "Final II:"<< II<< "\n";
+	    summaryFile << "\n**************************\n";
+	    summaryFile << "Entry ID:"<<args.entry_id<<", DFG:" << args.dfg_filename <<", JSON:" << args.json_file_name << ", max iterations:" << args.maxiter << ", Skip inter or intra:" << args.SkipINTERorINTRA << ", Open set limit: " << args.open_set_limit << "\n";
+	    summaryFile << "Final II:"<< II<< "\n";
 	    std::cout << "Time measured:"<< elapsed<< "seconds.\n";
+	    summaryFile<< "Time measured:"<< elapsed<< " s ("<<elapsed/3600<<" h).\n";
+	    summaryFile << "**************************\n";
 	return 0;
 }
