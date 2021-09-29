@@ -830,7 +830,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	int minLatSucc = 1000000000;
 	std::priority_queue<dest_with_cost> estimatedRoutesTemp;
 
-	int allowed_time_steps_for_connection = 3;
+	int allowed_time_steps_for_connection = 30;
 	int iterations = allowed_time_steps_for_connection;
 
 	//Route Estimation
