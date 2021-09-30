@@ -2268,13 +2268,13 @@ int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
 
 				std::cout << "Parent ALAP: " << node.ALAP << ", Child ALAP: " << child->ALAP <<"\n";
 				number_of_backedges = number_of_backedges+ 1;
-				recDistance = node.ASAP - child->ASAP;
+				recDistance = node.ASAP - child->ASAP +1;
 				assert(recDistance>=0);
 				if(recDistance > recMinII){
 					recMinII = recDistance;
 				}
 				cout << "node.childrenEdgeType[child]" << node.childrenEdgeType[child] <<"\n";
-				assert(node.childrenEdgeType[child] == "INTER");
+				//assert(node.childrenEdgeType[child] == "INTER");
 
 			}
 		}

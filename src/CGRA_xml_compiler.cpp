@@ -321,8 +321,14 @@ int main(int argn, char *argc[])
 			    long seconds = end.tv_sec - begin.tv_sec;
 			    long microseconds = end.tv_usec - begin.tv_usec;
 			    double elapsed = seconds + microseconds*1e-6;
+			    summaryFile << "\n**************************\n";
+			    summaryFile << "\n************Map failed: II max of 32 has been reached**************\n";
+			    summaryFile << "Entry ID:"<<args.entry_id<<", DFG:" << args.dfg_filename <<", JSON:" << args.json_file_name << ", max iterations:" << args.maxiter << ", Skip inter or intra:" << args.SkipINTERorINTRA << ", Open set limit: " << args.open_set_limit << "\n";
+			    summaryFile << "Res II:"<< resII<< "\n";
+			    summaryFile << "Rec II:"<< recII<< "\n";
 
 			    std::cout << "Time measured:"<< elapsed<< "seconds.\n";
+			    summaryFile<< "Time measured:"<< elapsed<< " s ("<<elapsed/3600<<" h).\n";
 				return 0;
 			}
 
@@ -356,8 +362,11 @@ int main(int argn, char *argc[])
 	    double elapsed = seconds + microseconds*1e-6;
 	    std::cout << "Final II:"<< II<< "\n";
 	    summaryFile << "\n**************************\n";
+	    summaryFile << "\n***********Map Successful***************\n";
 	    summaryFile << "Entry ID:"<<args.entry_id<<", DFG:" << args.dfg_filename <<", JSON:" << args.json_file_name << ", max iterations:" << args.maxiter << ", Skip inter or intra:" << args.SkipINTERorINTRA << ", Open set limit: " << args.open_set_limit << "\n";
-	    summaryFile << "Final II:"<< II<< "\n";
+	    summaryFile << "Res II:"<< resII<< "\n";
+	    summaryFile << "Rec II:"<< recII<< "\n";
+	    summaryFile << "Mapped II:"<< II<< "\n";
 	    std::cout << "Time measured:"<< elapsed<< "seconds.\n";
 	    summaryFile<< "Time measured:"<< elapsed<< " s ("<<elapsed/3600<<" h).\n";
 	    summaryFile << "**************************\n";
