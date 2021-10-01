@@ -26,23 +26,36 @@ using dfg_data = std::pair<DFGNode*,DFGNode*>; // <src, des>
 class SAMapper : public PathFinderMapper
 {
 public:
-	SAMapper(std::string fName) : PathFinderMapper(fName){
-
-										  };
+	SAMapper(std::string fName) : PathFinderMapper(fName){};
 
 	bool SAMap(CGRA *cgra, DFG *dfg);
-	float inner_map();
+
 	bool initMap();
-	port_util getRoutingAndCongestUtil();
-	std::vector<DataPath*> getRandomCandidate(DFGNode *node);
-	bool restoreMapping(DFGNode *node, 	std::map<DFGNode*, std::pair<DataPath*, int>> & dfg_node_placement, 
-										std::map<dfg_data, std::vector<LatPort>> & data_routing_path);
 	bool Route(DFGNode *node, std::priority_queue<dest_with_cost> &estimatedRoutes, DFGNode **failedNode);
 
+	float inner_map();
+	DFGNode* selectDFGNodeToUnmap();
+	DFGNode* selectAParentForDFGNode(DFGNode* target_node);
+	bool clearNodeMapping(DFGNode * node);
+	std::vector<DataPath*> getRandomDPCandidate(DFGNode *node);
 	bool SARoute(DFGNode *node, DataPath * candidate);
 	int getCost();
+	bool restoreMapping(DFGNode *node, 	std::map<DFGNode*, std::pair<DataPath*, int>> & dfg_node_placement, 
+										std::map<dfg_data, std::vector<LatPort>> & data_routing_path);
+	
 	int getCongestionNumber();
 	int getPortUsage();
+	int getNumberOfUnmappedNodes();
+	std::string mapStatus();
+	bool isCurrMappingValid(){
+		int overuse_number = getCongestionNumber();
+		int unmapped_node_numer = getNumberOfUnmappedNodes();
+		if(unmapped_node_numer == 0 && overuse_number == 0){
+			return true;
+		}else{
+			return false;
+		}
+	}
 
 	float updateTemperature(float t, float acceptance_rate)
 	{
@@ -71,7 +84,7 @@ public:
 			return t.tv_sec + t.tv_usec * 0.000001;
 	}
 
-	bool acceptNewMapping(float new_cost, float old_cost, float temperature)
+	bool whetherAcceptNewMapping(float new_cost, float old_cost, float temperature)
 	{
 			if (new_cost < old_cost)
 					return true;
@@ -89,8 +102,8 @@ private:
 	int congest_num;
 	int routing_num;
 
-	float maximum_temp;
-	float minimim_temp;
+	float maximum_temp = 100;
+	float minimim_temp = 10;
 	float curr_temp;
 	int movement_in_each_temp = 100;
   float cold_accept_rate = 0.01;

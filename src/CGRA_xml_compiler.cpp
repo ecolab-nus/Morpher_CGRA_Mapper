@@ -212,6 +212,7 @@ int main(int argn, char *argc[])
 
 	int resII = mapper->getMinimumII(testCGRA, &currDFG);
 	int recII  = mapper->getRecMinimumII(&currDFG);
+	// int recII = 0; // for SA initial mapping test.
 	std::cout << "Res Minimum II = " << resII << "\n";
 	std::cout << "Rec Minimum II = " << recII << "\n";
 	std::cout << "Init User II = " << initUserII << "\n";
@@ -313,5 +314,7 @@ int main(int argn, char *argc[])
 			
 		}
 	}
+	 
+
 	return 0;
 }

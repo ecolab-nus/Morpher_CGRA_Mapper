@@ -100,17 +100,17 @@ void CGRAXMLCompile::DataPath::assignNode(DFGNode *node, int lat, DFG *dfg)
 	}
 	else
 	{
-		std::cout << "new_op = " << node->op << ",old_op = " << fu->currOP << "\n";
+		// std::cout << "new_op = " << node->op << ",old_op = " << fu->currOP << "\n";
 		assert(fu->currOP.compare(node->op) == 0);
 	}
 
 	int oplatency = fu->supportedOPs[node->op];
 	int next_t = (pe->T + oplatency) % cgra->get_t_max();
-	std::cout << "assigning node=" << node->idx << ",to=" << pe->getName() << ",starting t=" << next_t << "\n";
+	// std::cout << "assigning node=" << node->idx << ",to=" << pe->getName() << ",starting t=" << next_t << "\n";
 
 	// PE *nextPE = cgra->PEArr[next_t][pe->Y][pe->X];
 	PE* nextPE = cgra->getLatencyPE(pe,oplatency);
-	cout << "op_lat = " << oplatency << "," << "nextPE = " << nextPE->getName() << "\n";
+	// cout << "op_lat = " << oplatency << "," << "nextPE = " << nextPE->getName() << "\n";
 
 	FU *nextFU = static_cast<FU *>(nextPE->getSubMod(fu->getName()));
 	DataPath *nextDP = static_cast<DataPath *>(nextFU->getSubMod(this->getName()));
@@ -142,7 +142,7 @@ void CGRAXMLCompile::DataPath::clear()
 
 	FU *fu = getFU();
 
-	std::cout << "PE=" << fu->getPE()->getName() << "is cleared!\n";
+	// if(detailed) std::cout << "PE=" << fu->getPE()->getName() << "is cleared!\n";
 
 	bool restDPsNOP = true;
 	for (Module *mod : fu->subModules)
