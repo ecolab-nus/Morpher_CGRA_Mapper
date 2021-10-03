@@ -786,7 +786,7 @@ void CGRAXMLCompile::CGRA::ExpandTilePattern(json &top, json &input, json &conne
 		int tile_y = el["Y"];
 		string tile_mod_type = el["MOD"];
 		string mod_name;
-		cout<<"inside loop";
+		//cout<<"inside loop";
 
 		for (auto &el_pe : top["TILE"]["SUBMODS"][0]["MODS"]){
 			int pe_x = el_pe["X"];
@@ -944,6 +944,29 @@ void CGRAXMLCompile::CGRA::ExpandTilePattern(json &top, json &input, json &conne
 			}
 		}
 	}
+
+
+	for (int x = 0; x < pe_xdim*tile_xdim; x++)
+	{
+		for (int y = 0; y < pe_ydim*tile_ydim; y++)
+		{
+			cout << "PE x :" << x << ",y :" << y <<"\n";
+			int src = x*(tile_ydim*pe_ydim)+y;
+			for(auto it = abstractPEgrid[x*(tile_ydim*pe_ydim)+y]->neighbors.begin(); it !=abstractPEgrid[x*(tile_ydim*pe_ydim)+y]->neighbors.end();it++ ){
+				PE_abstract* pe = *it;
+				cout << "Neighbor x :" << pe->X << ",y :" << pe->Y <<"\n";
+				int dest = pe->X*(tile_ydim*pe_ydim)+pe->Y;
+				PEgridAdjMat[src].push_back(dest);
+				PEgridAdjMat[dest].push_back(dest);
+
+			}
+		}}
+
+//    int source = 0, dest = 7;
+//    printShortestDistance(PEgridAdjMat, source, dest,pe_xdim*tile_xdim*pe_ydim*tile_ydim);
+//
+//
+//	exit(0);
 }
 
 
@@ -2230,8 +2253,9 @@ bool CGRAXMLCompile::CGRA::PreprocessInterSubmodConns(json &arch)
 void CGRAXMLCompile::CGRA::createAbstractPEGrid(){
 for(int i=0;i<tile_xdim*pe_xdim ; i++){
 	for(int j=0;j<tile_ydim*pe_ydim ; j++){
-		PE_abstract* pe = new PE_abstract(i,j);
+		PE_abstract* pe = new PE_abstract(i,j,i*(tile_ydim*pe_ydim)+j);
 		abstractPEgrid.push_back(pe);
+
 	}
 }
 

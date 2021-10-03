@@ -15,6 +15,7 @@
 #include "PE_abstract.h"
 #include <memory>
 #include <nlohmann/json.hpp>
+#include "bfs_shortes_path.hpp"
 
 using namespace std;
 using json = nlohmann::json;
@@ -325,6 +326,8 @@ public:
 	}
 
 	std::vector<PE_abstract *> abstractPEgrid;
+	std::vector<int> PEgridAdjMat[MAX_CGRA_SIZE];
+
 
 private:
 	int x_max;

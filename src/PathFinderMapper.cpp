@@ -594,21 +594,21 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 	//			assert(paths[end][i] == path[i].second);
 	//		}
 
-	mappingLog5 << "start x,y, end x,y\n";
-	mappingLog5 << start.second->getPE()->X << "," << start.second->getPE()->Y << ","<< end.second->getPE()->X << "," << end.second->getPE()->Y << "\n";
-	mappingLog5<<"PATH:\n";
-	for (LatPort lp : path)
-	{
-		mappingLog5 << lp.second->getPE()->X <<"," << lp.second->getPE()->Y <<"," << lp.first << "\n";
-
-	}
-
-	mappingLog5<<"OPENSET:\n";
-	for (LatPort lp : openSet)
-	{
-		mappingLog5 << lp.second->getPE()->X <<"," << lp.second->getPE()->Y <<"," << lp.first << "\n";
-
-	}
+	//mappingLog5 << "start x,y, end x,y\n";
+	//mappingLog5 << start.second->getPE()->X << "," << start.second->getPE()->Y << ","<< end.second->getPE()->X << "," << end.second->getPE()->Y << "\n";
+	//mappingLog5<<"PATH:\n";
+//	for (LatPort lp : path)
+//	{
+//		mappingLog5 << lp.second->getPE()->X <<"," << lp.second->getPE()->Y <<"," << lp.first << "\n";
+//
+//	}
+//
+//	mappingLog5<<"OPENSET:\n";
+//	for (LatPort lp : openSet)
+//	{
+//		mappingLog5 << lp.second->getPE()->X <<"," << lp.second->getPE()->Y <<"," << lp.first << "\n";
+//
+//	}
 
 	//	string shortest_path_route = AstarShortestPath(start,end);
 	//	int j; char c;
@@ -1500,9 +1500,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog4.open(mappingLog4FileName_withIter.c_str());
 		mappingLog5.open(mappingLog5FileName_withIter.c_str());
 #ifdef CLUSTERED_ARCH
-		mappingLog5 << cgra->get_x_max_clustered() <<","<<cgra->get_y_max_clustered() <<","<<cgra->get_t_max() <<"\n";
+		//mappingLog5 << cgra->get_x_max_clustered() <<","<<cgra->get_y_max_clustered() <<","<<cgra->get_t_max() <<"\n";
 #elif
-		mappingLog5 << cgra->get_x_max() <<","<<cgra->get_y_max() <<","<<cgra->get_t_max() <<"\n";
+		//mappingLog5 << cgra->get_x_max() <<","<<cgra->get_y_max() <<","<<cgra->get_t_max() <<"\n";
 #endif
 		mappingLog.open(mappingLogFileName_withIter.c_str());
 		mappingLog2.open(mappingLog2FileName_withIter.c_str());
@@ -3026,6 +3026,8 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 
 	for (BackEdge be : setBackEdges)
 	{
+		//std::cout << "be.second idx = " << be.second->idx << "\n";
+		//std::cout << "be.second->rootDP->getLat() = " << be.second->rootDP->getLat()  << "\n";
 		int maxLatency = be.second->rootDP->getLat() + cgra->get_t_max();
 		int noDownStreamOps = 0;
 		//		maxLatency = maxLatency - OpLatency[be.first->op];
@@ -3315,10 +3317,20 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 			{
 				//				if(pair.second.isLDST == false){
 				PE *bePE = pair.first->getPE();
+				//cout << "pe->getName(): " << pe->getName() << "\n";
+				//cout << "bePE->getName(): " << bePE->getName() << "\n";
 #ifdef NOTIMEDISTANCEFUNC
+#ifdef CLUSTERED_ARCH
+				int dist = BFSShortestDistance(pe->X, pe->Y, bePE->X, bePE->Y, pe->getCGRA());
+				//cout << "dist: " << dist << "\n";
+
+#else
 				int dx = std::abs(bePE->X - pe->X);
 				int dy = std::abs(bePE->Y - pe->Y);
 				int dist = dx + dy;
+
+				cout << "dist: " << dist << "\n";
+#endif
 #else
 				int dist = cgra->getQuickTimeDistBetweenPEs(bePE,pe);
 #endif
@@ -3349,8 +3361,12 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 				}
 
 				int lat_slack = pair.second.lat - maxLat;
+				//cout << "pair.second.lat "<<pair.second.lat << "\n";
+				//cout << "lat_slack "<<lat_slack << "\n";
 				assert(lat_slack >= 0);
 				dist = dist - lat_slack - dsOps;
+				//cout << "dsOps "<<dsOps << "\n";
+				//cout << "dist "<<dist << "\n";
 
 				if (dist > max_dist)
 					max_dist = dist;
@@ -3360,8 +3376,12 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 			if (max_dist > 0)
 				max_dist = max_dist - 1; // can reach the neighbours in the same cycle
 			offset += max_dist;
+			//cout << "offset "<<offset << "\n";
 		}
 
+		//cout << "pair.second "<<pair.second << "\n";
+		//cout << "maxLat"<<maxLat << "\n";
+		//cout << "maxLat - offset"<<maxLat - offset << "\n";
 		if (pair.second <= maxLat - offset)
 		{
 			//				std::cout << "pe=" << pe->getName() << ",";
@@ -4366,4 +4386,47 @@ string CGRAXMLCompile::PathFinderMapper::AstarShortestPath(LatPort start, LatPor
 	}
 	return ""; // no route found
 
+}
+
+
+
+
+int CGRAXMLCompile::PathFinderMapper::BFSShortestDistance(int  xStart,int  yStart,int  xFinish,int  yFinish, CGRA* cgra){
+
+
+	int src = xStart*(cgra->get_y_max_clustered())+yStart;
+	int dest = xFinish*(cgra->get_y_max_clustered())+yFinish;
+	std::pair<int,int> src_dest;
+	src_dest.first = src;
+	src_dest.second = dest;
+
+	if (src == dest) {return 0;}
+
+	int dist = -1;
+	bool exists = (shortest_dist_map.find(src_dest) != shortest_dist_map.end());
+
+	if(exists){
+		dist = shortest_dist_map.at(src_dest);
+	}else{
+        dist = getShortestDistance(cgra->PEgridAdjMat, src, dest,cgra->get_y_max_clustered()*cgra->get_x_max_clustered());
+        shortest_dist_map.insert(std::pair<std::pair<int,int>, int> (src_dest,dist));
+	}
+	return dist;
+//
+//
+//
+//
+//  astar::node<unsigned> n0, n1; // Two nodes.
+//  n0.edges.emplace_back(&n1, 1u); // Add a path with a cost of 1 from n0 to n1.
+//  std::cout << astar::path(n0, n1) << std::endl; // The shortest path from n0 to n1 should be 1.
+//  std::cout << n0.tentative << ", " << n1.tentative << std::endl; // The tentative values should be 0, and 1.
+//
+//
+//
+//		for(auto it = cgra.abstractPEgrid[x*(cgra.get_y_max_clustered())+y]->neighbors.begin(); it !=cgra.abstractPEgrid[x*(cgra.get_y_max_clustered())+y]->neighbors.end();it++ ){
+//			PE_abstract* pe = *it;
+//			cout << "Neighbor x :" << pe->X << ",y :" << pe->Y <<"\n";
+//		}
+//	return 0; // no route found
+//
 }

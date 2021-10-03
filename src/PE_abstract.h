@@ -19,7 +19,7 @@ namespace CGRAXMLCompile
 class PE_abstract
 {
 public:
-	PE_abstract(int x, int y)
+	PE_abstract(int x, int y, int id)
 	{
 
 
@@ -27,6 +27,7 @@ public:
 		assert(x != -1);
 		this->X = x;
 		this->Y = y;
+		this->id = id;
 
 	};
 
@@ -34,6 +35,7 @@ public:
 
 	int X;
 	int Y;
+	int id;
 
 private:
 

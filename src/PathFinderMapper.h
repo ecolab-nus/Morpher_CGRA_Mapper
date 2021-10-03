@@ -6,6 +6,7 @@
  */
 
 #include "HeuristicMapper.h"
+#include "bfs_shortes_path.hpp"
 #include <string>
 
 #ifndef PATHFINDERMAPPER_H_
@@ -75,6 +76,7 @@ public:
 	//	bool LeastCostPathAstar(Port* start, Port* end, DataPath* endDP, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
 	bool LeastCostPathAstar(LatPort start, LatPort end, DataPath *endDP, std::vector<LatPort> &path, int &cost, DFGNode *node, std::map<Port *, std::set<DFGNode *>> &mutexPaths, DFGNode *currNode);
     string AstarShortestPath(LatPort start, LatPort end);
+    int BFSShortestDistance(int  xStart,int  yStart,int  xFinish,int  yFinish, CGRA* cgra);
 	bool estimateRouting(DFGNode *node, std::priority_queue<dest_with_cost> &estimatedRoutes, DFGNode **failedNode);
 	int predictiveRoute(DFGNode *node,
 						DataPath *dest,
@@ -139,6 +141,8 @@ public:
 	std::set<std::pair<int,int>> astar_abstract_open_set; // open set generated from abstract aster routing
 	bool open_set_limit_1 = false;// openset contains the neighbors of original abstract astart search openset
 	bool open_set_limit_2 = false;//limit openset to original abstract astart search openset (this cannot be true if limit 1 is false)
+	std::map<std::pair<int,int>, int> shortest_dist_map;
+
 
 
 private:
