@@ -15,6 +15,8 @@
 
 //#define HIERARCHICAL
 #define CLUSTERED_ARCH
+#define HOTFIX1
+#define HOTFIX2
 #define NOTIMEDISTANCEFUNC
 #define MAX_CGRA_SIZE 256 //16x16 (for creating adj mat)
 

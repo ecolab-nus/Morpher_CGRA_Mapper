@@ -1954,7 +1954,9 @@ int CGRAXMLCompile::HeuristicMapper::getlatMinStarts(
 	//	assert(max!=-1);
 	return max;
 }
-
+/*
+ * All datapaths in MRRG will be assigned a latency higher than the minimum latency based on
+ * T value (control step) of the datapath*/
 std::map<CGRAXMLCompile::DataPath *, int> CGRAXMLCompile::HeuristicMapper::getLatCandDests(
 		const std::vector<DataPath *> &candidateDests, int minLat)
 {

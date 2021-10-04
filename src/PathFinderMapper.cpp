@@ -646,7 +646,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::map<DFGNode *, std::vector<Port *>> possibleStarts;
 	std::map<DFGNode *, Port *> alreadyMappedChildPorts;
 
-	bool detailedDebug = false;//true;
+	bool detailedDebug = true;//true;
 	// if(node->idx==1)detailedDebug=true;
 
 	//	std::cout << "EstimateEouting begin...\n";
@@ -838,10 +838,17 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	{
 		bool pathFromParentExist = false;
 		bool pathExistMappedChild = false;
+		bool destinationHasValidParentsPaths = false;
+		bool destinationHasValidChildPaths = false;
+		bool hasRecChild = false;
 		if (detailedDebug)
 			std::cout << "iteration:" << i << endl;
 		for (DataPath *dest : candidateDests)
 		{
+
+			if (detailedDebug)
+				std::cout << "\nNext candidate destination:\n";
+
 			int minLatDestVal_prime = minLatDests[dest] + ii * i;
 			//					std::cout << "Candidate Dest =" ;
 			//					std::cout << dest->getPE()->getName() << ".";
@@ -854,6 +861,9 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			pathFromParentExist = true;
 			for (std::pair<DFGNode *, std::vector<Port *>> pair : possibleStarts)
 			{
+
+				if (detailedDebug)
+					std::cout << "next possible start::\n";
 				DFGNode *parent = pair.first;
 
 				//Skip parent if the edge is pseudo
@@ -927,6 +937,10 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 						if (detailedDebug)
 							std::cout << "par Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
 						continue;
+					}else{
+						if (detailedDebug)
+							std::cout << "par Estimate Parent to Child Path Exist:: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
+
 					}
 					cost += dpPenaltyMap[dest];
 					res.push(cand_src_with_cost(startCandLat, destPortLat, cost));
@@ -944,6 +958,10 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			if (!pathFromParentExist)
 			{
 				continue;
+			}else{
+				if (detailedDebug)
+					std::cout << "path from parent Exist::\n";
+				destinationHasValidParentsPaths =true;
 			}
 
 			//		for(std::pair<DFGNode*,std::priority_queue<cand_src_with_cost>> pair : parentStartLocs){
@@ -958,9 +976,21 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			std::priority_queue<dest_child_with_cost> alreadyMappedChilds;
 			for (std::pair<DFGNode *, Port *> pair : alreadyMappedChildPorts)
 			{
+				if (detailedDebug)
+					std::cout << "next Already mapped child::\n";
+
 				DFGNode *child = pair.first;
 				Port *childDestPort = pair.second;
 				DataPath* childDP = child->rootDP;
+
+#ifdef HOTFIX2
+				if(node->childNextIter[child] >= 1){
+					if (detailedDebug)
+						std::cout << "child is executed on next iteration (rec child)::\n";
+					hasRecChild = true;
+
+				}
+#endif
 
 				if (child->idx == node->idx)
 				{
@@ -996,6 +1026,9 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				{
 					*failedNode = child;
 					break;
+				}else{
+					if (detailedDebug)
+						std::cout << "path from child Exist::\n";
 				}
 
 				dest_child_with_cost dcwc(child,childDP, childDestPortLat, destPortLat, cost);
@@ -1006,6 +1039,8 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				if (detailedDebug)
 					std::cout << "already child Estimating Path Failed!\n";
 				continue; //if it cannot be mapped to child abort the estimation for this dest
+			}else{
+				destinationHasValidChildPaths = true;
 			}
 
 			assert(pathFromParentExist);
@@ -1019,8 +1054,19 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 
 			estimatedRoutesTemp.push(dest_with_cost_ins);
 		}
+#ifdef HOTFIX2
+		/*If the node has a recurrent child, no point of increasing minLatDestVal since it should be placed before recurrent child
+		 * (node has has hard latency constraint)*/
+		if (hasRecChild)
+			break;
+#endif
+#ifdef HOTFIX1
+		if (destinationHasValidParentsPaths & destinationHasValidChildPaths)
+					break;
+#else
 		if (pathFromParentExist & pathExistMappedChild)
 			break;
+#endif
 	}
 
 	while (!estimatedRoutesTemp.empty())
@@ -2855,7 +2901,9 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityALAP()
 	}
 	dfg->unmappedMemOps = unmappedMemNodeCount;
 }
-
+/*Get the minimum latency value which the current node can be placed.
+ * The minimum latency value depends on the latency values of all parents of the current node.
+ * */
 int CGRAXMLCompile::PathFinderMapper::getlatMinStartsPHI(const DFGNode *currNode,
 		const std::map<DFGNode *, std::vector<Port *>> &possibleStarts)
 {
@@ -3274,7 +3322,10 @@ int CGRAXMLCompile::PathFinderMapper::getFreeMEMPeDist(PE *currPE)
 	// 	//		PE* destPE = this->cgra->PEArr
 	// }
 }
-
+/* Remove the candidate destinations which cannot possibly route the data to backedge childrens.
+ * Backedge childrens (recurrence dependencies) limit the candidate destinations because of the
+ * hard latency requirement (recurrent operation should be placed II cycles after the corresponding operation,
+ * therefore the data need to be routed within II cycles)*/
 std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modifyMaxLatCandDest(
 		std::map<DataPath *, int> candDestIn, DFGNode *node, bool &changed)
 {

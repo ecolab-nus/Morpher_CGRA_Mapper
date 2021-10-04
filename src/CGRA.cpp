@@ -950,11 +950,11 @@ void CGRAXMLCompile::CGRA::ExpandTilePattern(json &top, json &input, json &conne
 	{
 		for (int y = 0; y < pe_ydim*tile_ydim; y++)
 		{
-			cout << "PE x :" << x << ",y :" << y <<"\n";
+			//cout << "PE x :" << x << ",y :" << y <<"\n";
 			int src = x*(tile_ydim*pe_ydim)+y;
 			for(auto it = abstractPEgrid[x*(tile_ydim*pe_ydim)+y]->neighbors.begin(); it !=abstractPEgrid[x*(tile_ydim*pe_ydim)+y]->neighbors.end();it++ ){
 				PE_abstract* pe = *it;
-				cout << "Neighbor x :" << pe->X << ",y :" << pe->Y <<"\n";
+				//cout << "Neighbor x :" << pe->X << ",y :" << pe->Y <<"\n";
 				int dest = pe->X*(tile_ydim*pe_ydim)+pe->Y;
 				PEgridAdjMat[src].push_back(dest);
 				PEgridAdjMat[dest].push_back(dest);
@@ -1023,6 +1023,7 @@ bool CGRAXMLCompile::CGRA::PreprocessTilePattern(json &top)
 	cout << "After JSON Begin :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
 	//std::cout << setw(4) << top << std::endl;
 	cout << "After JSON End :: %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+	assert(tile_xdim*pe_xdim*tile_ydim*pe_ydim <= MAX_CGRA_SIZE);
 }
 
 void CGRAXMLCompile::CGRA::printARCHI(std::string fileName,json &connections, json &submods) {
