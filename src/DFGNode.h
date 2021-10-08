@@ -17,6 +17,7 @@
 #define CLUSTERED_ARCH
 #define HOTFIX1
 #define HOTFIX2
+#define HOTFIX3
 #define NOTIMEDISTANCEFUNC
 #define MAX_CGRA_SIZE 256 //16x16 (for creating adj mat)
 
@@ -38,6 +39,7 @@ public:
 	int TILE;
 	int DFG_CLUSTER;
 	std::vector<std::string> CGRA_CLUSTERS;
+	bool map_on_any_cluster = false;
 #endif
 	int constant;
 	bool hasConst = false;

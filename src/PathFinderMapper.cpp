@@ -713,6 +713,10 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 		//				if( ((currPE->X <= 3)&&(currPE->Y <= 3)&&(node->TILE == 0))  || ((currPE->X > 3)&&(currPE->Y <= 3)&&(node->TILE == 1))
 		//						|| ((currPE->X <= 3)&&(currPE->Y > 3)&&(node->TILE == 2))  || ((currPE->X > 3)&&(currPE->Y > 3)&&(node->TILE == 3)) ){
 		bool map_on_this = false;
+#ifdef HOTFIX3
+		if (node->map_on_any_cluster == true)
+			map_on_this = true;
+#endif
 		for(auto tile_name: node->CGRA_CLUSTERS){
 			if (currPE->tile_name == tile_name){
 				map_on_this = true;
@@ -838,7 +842,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	{
 		bool pathFromParentExist = false;
 		bool pathExistMappedChild = false;
-		bool destinationHasValidParentsPaths = false;
+		bool destinationHasValidPartentPaths = false;
 		bool destinationHasValidChildPaths = false;
 		bool hasRecChild = false;
 		if (detailedDebug)
@@ -961,7 +965,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			}else{
 				if (detailedDebug)
 					std::cout << "path from parent Exist::\n";
-				destinationHasValidParentsPaths =true;
+				destinationHasValidPartentPaths =true;
 			}
 
 			//		for(std::pair<DFGNode*,std::priority_queue<cand_src_with_cost>> pair : parentStartLocs){
@@ -1061,7 +1065,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			break;
 #endif
 #ifdef HOTFIX1
-		if (destinationHasValidParentsPaths & destinationHasValidChildPaths)
+		if (destinationHasValidPartentPaths & destinationHasValidChildPaths)
 					break;
 #else
 		if (pathFromParentExist & pathExistMappedChild)
@@ -1499,6 +1503,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 	std::stack<DFGNode *> mappedNodes;
 	std::stack<DFGNode *> unmappedNodes;
 	std::map<DFGNode *, std::priority_queue<dest_with_cost>> estimatedRouteInfo;
+#ifdef HOTFIX3
+		failed_due_to_estimate_routing = false;
+#endif
 
 	int backTrackCredits = this->backTrackLimit;
 
@@ -1698,6 +1705,12 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						mappingLog3.close();
 						mappingLog4.close();
 						mappingLog5.close();
+#ifdef HIERARCHICAL
+#ifdef HOTFIX3
+						failed_due_to_estimate_routing = true;
+						node->map_on_any_cluster = true;
+#endif
+#endif
 						return false;
 					}
 				}

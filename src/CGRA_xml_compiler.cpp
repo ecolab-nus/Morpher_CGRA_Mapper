@@ -299,8 +299,17 @@ int main(int argn, char *argc[])
 
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();
-
+#ifdef HIERARCHICAl
+#ifdef HOTFIX3
+		while(!hm.failed_due_to_estimate_routing){
+			mappingSuccess = hm.Map(tempCGRA, &tempDFG);
+		}
+#else
 		mappingSuccess = hm.Map(tempCGRA, &tempDFG);
+#endif
+#else
+		mappingSuccess = hm.Map(tempCGRA, &tempDFG);
+#endif
 		hm.congestionInfoFile.close();
 		if (!mappingSuccess)
 		{
