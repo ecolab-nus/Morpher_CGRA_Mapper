@@ -72,7 +72,7 @@ public:
 
 										  };
 
-	bool Map(CGRA *cgra, DFG *dfg);
+	bool Map(CGRA *cgra, DFG *dfg, std::ofstream& sumFile);
 	//	bool LeastCostPathAstar(Port* start, Port* end, DataPath* endDP, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
 	bool LeastCostPathAstar(LatPort start, LatPort end, DataPath *endDP, std::vector<LatPort> &path, int &cost, DFGNode *node, std::map<Port *, std::set<DFGNode *>> &mutexPaths, DFGNode *currNode);
     string AstarShortestPath(LatPort start, LatPort end);
@@ -143,6 +143,9 @@ public:
 	bool open_set_limit_2 = false;//limit openset to original abstract astart search openset (this cannot be true if limit 1 is false)
 	std::map<std::pair<int,int>, int> shortest_dist_map;
 	//bool failed_due_to_estimate_routing = false;
+
+	int num_of_congestions = 0;
+	int num_of_conflicts = 0;
 
 
 

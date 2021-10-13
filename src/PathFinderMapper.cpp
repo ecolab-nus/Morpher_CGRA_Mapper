@@ -27,6 +27,9 @@
 #include <algorithm> // std::reverse
 #include "DataPath.h"
 #include "FU.h"
+#include <sys/time.h>
+#include <iomanip>
+#include <ctime>
 
 #include <stack>
 #include <functional>
@@ -1503,7 +1506,7 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(LatPort src,
 	return distance;
 }
 
-bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
+bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg, std::ofstream& sumFile)
 {
 	std::stack<DFGNode *> mappedNodes;
 	std::stack<DFGNode *> unmappedNodes;
@@ -1544,7 +1547,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 	for (int i = 0; i < this->maxIter; ++i)
 	{
-
+		sumFile << "\nIteration: "<<i<<"  -----------------------------------------------\n";sumFile.flush();
 		std::string mappingLogFileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mapping.csv";
 		std::string mappingLog2FileName_withIter = mappingLog2FileName + "_Iter=" + std::to_string(i) + ".routeInfo.log";
 		//#ifdef HIERARCHICAL
@@ -1596,6 +1599,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		//		exit(true);
 
 		std::cout << "MAP begin...\n";
+		int total_nodes = unmappedNodes.size();
+		sumFile << "Total nodes:" <<total_nodes << "\n";
+		double prev_node_percentage = 0;
 
 		while (!unmappedNodes.empty())
 		{
@@ -1612,6 +1618,17 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 			MapHeader << ",unmappedMemNodes = " << dfg->unmappedMemOps;
 			MapHeader << ",II = " << cgra->get_t_max();
 			MapHeader << ",btCredits = " << backTrackCredits;
+			double mapped_node_percentage = ((mappedNodes.size()*100/total_nodes));
+			//sumFile << mappedNodes.size() <<"/"<<total_nodes << ":";
+			if(prev_node_percentage!=mapped_node_percentage && (mapped_node_percentage == 25 || mapped_node_percentage == 50 || mapped_node_percentage > 75)){
+			  sumFile << mapped_node_percentage<< "% ";
+
+			  //if (mapped_node_percentage == 25 || mapped_node_percentage == 50 || mapped_node_percentage > 75)
+			  sumFile.flush();
+			}
+
+			prev_node_percentage = mapped_node_percentage;
+
 
 			// MapHeader << ",PEType = " << this->cgra->peType;
 			// MapHeader << ",XDim = " << this->cgra->get_x_max();
@@ -1662,11 +1679,12 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 								node->map_on_any_cluster = true;
 								unmappedNodes.push(node);
 								std::cout << "This node will be mapped in any cluster in future iterations! Return mapping.\n";
+								sumFile << "\nWill be mapped in any cluster: "<< node->idx<<"\n";
 								continue;
 							}
 #endif
 #endif
-
+							sumFile << "Map Failed due to route estimation fail: "<< node->idx<<"\n";sumFile.flush();
 							mappingLog.close();
 							mappingLog2.close();
 							mappingLog3.close();
@@ -1711,9 +1729,11 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						node->map_on_any_cluster = true;
 						unmappedNodes.push(node);
 						std::cout << "Route Estimation Failed. This node will be mapped in any cluster in future iterations! Return mapping.\n";
+						sumFile << "\nWill be mapped in any cluster: "<< node->idx<<"\n";
 						continue;
 #endif
 #endif
+						sumFile << "*Map Failed due to route estimation fail: "<< node->idx<<"\n";sumFile.flush();
 						while (!mappedNodes.empty())
 						{
 							DFGNode *prevNode = mappedNodes.top();
@@ -1833,6 +1853,15 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 			mappedNodes.push(node);
 		}
 		mapSuccess = updateCongestionCosts(i);
+		sumFile << "\nNo of congestions: "<< num_of_congestions <<"\n";
+		sumFile << "No of conflicts: "<< num_of_conflicts <<"\n";
+		struct timeval begin1;
+	    gettimeofday(&begin1, 0);
+	    auto t = std::time(nullptr);
+		auto tm = *std::localtime(&t);
+		sumFile << "Time: "<<std::put_time(&tm, "%d-%m-%Y %H-%M-%S")  << "\n";
+		sumFile.flush();
+
 		if (mapSuccess)
 		{
 			break;
@@ -1961,6 +1990,8 @@ void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode *src, DFGNode *dest,
 bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts(int iter)
 {
 	bool noCongestion = true;
+	num_of_congestions = 0;
+	num_of_conflicts = 0;
 
 	std::set<int> conflictedTimeSteps;
 
@@ -1994,6 +2025,7 @@ bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts(int iter)
 					congestionInfoFile << "\n";
 					p->increastCongCost();
 					noCongestion = false;
+					num_of_congestions++;
 					conflictedTimeSteps.insert(p->getMod()->getPE()->T);
 					//					break;
 				}
@@ -2026,6 +2058,7 @@ bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts(int iter)
 				//					if((isRDP&isINT) || isT) continue;
 				//				}
 				noConflicts = false;
+				num_of_conflicts++;
 			}
 
 			if (noConflicts)
