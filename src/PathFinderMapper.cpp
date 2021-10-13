@@ -1655,6 +1655,15 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 							std::cout << "Map Failed!.\n";
 							mappingLog << "route estimation failed...\n";
 							mappingLog << "Map Failed!.\n";
+#ifdef HIERARCHICAL
+#ifdef HOTFIX3
+
+						node->map_on_any_cluster = true;
+						unmappedNodes.push(node);
+						std::cout << "This node will be mapped in any cluster in future iterations! Return mapping.\n";
+						continue;
+#endif
+#endif
 
 							mappingLog.close();
 							mappingLog2.close();
