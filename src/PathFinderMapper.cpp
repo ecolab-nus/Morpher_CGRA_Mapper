@@ -1694,6 +1694,15 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 					}
 					else
 					{
+#ifdef HIERARCHICAL
+#ifdef HOTFIX3
+
+						node->map_on_any_cluster = true;
+						unmappedNodes.push(node);
+						std::cout << "Route Estimation Failed. This node will be mapped in any cluster in future iterations! Return mapping.\n";
+						continue;
+#endif
+#endif
 						while (!mappedNodes.empty())
 						{
 							DFGNode *prevNode = mappedNodes.top();
@@ -1707,15 +1716,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						mappingLog3.close();
 						mappingLog4.close();
 						mappingLog5.close();
-#ifdef HIERARCHICAL
-#ifdef HOTFIX3
 
-						node->map_on_any_cluster = true;
-						unmappedNodes.push(node);
-						std::cout << "Node will be mapped in any cluster! Return mapping.\n";
-						continue;
-#endif
-#endif
 						return false;
 					}
 				}
