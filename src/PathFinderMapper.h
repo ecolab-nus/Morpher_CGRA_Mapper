@@ -142,7 +142,7 @@ public:
 	bool open_set_limit_1 = false;// openset contains the neighbors of original abstract astart search openset
 	bool open_set_limit_2 = false;//limit openset to original abstract astart search openset (this cannot be true if limit 1 is false)
 	std::map<std::pair<int,int>, int> shortest_dist_map;
-	bool failed_due_to_estimate_routing = false;
+	//bool failed_due_to_estimate_routing = false;
 
 
 

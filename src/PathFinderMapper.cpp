@@ -709,13 +709,15 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	unordered_set<PE *> allPEs = cgra->getAllPEList();
 	for (PE *currPE : allPEs)
 	{
+
 #ifdef HIERARCHICAL
 		//				if( ((currPE->X <= 3)&&(currPE->Y <= 3)&&(node->TILE == 0))  || ((currPE->X > 3)&&(currPE->Y <= 3)&&(node->TILE == 1))
 		//						|| ((currPE->X <= 3)&&(currPE->Y > 3)&&(node->TILE == 2))  || ((currPE->X > 3)&&(currPE->Y > 3)&&(node->TILE == 3)) ){
 		bool map_on_this = false;
 #ifdef HOTFIX3
-		if (node->map_on_any_cluster == true)
+		if (node->map_on_any_cluster == true){
 			map_on_this = true;
+		}
 #endif
 		for(auto tile_name: node->CGRA_CLUSTERS){
 			if (currPE->tile_name == tile_name){
@@ -811,6 +813,9 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	std::cout << "Tile = \n";
 	for(auto tile_name: node->CGRA_CLUSTERS){
 		std::cout << tile_name << "\t";
+	}
+	if (node->map_on_any_cluster == true){
+		std::cout << "Can Map on any cluster\n";
 	}
 	std::cout << "\n";
 #endif
@@ -1503,9 +1508,6 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 	std::stack<DFGNode *> mappedNodes;
 	std::stack<DFGNode *> unmappedNodes;
 	std::map<DFGNode *, std::priority_queue<dest_with_cost>> estimatedRouteInfo;
-#ifdef HOTFIX3
-		failed_due_to_estimate_routing = false;
-#endif
 
 	int backTrackCredits = this->backTrackLimit;
 
@@ -1707,8 +1709,11 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						mappingLog5.close();
 #ifdef HIERARCHICAL
 #ifdef HOTFIX3
-						failed_due_to_estimate_routing = true;
+
 						node->map_on_any_cluster = true;
+						unmappedNodes.push(node);
+						std::cout << "Node will be mapped in any cluster! Return mapping.\n";
+						continue;
 #endif
 #endif
 						return false;

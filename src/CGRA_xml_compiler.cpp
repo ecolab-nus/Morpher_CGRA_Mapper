@@ -269,6 +269,7 @@ int main(int argn, char *argc[])
 		tempDFG.parseXML(inputDFG_filename);
 		tempDFG.printDFG();
 
+
 		CGRA *tempCGRA;
 		if (json_file_name.empty())
 		{
@@ -305,17 +306,9 @@ int main(int argn, char *argc[])
 
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();
-#ifdef HIERARCHICAl
-#ifdef HOTFIX3
-		while(!hm.failed_due_to_estimate_routing){
-			mappingSuccess = hm.Map(tempCGRA, &tempDFG);
-		}
-#else
+
 		mappingSuccess = hm.Map(tempCGRA, &tempDFG);
-#endif
-#else
-		mappingSuccess = hm.Map(tempCGRA, &tempDFG);
-#endif
+
 		hm.congestionInfoFile.close();
 		if (!mappingSuccess)
 		{
@@ -326,7 +319,25 @@ int main(int argn, char *argc[])
 			}
 
 			delete tempCGRA;
+//#ifdef HIERARCHICAL
+//	#ifdef HOTFIX
+//			if(hm.failed_due_to_estimate_routing == true){
+//				std::cout << "Not increasing II\n";
+//			}else{
+//				II++;
+//				std::cout << "Increasing II to " << II << "\n";
+//			}
+//	#else
+//			II++;
+//			std::cout << "Increasing II to " << II << "\n";
+//
+//	#endif
+//#else
 			II++;
+			std::cout << "Increasing II to " << II << "\n";
+//#endif
+
+
 
 			if (II == 32)
 			{
@@ -356,7 +367,6 @@ int main(int argn, char *argc[])
 				//return 0;
 			}
 
-			std::cout << "Increasing II to " << II << "\n";
 		}
 		else
 		{
