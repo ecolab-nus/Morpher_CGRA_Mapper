@@ -230,7 +230,7 @@ int main(int argn, char *argc[])
 	hm.setMaxIter(args.maxiter);
 
 	int resII = hm.getMinimumII(testCGRA, &currDFG);
-	int recII  = hm.getRecMinimumII(&currDFG);
+	int recII  = 0;//hm.getRecMinimumII(&currDFG);// use python script to calculate recurrence II and pass it through initUserII
 	std::cout << "Res Minimum II = " << resII << "\n";
 	std::cout << "Rec Minimum II = " << recII << "\n";
 	std::cout << "Init User II = " << initUserII << "\n";
