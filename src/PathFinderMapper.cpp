@@ -1657,11 +1657,13 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 							mappingLog << "Map Failed!.\n";
 #ifdef HIERARCHICAL
 #ifdef HOTFIX3
+							if(node->map_on_any_cluster == false){//no point of continuing if the node can be already placed in any cluster
 
-						node->map_on_any_cluster = true;
-						unmappedNodes.push(node);
-						std::cout << "This node will be mapped in any cluster in future iterations! Return mapping.\n";
-						continue;
+								node->map_on_any_cluster = true;
+								unmappedNodes.push(node);
+								std::cout << "This node will be mapped in any cluster in future iterations! Return mapping.\n";
+								continue;
+							}
 #endif
 #endif
 
