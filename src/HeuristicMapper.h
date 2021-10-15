@@ -263,6 +263,7 @@ public:
 	int upperboundIter = -1;
 	int upperboundFoundBy = -1;
 	int astar_path_print_count=0;
+	int maxCongestion = 200;
 
 protected:
 	int regDiscourageFactor = 10;

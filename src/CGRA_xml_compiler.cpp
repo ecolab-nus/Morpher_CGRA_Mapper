@@ -46,8 +46,9 @@ struct arguments
 	int open_set_limit = 0;
 	string SkipINTERorINTRA ="";
 	string summary_file_name = "summary.log";
-	string detailed_summary_file_name = "detailed_summary.log";
+	string compact_summary_file_name = "compact_summary.log";
 	int entry_id = -1;
+	int maxCongestion= 200;
 };
 
 arguments parse_arguments(int argn, char *argc[])
@@ -62,7 +63,7 @@ arguments parse_arguments(int argn, char *argc[])
 
 	opterr = 0;
 
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:l:s:u:v:a:")) != -1)
+	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:l:s:u:v:a:c:")) != -1)
 		switch (c)
 		{
 		case 'd':
@@ -109,10 +110,13 @@ arguments parse_arguments(int argn, char *argc[])
 			ret.summary_file_name = string(optarg);
 			break;
 		case 'v':
-			ret.detailed_summary_file_name = string(optarg);
+			ret.compact_summary_file_name = string(optarg);
 			break;
 		case 'a':
 			ret.entry_id = atoi(optarg);
+			break;
+		case 'c':
+			ret.maxCongestion = atoi(optarg);
 			break;
 		case '?':
 			if (optopt == 'c')
@@ -200,13 +204,13 @@ int main(int argn, char *argc[])
 	summaryFile.open(summary_file_name.c_str(), std::ios_base::app);
 
 
-	string detailed_summary_file_name = args.detailed_summary_file_name;
-	std::ofstream detailed_summaryFile;
-	detailed_summaryFile.open(detailed_summary_file_name.c_str(), std::ios_base::app);
+	string compact_summary_file_name = "compact_summary.log";// by pass argument, args.compact_summary_file_name;
+	std::ofstream compact_summaryFile;
+	compact_summaryFile.open(compact_summary_file_name.c_str(), std::ios_base::app);
 
-	detailed_summaryFile << "\n\n################################################################\n";
-	detailed_summaryFile << "[Time: "<<std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<",Entry:"<<args.entry_id <<", DFG:"<< args.dfg_filename<<", ARCH:"<< args.json_file_name << "] \n";
-	detailed_summaryFile.flush();
+	compact_summaryFile << "\n\n################################################################\n";
+	compact_summaryFile << "[Time: "<<std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<",Entry:"<<args.entry_id <<", DFG:"<< args.dfg_filename<<", ARCH:"<< args.json_file_name << "] \n";
+	compact_summaryFile.flush();
 	//detailed_summaryFile.open(detailed_summary_file_name.c_str(), std::ios_base::app);
 	int initUserII = args.userII;
 	//std::ofstream outputfile( summary_file_name, std::ios::app ) ;
@@ -253,7 +257,7 @@ int main(int argn, char *argc[])
 	II = std::max(initUserII, II);
 
 	std::cout << "Using II = " << II << "\n";
-	detailed_summaryFile << "II:" << II << "\n";
+	compact_summaryFile << "II:" << II << "\n";
 //exit(true);
 	hm.enableMutexPaths = true;
 	if (args.noMutexPaths)
@@ -262,6 +266,7 @@ int main(int argn, char *argc[])
 	}
 	hm.enableBackTracking = true;
 	hm.backTrackLimit = args.backtracklimit;
+	hm.maxCongestion = args.maxCongestion;
 
 	cout << "json_file_name = " << json_file_name << "\n";
 	// exit(EXIT_SUCCESS);
@@ -322,7 +327,7 @@ int main(int argn, char *argc[])
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();
 
-		mappingSuccess = hm.Map(tempCGRA, &tempDFG, detailed_summaryFile);
+		mappingSuccess = hm.Map(tempCGRA, &tempDFG, compact_summaryFile);
 
 		hm.congestionInfoFile.close();
 		if (!mappingSuccess)
@@ -350,7 +355,7 @@ int main(int argn, char *argc[])
 //#else
 			II++;
 			std::cout << "Increasing II to " << II << "\n";
-			detailed_summaryFile << "Increasing II to " << II  << "\n";
+			compact_summaryFile << "Increasing II to " << II  << "\n";
 //#endif
 
 
@@ -363,14 +368,15 @@ int main(int argn, char *argc[])
 			    long seconds = end.tv_sec - begin.tv_sec;
 			    long microseconds = end.tv_usec - begin.tv_usec;
 			    double elapsed = seconds + microseconds*1e-6;
-			    summaryFile << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<","<<args.entry_id <<","<< args.dfg_filename<<","<< args.json_file_name <<","<<args.maxiter<<","<<args.SkipINTERorINTRA<<","<<args.open_set_limit<<",";
+			    summaryFile << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<","<<args.entry_id <<",";
 			    //summaryFile << "\n**************************\n";
 			    //summaryFile << "\n************Map failed: II max of 32 has been reached**************\n";
 			   // summaryFile << "Entry ID:"<<args.entry_id<<", DFG:" << args.dfg_filename <<", JSON:" << args.json_file_name << ", max iterations:" << args.maxiter << ", Skip inter or intra:" << args.SkipINTERorINTRA << ", Open set limit: " << args.open_set_limit << "\n";
 			   // summaryFile << "Res II:"<< resII<< "\n";
 			    //summaryFile << "Rec II:"<< recII<< "\n";
-			    summaryFile << "FAILED (32)," << "-" <<"," << resII <<","<<recII<<","<< elapsed << ","<<elapsed/3600<< "\n";
-			    detailed_summaryFile << "\nFAILED (32)," << "-" <<"," << resII <<","<<recII<<","<< elapsed << ","<<elapsed/3600<< "\n";detailed_summaryFile.flush();detailed_summaryFile.close();
+			    summaryFile << "FAILED (32)," << "-" <<"," << resII <<","<<recII<<","<< elapsed << ","<<elapsed/3600<< ",";
+			    summaryFile << args.dfg_filename<<","<< args.json_file_name <<","<<args.maxiter<<","<<args.SkipINTERorINTRA<<","<<args.open_set_limit<<"\n";
+			    compact_summaryFile << "\nFAILED (32)," << "-" <<"," << resII <<","<<recII<<","<< elapsed << ","<<elapsed/3600<< "\n";compact_summaryFile.flush();compact_summaryFile.close();
 
 			    //std::cout << "Time measured:"<< elapsed<< "seconds.\n";
 			   // summaryFile<< "Time measured:"<< elapsed<< " s ("<<elapsed/3600<<" h).\n";
@@ -414,10 +420,11 @@ int main(int argn, char *argc[])
 	    std::cout << "Time measured:"<< elapsed<< "seconds.\n";
 	    //summaryFile<< "Time measured:"<< elapsed<< " s ("<<elapsed/3600<<" h).\n";
 	    //summaryFile << "**************************\n";
-	    summaryFile << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<","<<args.entry_id <<","<< args.dfg_filename<<","<< args.json_file_name <<","<<args.maxiter<<","<<args.SkipINTERorINTRA<<","<<args.open_set_limit<<",";
+	    summaryFile << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<","<<args.entry_id <<",";
 
-	    summaryFile << "SUCCESS," << II <<","<< resII <<","<<recII<<","<< elapsed << ","<<elapsed/3600 << "\n";
-	    detailed_summaryFile << "\nSUCCESS," << II <<","<< resII <<","<<recII<<","<< elapsed << ","<<elapsed/3600 << "\n";detailed_summaryFile.flush();
-	    detailed_summaryFile.close();
+	    summaryFile << "SUCCESS," << II <<","<< resII <<","<<recII<<","<< elapsed << ","<<elapsed/3600 << ",";
+	    summaryFile << args.dfg_filename<<","<< args.json_file_name <<","<<args.maxiter<<","<<args.SkipINTERorINTRA<<","<<args.open_set_limit<<"\n";
+	    compact_summaryFile << "\nSUCCESS," << II <<","<< resII <<","<<recII<<","<< elapsed << ","<<elapsed/3600 << "\n";compact_summaryFile.flush();
+	    compact_summaryFile.close();
 	return 0;
 }

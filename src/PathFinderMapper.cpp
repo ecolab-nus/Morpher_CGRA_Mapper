@@ -1573,6 +1573,9 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg, std::ofstream& 
 		assert(mappingLog3.is_open());
 		assert(mappingLog4.is_open());
 		assert(mappingLog5.is_open());
+		time_t begin,end; // time_t is a datatype to store time values.
+
+		time (&begin); // note time before execution
 
 		while (!mappedNodes.empty())
 		{
@@ -1679,7 +1682,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg, std::ofstream& 
 								node->map_on_any_cluster = true;
 								unmappedNodes.push(node);
 								std::cout << "This node will be mapped in any cluster in future iterations! Return mapping.\n";
-								sumFile << "\nWill be mapped in any cluster: "<< node->idx<<"\n";
+								sumFile << "ANYCLUS:["<< node->idx<<"] ";
 								continue;
 							}
 #endif
@@ -1855,11 +1858,15 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg, std::ofstream& 
 		mapSuccess = updateCongestionCosts(i);
 		sumFile << "\nNo of congestions: "<< num_of_congestions <<"\n";
 		sumFile << "No of conflicts: "<< num_of_conflicts <<"\n";
-		struct timeval begin1;
-	    gettimeofday(&begin1, 0);
-	    auto t = std::time(nullptr);
-		auto tm = *std::localtime(&t);
-		sumFile << "Time: "<<std::put_time(&tm, "%d-%m-%Y %H-%M-%S")  << "\n";
+		//struct timeval begin1;
+	    //gettimeofday(&begin1, 0);
+	    //auto t = std::time(nullptr);
+		//auto tm = *std::localtime(&t);
+		//sumFile << "Time: "<<std::put_time(&tm, "%d-%m-%Y %H-%M-%S")  << "\n";
+		time (&end); // note time after execution
+
+		double difference = difftime (end,begin);
+		sumFile << "Iteration Exec Time: "<< difference << "\n";
 		sumFile.flush();
 
 		if (mapSuccess)
@@ -1873,6 +1880,10 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg, std::ofstream& 
 		mappingLog3.close();
 		mappingLog4.close();
 		mappingLog5.close();
+		if(num_of_congestions > maxCongestion){
+			sumFile << "Map failed due to number of congestions is higher than maximum congestion value(" << maxCongestion <<")\n";
+			return false;
+		}
 	}
 
 	//	congestionInfoFile.close();
