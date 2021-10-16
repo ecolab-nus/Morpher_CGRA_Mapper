@@ -3317,21 +3317,27 @@ void CGRAXMLCompile::PathFinderMapper::UpdateVariableBaseAddr(){
 void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 	//maybe using 1D vector of InsFarr. And use (x,y,t) index
 
-	std::vector<std::vector<std::vector<InsFormat>>> InsFArr(cgra->get_t_max());
+	std::vector<InsFormat> InsFArr;
+	
+	int max_index = (cgra->get_t_max() + 1) * cgra->get_x_max() * cgra->get_y_max();
+	InsFArr.reserve(max_index + cgra->get_x_max() * cgra->get_y_max());
+	for(int i = 0; i < max_index; i++){
+		InsFArr.push_back(InsFormat{});
+	}
 	//  (cgra->get_t_max()+1,
 	// 		std::vector<std::vector<InsFormat>>(cgra->get_y_max(),
 	// 				std::vector<InsFormat>(cgra->get_x_max())
 	// 		)
 	// );
-	for(int t = 0; t < cgra->get_t_max(); t++){
-		std::vector<std::vector<InsFormat>> temp_y(cgra->get_y_max());
-		for(int y = 0; y < cgra->get_y_max(); y++){
-			std::vector<InsFormat> temp_x(cgra->get_x_max());
-			temp_y[y] = temp_x;
-		}
+	// for(int t = 0; t < cgra->get_t_max(); t++){
+	// 	std::vector<std::vector<InsFormat>> temp_y(cgra->get_y_max());
+	// 	for(int y = 0; y < cgra->get_y_max(); y++){
+	// 		std::vector<InsFormat> temp_x(cgra->get_x_max());
+	// 		temp_y[y] = temp_x;
+	// 	}
 		
-		InsFArr[t] = temp_y;
-	}
+	// 	InsFArr[t] = temp_y;
+	// }
 	// InsFArr.resize(cgra->get_t_max());
 	for (int t = 0; t < cgra->get_t_max(); ++t) {
 		vector<PE *> peList = this->cgra->getSpatialPEList(t);
@@ -3359,8 +3365,8 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					//}
 
 					int prev_t;
-					int X;
-					int Y;
+					int X = 0;
+					int Y = 0;
 					X = pe->X;
 					Y = pe->Y;
 					prev_t = (t + 2*cgra->get_t_max() - 1)%cgra->get_t_max();
@@ -3836,8 +3842,8 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					else{
 						insF.negated_predicate = "0";
 					}
-
-					InsFArr[t+1][Y][X] = insF;
+					InsFArr[getIndexOfBin(t+1, Y, X)] = insF;
+ 					// InsFArr[t+1][Y][X] = insF;
 
 					//		}
 					//	}
@@ -3876,16 +3882,17 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 		//	for (int x = 0; x < X; ++x) {
 		x = pe->X;
 		y = pe->Y;
-
-		jumpl.alu_p = InsFArr[cgra->get_t_max()][y][x].alu_p;
-		jumpl.alu_i1 = InsFArr[cgra->get_t_max()][y][x].alu_i1;
-		jumpl.alu_i2 = InsFArr[cgra->get_t_max()][y][x].alu_i2;
-		jumpl.northo = InsFArr[cgra->get_t_max()][y][x].northo;
-		jumpl.easto = InsFArr[cgra->get_t_max()][y][x].easto;
-		jumpl.westo = InsFArr[cgra->get_t_max()][y][x].westo;
-		jumpl.southo = InsFArr[cgra->get_t_max()][y][x].southo;
+		
+		jumpl.alu_p = InsFArr[getIndexOfBin(cgra->get_t_max(), y, x)].alu_p;
+		jumpl.alu_i1 = InsFArr[getIndexOfBin(cgra->get_t_max(), y, x)].alu_i1;
+		jumpl.alu_i2 = InsFArr[getIndexOfBin(cgra->get_t_max(), y, x)].alu_i2;
+		jumpl.northo = InsFArr[getIndexOfBin(cgra->get_t_max(), y, x)].northo;
+		jumpl.easto = InsFArr[getIndexOfBin(cgra->get_t_max(), y, x)].easto;
+		jumpl.westo = InsFArr[getIndexOfBin(cgra->get_t_max(), y, x)].westo;
+		jumpl.southo = InsFArr[getIndexOfBin(cgra->get_t_max(), y, x)].southo;
 		///cout << "THILINI::" << jumpl.alu_p << jumpl.alu_i1 << jumpl.alu_i2 << "\n";
-		InsFArr[0][y][x] = jumpl;
+		InsFArr[getIndexOfBin(0, y, x)] = jumpl;
+		// InsFArr[0][y][x] = jumpl;
 	}
 
 	//std::string binFName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs)  + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths) + "_binary.bin";
@@ -3900,7 +3907,7 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 
 
 void CGRAXMLCompile::PathFinderMapper::printBinFile(
-		const std::vector<std::vector<std::vector<InsFormat> > >& insFArr,
+		const std::vector<InsFormat >& insFArr,
 		std::string fName, CGRA* cgra) {
 
 	std::ofstream binFile(fName.c_str());
@@ -3928,27 +3935,27 @@ void CGRAXMLCompile::PathFinderMapper::printBinFile(
 			for(int x = 0 ; x < x_max ; x++){
 
 				binFile << "Y=" << y << " X=" << x << ",";
-				binFile << insFArr[t][y][x].negated_predicate;
-				binFile << insFArr[t][y][x].constant_valid;
-				binFile << insFArr[t][y][x].constant;
-				binFile << insFArr[t][y][x].opcode;
-				binFile << insFArr[t][y][x].north_reg_we;
-				binFile << insFArr[t][y][x].west_reg_we;
-				binFile << insFArr[t][y][x].south_reg_we;
-				binFile << insFArr[t][y][x].east_reg_we;
-				binFile << insFArr[t][y][x].treg_we;
-				binFile << insFArr[t][y][x].south_reg_bypass;
-				binFile << insFArr[t][y][x].north_reg_bypass;
-				binFile << insFArr[t][y][x].west_reg_bypass;
-				binFile << insFArr[t][y][x].east_reg_bypass;
+				binFile << insFArr[getIndexOfBin(t, y, x)].negated_predicate;
+				binFile << insFArr[getIndexOfBin(t, y, x)].constant_valid;
+				binFile << insFArr[getIndexOfBin(t, y, x)].constant;
+				binFile << insFArr[getIndexOfBin(t, y, x)].opcode;
+				binFile << insFArr[getIndexOfBin(t, y, x)].north_reg_we;
+				binFile << insFArr[getIndexOfBin(t, y, x)].west_reg_we;
+				binFile << insFArr[getIndexOfBin(t, y, x)].south_reg_we;
+				binFile << insFArr[getIndexOfBin(t, y, x)].east_reg_we;
+				binFile << insFArr[getIndexOfBin(t, y, x)].treg_we;
+				binFile << insFArr[getIndexOfBin(t, y, x)].south_reg_bypass;
+				binFile << insFArr[getIndexOfBin(t, y, x)].north_reg_bypass;
+				binFile << insFArr[getIndexOfBin(t, y, x)].west_reg_bypass;
+				binFile << insFArr[getIndexOfBin(t, y, x)].east_reg_bypass;
 
-				binFile << insFArr[t][y][x].alu_p;
-				binFile << insFArr[t][y][x].alu_i2;
-				binFile << insFArr[t][y][x].alu_i1;
-				binFile << insFArr[t][y][x].northo;
-				binFile << insFArr[t][y][x].westo;
-				binFile << insFArr[t][y][x].southo;
-				binFile << insFArr[t][y][x].easto;
+				binFile << insFArr[getIndexOfBin(t, y, x)].alu_p;
+				binFile << insFArr[getIndexOfBin(t, y, x)].alu_i2;
+				binFile << insFArr[getIndexOfBin(t, y, x)].alu_i1;
+				binFile << insFArr[getIndexOfBin(t, y, x)].northo;
+				binFile << insFArr[getIndexOfBin(t, y, x)].westo;
+				binFile << insFArr[getIndexOfBin(t, y, x)].southo;
+				binFile << insFArr[getIndexOfBin(t, y, x)].easto;
 
 				binFile << "\n";
 			}

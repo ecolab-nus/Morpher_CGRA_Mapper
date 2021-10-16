@@ -114,7 +114,12 @@ public:
 	void UpdateVariableBaseAddr();
 
 	void printHyCUBEBinary(CGRA* cgra);
-	void printBinFile(const std::vector<std::vector<std::vector<InsFormat>>>& insFArr, std::string fName, CGRA* cgra);
+	void printBinFile(const std::vector<InsFormat>& insFArr, std::string fName, CGRA* cgra);
+
+	int getIndexOfBin(int t, int y, int x){
+		return t * cgra->get_y_max() * cgra->get_x_max() + y * cgra->get_x_max() + x;
+	}
+	std::tuple<int, int, int> getIndexOfBin(int index);
 
 protected:
 	int getlatMinStartsPHI(const DFGNode *currNode, const std::map<DFGNode *, std::vector<Port *>> &possibleStarts);
