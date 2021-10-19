@@ -146,6 +146,8 @@ public:
 
 	int num_of_congestions = 0;
 	int num_of_conflicts = 0;
+	time_t start_time;
+	int maxIterationTime = 6;//hours
 
 
 

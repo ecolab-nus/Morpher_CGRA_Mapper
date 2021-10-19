@@ -1573,9 +1573,8 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg, std::ofstream& 
 		assert(mappingLog3.is_open());
 		assert(mappingLog4.is_open());
 		assert(mappingLog5.is_open());
-		time_t begin,end; // time_t is a datatype to store time values.
+		time_t begin,end,now; // time_t is a datatype to store time values.
 
-		time (&begin); // note time before execution
 
 		while (!mappedNodes.empty())
 		{
@@ -1605,9 +1604,20 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg, std::ofstream& 
 		int total_nodes = unmappedNodes.size();
 		sumFile << "Total nodes:" <<total_nodes << "\n";
 		double prev_node_percentage = 0;
-
+		time (&begin); // note time before execution
 		while (!unmappedNodes.empty())
 		{
+			time (&now); // note time before execution
+
+			if(i>0){
+						double elapsed_time = difftime (now,start_time);
+						double maxIterationTimeinSec = 3600*maxIterationTime;
+						if (elapsed_time > maxIterationTimeinSec){
+							sumFile << "Map stopped due to iteration time limit exceed:\n";sumFile.flush();
+							return false;
+						}
+			}
+
 
 			DFGNode *node = unmappedNodes.top();
 			unmappedNodes.pop();
@@ -1866,7 +1876,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg, std::ofstream& 
 		time (&end); // note time after execution
 
 		double difference = difftime (end,begin);
-		sumFile << "Iteration Exec Time: "<< difference << "\n";
+		sumFile << "Iteration Exec Time: "<< difference/3600 << "(h)\n";
 		sumFile.flush();
 
 		if (mapSuccess)

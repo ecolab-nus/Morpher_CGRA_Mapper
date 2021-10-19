@@ -49,6 +49,7 @@ struct arguments
 	string compact_summary_file_name = "compact_summary.log";
 	int entry_id = -1;
 	int maxCongestion= 200;
+	int maxIterationTime = 6;//6 hours
 };
 
 arguments parse_arguments(int argn, char *argc[])
@@ -63,7 +64,7 @@ arguments parse_arguments(int argn, char *argc[])
 
 	opterr = 0;
 
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:l:s:u:v:a:c:")) != -1)
+	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:l:s:u:v:a:c:w:")) != -1)
 		switch (c)
 		{
 		case 'd':
@@ -117,6 +118,9 @@ arguments parse_arguments(int argn, char *argc[])
 			break;
 		case 'c':
 			ret.maxCongestion = atoi(optarg);
+			break;
+		case 'w':
+			ret.maxIterationTime = atoi(optarg);
 			break;
 		case '?':
 			if (optopt == 'c')
@@ -246,6 +250,7 @@ int main(int argn, char *argc[])
 	//	HeuristicMapper hm(inputDFG_filename);
 	PathFinderMapper hm(inputDFG_filename);
 	hm.setMaxIter(args.maxiter);
+	hm.maxIterationTime = args.maxIterationTime;
 
 	int resII = hm.getMinimumII(testCGRA, &currDFG);
 	int recII  = initUserII;//hm.getRecMinimumII(&currDFG);// use python script to calculate recurrence II and pass it through initUserII
@@ -326,6 +331,10 @@ int main(int argn, char *argc[])
 
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();
+
+		time_t start_time;
+		time (&start_time);
+		hm.start_time = start_time;
 
 		mappingSuccess = hm.Map(tempCGRA, &tempDFG, compact_summaryFile);
 
@@ -422,9 +431,9 @@ int main(int argn, char *argc[])
 	    //summaryFile << "**************************\n";
 	    summaryFile << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") <<","<<args.entry_id <<",";
 
-	    summaryFile << "SUCCESS," << II <<","<< resII <<","<<recII<<","<< elapsed << ","<<elapsed/3600 << ",";
+	    summaryFile << "SUCCESS, II=" << II <<", resII="<< resII <<", recII="<<recII<<","<< elapsed << ", t="<<elapsed/3600 << "(h),";
 	    summaryFile << args.dfg_filename<<","<< args.json_file_name <<","<<args.maxiter<<","<<args.SkipINTERorINTRA<<","<<args.open_set_limit<<"\n";
-	    compact_summaryFile << "\nSUCCESS," << II <<","<< resII <<","<<recII<<","<< elapsed << ","<<elapsed/3600 << "\n";compact_summaryFile.flush();
+	    compact_summaryFile << "\nSUCCESS, II=" << II <<","<< resII <<","<<recII<<","<< elapsed << ", t="<<elapsed/3600 << "(h)\n";compact_summaryFile.flush();
 	    compact_summaryFile.close();
 	return 0;
 }
