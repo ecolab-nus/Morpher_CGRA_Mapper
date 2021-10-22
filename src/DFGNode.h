@@ -19,7 +19,7 @@
 #define HOTFIX2
 #define HOTFIX3
 #define NOTIMEDISTANCEFUNC
-#define MAX_CGRA_SIZE 256 //16x16 (for creating adj mat)
+#define MAX_CGRA_SIZE 625 //25x25 (for creating adj mat)
 
 namespace CGRAXMLCompile
 {
