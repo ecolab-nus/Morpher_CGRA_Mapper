@@ -150,8 +150,10 @@ public:
 	int maxIterationTime = 6;//hours
 
 
-
+#ifdef SIM_ANNEAL
+#else
 private:
+#endif
 	std::map<Port *, std::set<DFGNode *>> congestedPorts;
 	std::map<Port *, std::set<DFGNode *>> conflictedPorts;
 	int maxIter = 30;

@@ -14,6 +14,7 @@
 #include <set>
 
 //#define HIERARCHICAL
+//#define SIM_ANNEAL
 #define CLUSTERED_ARCH
 #define HOTFIX1
 #define HOTFIX2
