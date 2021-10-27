@@ -28,9 +28,9 @@ class SAMapper : public PathFinderMapper
 public:
 	SAMapper(std::string fName) : PathFinderMapper(fName){};
 
-	bool SAMap(CGRA *cgra, DFG *dfg);
+	bool SAMap(CGRA *cgra, DFG *dfg, std::ofstream& sumFile);
 
-	bool initMap();
+	bool initMap(std::ofstream& sumFile);
 	bool Route(DFGNode *node, std::priority_queue<dest_with_cost> &estimatedRoutes, DFGNode **failedNode);
 
 	float inner_map();

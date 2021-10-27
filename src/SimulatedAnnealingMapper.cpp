@@ -36,7 +36,7 @@ namespace CGRAXMLCompile
 	If no umapped nodes, I will randomly select one node.
 	Will it be better if we randomly select from any node, or we just give a bit higher priority to unmapped nodes?
 */
-bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg){
+bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg, std::ofstream& sumFile){
   std::stack<DFGNode *> mappedNodes;
 	std::stack<DFGNode *> unmappedNodes;
 	std::map<DFGNode *, std::priority_queue<dest_with_cost>> estimatedRouteInfo;
@@ -103,25 +103,33 @@ bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg){
 
   data_routing_path.clear();
 	dfg_node_placement.clear();
-	if(!initMap()){
+	if(!initMap(sumFile)){
 		assert(false && "how come?");
 		std::cout<<"cannot find an initial mapping, exit....\n";
 		return false;
 	}
+
   
 	int unmapped_node_numer = getNumberOfUnmappedNodes();
 	int overuse_number = getCongestionNumber();
 	std::cout<<"Initial mapping done. unmapped node:"<<unmapped_node_numer<<" overuse:" <<overuse_number<<" \n";
-	
+	sumFile << "Initial mapping done. unmapped node number:"<<unmapped_node_numer<<" overuse:" <<overuse_number<<" \n";
 	if(unmapped_node_numer == 0 && overuse_number == 0){
 		std::cout<<"find a valid initial mapping, exit....\n";
 		return true;
+	}
+	if(overuse_number > maxCongestion){
+			sumFile << "Map failed due to number of congestions is higher than maximum congestion value(" << maxCongestion <<")\n";
+			return false;
 	}
 	std::cout<<"maximum temperature:"<<maximum_temp<<" minimum temperature:"<<minimim_temp<<"\n";
 	curr_cost = getCost();
 	curr_temp = maximum_temp;
 	while(curr_temp > minimim_temp){
 		std::cout<<"*******************************current temperature:"<<curr_temp<<"\n";
+		sumFile << "*******************************current temperature:"<<curr_temp<<"\n";
+		sumFile << "unmapped node number:"<<unmapped_node_numer<<" overuse:" <<overuse_number<<" \n";
+
 		float accept_rate = inner_map();
 		std::cout<<"accept_rate:"<<accept_rate;
 		curr_temp = updateTemperature(curr_temp, accept_rate);
@@ -135,7 +143,7 @@ bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg){
 	return  isCurrMappingValid();
 }
 
-bool CGRAXMLCompile::SAMapper::initMap(){
+bool CGRAXMLCompile::SAMapper::initMap(std::ofstream& sumFile){
 
 	std::stack<DFGNode *> mappedNodes;
 	std::stack<DFGNode *> unmappedNodes;
@@ -156,6 +164,9 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 	{
 		unmappedNodes.push(node);
 	}
+	int total_nodes = unmappedNodes.size();
+	sumFile << "Total nodes:" <<total_nodes << "\n";
+	double prev_node_percentage = 0;
 
 	while (!unmappedNodes.empty())
 	{
@@ -172,6 +183,17 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 		MapHeader << ",unmappedMemNodes = " << dfg->unmappedMemOps;
 		MapHeader << ",II = " << cgra->get_t_max();
 		MapHeader << ",btCredits = " << backTrackCredits;
+		double mapped_node_percentage = ((mappedNodes.size()*100/total_nodes));
+
+		if(prev_node_percentage!=mapped_node_percentage && (mapped_node_percentage == 25 || mapped_node_percentage == 50 || mapped_node_percentage > 75)){
+			  sumFile << mapped_node_percentage<< "% ";
+
+			  //if (mapped_node_percentage == 25 || mapped_node_percentage == 50 || mapped_node_percentage > 75)
+			  sumFile.flush();
+			}
+
+		prev_node_percentage = mapped_node_percentage;
+
 
 		// MapHeader << ",PEType = " << this->cgra->peType;
 		// MapHeader << ",XDim = " << this->cgra->get_x_max();
@@ -254,6 +276,16 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 				node->clear(this->dfg);
 				std::cout<<"----------node" <<node->idx<<" not mapped in initial mapping\n";
 			}
+#ifdef HIERARCHICAL
+#ifdef HOTFIX3
+
+						node->map_on_any_cluster = true;
+						//unmappedNodes.push(node);
+						std::cout << "Route Estimation Failed. This node will be mapped in any cluster in future iterations! Return mapping.\n";
+						sumFile << "ANYCLUS:["<< node->idx<<"] ";
+						continue;
+#endif
+#endif
 		}
 		backTrackCredits = std::min(this->backTrackLimit, backTrackCredits + 1);
 		mappedNodes.push(node);
