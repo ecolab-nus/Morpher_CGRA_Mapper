@@ -370,8 +370,15 @@ int main(int argn, char *argc[])
 		tempCGRA->analyzeTimeDist(tdi);
 #endif
 
+#ifdef SIM_ANNEAL
+#ifdef HIERARCHICAL
+		mapper->skip_inter_or_intra = args.SkipINTERorINTRA;//"INTER";
+#endif
+#else
+
 #ifdef HIERARCHICAL
 		hm.skip_inter_or_intra = args.SkipINTERorINTRA;//"INTER";
+#endif
 #endif
 		tempCGRA->max_hops = args.max_hops;
 
@@ -385,7 +392,7 @@ int main(int argn, char *argc[])
 //			mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
 //		}else if(mapping_method  == 1){
 			SAMapper * sa_mapper = static_cast<SAMapper*>(mapper);
-			mappingSuccess = sa_mapper->SAMap(tempCGRA, &tempDFG);
+			mappingSuccess = sa_mapper->SAMap(tempCGRA, &tempDFG, compact_summaryFile);
 //		}else{
 //			assert(false && "did not set a valid mapping method");
 //		}
