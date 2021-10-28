@@ -129,26 +129,31 @@ bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg, std::ofstream& sumFi
 	while(curr_temp > minimim_temp){
 		time (&begin);
 		std::cout<<"*******************************current temperature:"<<curr_temp<<"\n";
+
+
+		overuse_number = getCongestionNumber();
+		unmapped_node_numer = getNumberOfUnmappedNodes();
+
+
 		sumFile << "current temperature:"<<curr_temp<<",";
+
 		sumFile << "unmapped node number:"<<unmapped_node_numer<<" overuse:" <<overuse_number<<" \n";
 
+		sumFile.flush();
 		float accept_rate = inner_map();
 		std::cout<<"accept_rate:"<<accept_rate;
 		curr_temp = updateTemperature(curr_temp, accept_rate);
 		
 		if(isCurrMappingValid()){
-			std::cout<<"find a valid mapping, exit....\n";
+			std::cout<<"found a valid mapping, exit....\n";
 			break;
 		}
 
-		overuse_number = getCongestionNumber();
-		unmapped_node_numer = getNumberOfUnmappedNodes();
 
 		time (&end); // note time after execution
 
 		double difference = difftime (end,begin);
 		sumFile << "Exec Time: "<< difference/3600 << "(h)\n";
-		sumFile.flush();
 	}
   
 	return  isCurrMappingValid();
