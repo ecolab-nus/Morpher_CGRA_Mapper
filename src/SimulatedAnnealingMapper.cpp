@@ -125,9 +125,11 @@ bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg, std::ofstream& sumFi
 	std::cout<<"maximum temperature:"<<maximum_temp<<" minimum temperature:"<<minimim_temp<<"\n";
 	curr_cost = getCost();
 	curr_temp = maximum_temp;
+	time_t begin,end;
 	while(curr_temp > minimim_temp){
+		time (&begin);
 		std::cout<<"*******************************current temperature:"<<curr_temp<<"\n";
-		sumFile << "*******************************current temperature:"<<curr_temp<<"\n";
+		sumFile << "current temperature:"<<curr_temp<<",";
 		sumFile << "unmapped node number:"<<unmapped_node_numer<<" overuse:" <<overuse_number<<" \n";
 
 		float accept_rate = inner_map();
@@ -138,6 +140,15 @@ bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg, std::ofstream& sumFi
 			std::cout<<"find a valid mapping, exit....\n";
 			break;
 		}
+
+		overuse_number = getCongestionNumber();
+		unmapped_node_numer = getNumberOfUnmappedNodes();
+
+		time (&end); // note time after execution
+
+		double difference = difftime (end,begin);
+		sumFile << "Exec Time: "<< difference/3600 << "(h)\n";
+		sumFile.flush();
 	}
   
 	return  isCurrMappingValid();
@@ -151,6 +162,8 @@ bool CGRAXMLCompile::SAMapper::initMap(std::ofstream& sumFile){
 	enableBackTracking = false;
 	int backTrackLimit = 4;
 	int backTrackCredits = 4;
+	time_t begin,end;
+	time (&begin);
 	while (!mappedNodes.empty())
 	{
 		mappedNodes.pop();
@@ -290,7 +303,11 @@ bool CGRAXMLCompile::SAMapper::initMap(std::ofstream& sumFile){
 		backTrackCredits = std::min(this->backTrackLimit, backTrackCredits + 1);
 		mappedNodes.push(node);
 	}
+	time (&end); // note time after execution
 
+	double difference = difftime (end,begin);
+	sumFile << "Init Map Exec Time: "<< difference/3600 << "(h)\n";
+	sumFile.flush();
 	return true;
 
 }
