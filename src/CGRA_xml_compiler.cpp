@@ -40,7 +40,7 @@ struct arguments
 	int userII = 0;
 	bool noMutexPaths=false;
 #ifdef SIM_ANNEAL
-	int backtracklimit = 2;
+	int backtracklimit = 0;
 #else
 	int backtracklimit = 0;
 #endif

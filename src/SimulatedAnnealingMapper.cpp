@@ -104,7 +104,7 @@ bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg, std::ofstream& sumFi
   data_routing_path.clear();
 	dfg_node_placement.clear();
 	if(!initMap(sumFile)){
-		assert(false && "how come?");
+		//assert(false && "how come?");
 		std::cout<<"cannot find an initial mapping, exit....\n";
 		return false;
 	}
@@ -160,155 +160,179 @@ bool CGRAXMLCompile::SAMapper::initMap(std::ofstream& sumFile){
 	std::stack<DFGNode *> unmappedNodes;
 	std::map<DFGNode *, std::priority_queue<dest_with_cost>> estimatedRouteInfo;
 	enableBackTracking = false;
-	int backTrackLimit = 4;
-	int backTrackCredits = 4;
-	time_t begin,end;
-	time (&begin);
-	while (!mappedNodes.empty())
-	{
-		mappedNodes.pop();
-	}
-	while (!unmappedNodes.empty())
-	{
-		unmappedNodes.pop();
-	}
+	int backTrackLimit = 0;
+	int backTrackCredits = 0;
+	time_t begin,end,now;
 
-	for (DFGNode *node : sortedNodeList)
-	{
-		unmappedNodes.push(node);
-	}
-	int total_nodes = unmappedNodes.size();
-	sumFile << "Total nodes:" <<total_nodes << "\n";
-	double prev_node_percentage = 0;
+	//for (int i = 0; i < this->maxIter; ++i)
+	//{
+		//sumFile << "\nIteration: "<<i<<"  -----------------------------------------------\n";sumFile.flush();
 
-	while (!unmappedNodes.empty())
-	{
+		time (&begin);
+		while (!mappedNodes.empty())
+		{
+			mappedNodes.pop();
+		}
+		while (!unmappedNodes.empty())
+		{
+			unmappedNodes.pop();
+		}
 
-		DFGNode *node = unmappedNodes.top();
-		unmappedNodes.pop();
+		for (DFGNode *node : sortedNodeList)
+		{
+			unmappedNodes.push(node);
+		}
+		int total_nodes = unmappedNodes.size();
+		sumFile << "Total nodes:" <<total_nodes << "\n";
+		double prev_node_percentage = 0;
 
-		std::stringstream MapHeader;
-		MapHeader << "current node = " << node->idx;
-		MapHeader << ",op = " << node->op;
-		MapHeader << ",unmapped nodes = " << unmappedNodes.size();
-		MapHeader << ",mapped nodes = " << mappedNodes.size();
-		MapHeader << ",freeMemNodes = " << cgra->freeMemNodes;
-		MapHeader << ",unmappedMemNodes = " << dfg->unmappedMemOps;
-		MapHeader << ",II = " << cgra->get_t_max();
-		MapHeader << ",btCredits = " << backTrackCredits;
-		double mapped_node_percentage = ((mappedNodes.size()*100/total_nodes));
+		while (!unmappedNodes.empty())
+		{
+			time (&now); // note time before execution
 
-		if(prev_node_percentage!=mapped_node_percentage && (mapped_node_percentage == 25 || mapped_node_percentage == 50 || mapped_node_percentage > 75)){
-			  sumFile << mapped_node_percentage<< "% ";
+			//if(i>0){
+//						double elapsed_time = difftime (now,start_time);
+//						double maxIterationTimeinSec = 3600*maxIterationTime;
+//						if (elapsed_time > maxIterationTimeinSec){
+//							sumFile << "Map stopped due to iteration time limit exceed:\n";sumFile.flush();
+//							return false;
+//						}
+			//}
 
-			  //if (mapped_node_percentage == 25 || mapped_node_percentage == 50 || mapped_node_percentage > 75)
-			  sumFile.flush();
+			DFGNode *node = unmappedNodes.top();
+			unmappedNodes.pop();
+
+			std::stringstream MapHeader;
+			MapHeader << "current node = " << node->idx;
+			MapHeader << ",op = " << node->op;
+			MapHeader << ",unmapped nodes = " << unmappedNodes.size();
+			MapHeader << ",mapped nodes = " << mappedNodes.size();
+			MapHeader << ",freeMemNodes = " << cgra->freeMemNodes;
+			MapHeader << ",unmappedMemNodes = " << dfg->unmappedMemOps;
+			MapHeader << ",II = " << cgra->get_t_max();
+			MapHeader << ",btCredits = " << backTrackCredits;
+			double mapped_node_percentage = ((mappedNodes.size()*100/total_nodes));
+
+			if(prev_node_percentage!=mapped_node_percentage && (mapped_node_percentage == 25 || mapped_node_percentage == 50 || mapped_node_percentage > 75)){
+				sumFile << mapped_node_percentage<< "% ";
+
+				//if (mapped_node_percentage == 25 || mapped_node_percentage == 50 || mapped_node_percentage > 75)
+				sumFile.flush();
 			}
 
-		prev_node_percentage = mapped_node_percentage;
+			prev_node_percentage = mapped_node_percentage;
 
 
-		// MapHeader << ",PEType = " << this->cgra->peType;
-		// MapHeader << ",XDim = " << this->cgra->get_x_max();
-		// MapHeader << ",YDim = " << this->cgra->get_y_max();
-		// MapHeader << ",DPs = " << this->cgra->numberofDPs;
+			// MapHeader << ",PEType = " << this->cgra->peType;
+			// MapHeader << ",XDim = " << this->cgra->get_x_max();
+			// MapHeader << ",YDim = " << this->cgra->get_y_max();
+			// MapHeader << ",DPs = " << this->cgra->numberofDPs;
 
-		MapHeader << ",CGRA=" << this->cgra->getCGRAName();
-		MapHeader << ",MaxHops=" << this->cgra->max_hops;
+			MapHeader << ",CGRA=" << this->cgra->getCGRAName();
+			MapHeader << ",MaxHops=" << this->cgra->max_hops;
 
-		MapHeader << ",BB = " << node->BB;
-		MapHeader << ",mutexPathEn = " << this->enableMutexPaths;
-		MapHeader << "\n";
+			MapHeader << ",BB = " << node->BB;
+			MapHeader << ",mutexPathEn = " << this->enableMutexPaths;
+			MapHeader << "\n";
 
 			std::cout << MapHeader.str();
 
 
-		bool isEstRouteSucc = false;
-
-		
-
-		//fill the routing information
-		if (estimatedRouteInfo.find(node) == estimatedRouteInfo.end())
-		{
-			//the routes are not estimated.
-			
-			DFGNode *failedNode;
-			std::priority_queue<dest_with_cost> estimatedRoutes;
-			isEstRouteSucc = estimateRouting(node, estimatedRoutes, &failedNode);
-			if(isEstRouteSucc){
-				estimatedRouteInfo[node] = estimatedRoutes;
-			}
-			
-			
-		}
-
-		bool isRouteSucc = false;
-		DFGNode *failedNode = NULL;
-
-		std::cout << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
-		mappingLog << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
-		if (!estimatedRouteInfo[node].empty())
-		{
-			isRouteSucc = Route(node, estimatedRouteInfo[node], &failedNode);
-			if (!isRouteSucc){
-				LOG(ROUTE) << "route not successful!\n";
-			}
-			// else if(!estimatedRouteInfo[node].empty()){
-			// 	//route not successful
-			// }
-		} else{
-			isRouteSucc = false;
-		}
-
-		if (!isRouteSucc)
-		{
+			bool isEstRouteSucc = false;
 
 
-			if (enableBackTracking) // always false
+
+			//fill the routing information
+			if (estimatedRouteInfo.find(node) == estimatedRouteInfo.end())
 			{
-				if (backTrackCredits == 0)
-				{
-					std::cout << "Map Failed!.\n";
-					return false;
-				}
-				//					assert(failedNode!=NULL);
-				backTrackCredits--;
+				//the routes are not estimated.
 
-				DFGNode *prevNode = mappedNodes.top();
-				mappedNodes.pop();
-				unmappedNodes.push(node);
-				unmappedNodes.push(prevNode);
+				DFGNode *failedNode;
+				std::priority_queue<dest_with_cost> estimatedRoutes;
+				isEstRouteSucc = estimateRouting(node, estimatedRoutes, &failedNode);
+				if(isEstRouteSucc){
+					estimatedRouteInfo[node] = estimatedRoutes;
+				}else{
 
-				prevNode->clear(this->dfg);
-				estimatedRouteInfo.erase(node);
-				continue;
-			}
-			else
-			{
-
-				node->clear(this->dfg);
-				std::cout<<"----------node" <<node->idx<<" not mapped in initial mapping\n";
-			}
 #ifdef HIERARCHICAL
 #ifdef HOTFIX3
 
+					if(node->map_on_any_cluster == false){//no point of continuing if the node can be already placed in any cluster
+
 						node->map_on_any_cluster = true;
-						//unmappedNodes.push(node);
-						std::cout << "Route Estimation Failed. This node will be mapped in any cluster in future iterations! Return mapping.\n";
+						unmappedNodes.push(node);
+						std::cout << "This node will be mapped in any cluster in future iterations! Return mapping.\n";
 						sumFile << "ANYCLUS:["<< node->idx<<"] ";
 						continue;
+					}
 #endif
 #endif
-		}
-		backTrackCredits = std::min(this->backTrackLimit, backTrackCredits + 1);
-		mappedNodes.push(node);
-	}
-	time (&end); // note time after execution
+				return false;//initial mapping should have valid estimated routes
+				}
 
-	double difference = difftime (end,begin);
-	sumFile << "Init Map Exec Time: "<< difference/3600 << "(h)\n";
-	sumFile.flush();
-	return true;
+
+			}
+
+			bool isRouteSucc = false;
+			DFGNode *failedNode = NULL;
+
+			std::cout << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
+			mappingLog << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
+			if (!estimatedRouteInfo[node].empty())
+			{
+				isRouteSucc = Route(node, estimatedRouteInfo[node], &failedNode);
+				if (!isRouteSucc){
+					LOG(ROUTE) << "route not successful!\n";
+				}
+				// else if(!estimatedRouteInfo[node].empty()){
+				// 	//route not successful
+				// }
+			} else{
+				isRouteSucc = false;
+			}
+
+			if (!isRouteSucc)
+			{
+
+
+				if (enableBackTracking) // always false
+				{
+					if (backTrackCredits == 0)
+					{
+						std::cout << "Map Failed!.\n";
+						return false;
+					}
+					//					assert(failedNode!=NULL);
+					backTrackCredits--;
+
+					DFGNode *prevNode = mappedNodes.top();
+					mappedNodes.pop();
+					unmappedNodes.push(node);
+					unmappedNodes.push(prevNode);
+
+					prevNode->clear(this->dfg);
+					estimatedRouteInfo.erase(node);
+					continue;
+				}
+				else
+				{
+
+					node->clear(this->dfg);
+					std::cout<<"----------node" <<node->idx<<" not mapped in initial mapping\n";
+				}
+				return false;//initial mapping should have valid routes
+			}
+			backTrackCredits = std::min(this->backTrackLimit, backTrackCredits + 1);
+			mappedNodes.push(node);
+		}
+		time (&end); // note time after execution
+
+		double difference = difftime (end,begin);
+		sumFile << "Init map: Iteration Exec Time: "<< difference/3600 << "(h)\n";
+		sumFile.flush();
+		return true;
+	//}
+	//return false;
 
 }
 
