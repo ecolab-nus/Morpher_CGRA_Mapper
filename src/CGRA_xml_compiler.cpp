@@ -21,6 +21,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <chrono>
+#include <fstream>
+
 using namespace std;
 using namespace CGRAXMLCompile;
 
@@ -38,6 +41,14 @@ struct arguments
 	int ndps = 1;
 	int maxiter = 30;
 	int max_hops = 4;
+};
+struct timer{
+	double l0 = 0;
+	double l1 = 0;
+	double l2 = 0;
+	double l31 = 0;
+	double l32 = 0;
+	double l33 = 0;
 };
 
 arguments parse_arguments(int argn, char *argc[])
@@ -150,6 +161,7 @@ void find_routing_resource(Module * md, std::set<Port*> & ports, std::set<port_e
 
 int main(int argn, char *argc[])
 {
+	timer ttimer;
 	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 
 	// if (argn < 7)
@@ -212,6 +224,8 @@ int main(int argn, char *argc[])
 	bool mappingSuccess = false;
 	while (!mappingSuccess)
 	{
+		auto l0_start = std::chrono::high_resolution_clock::now();
+
 		DFG tempDFG;
 		tempDFG.parseXML(inputDFG_filename);
 		tempDFG.printDFG();
@@ -241,7 +255,13 @@ int main(int argn, char *argc[])
 
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();
+
+		auto l1_start = std::chrono::high_resolution_clock::now();
 		mappingSuccess = hm.Map(tempCGRA, &tempDFG);
+		auto l1_end = std::chrono::high_resolution_clock::now();
+		double l1_diff = std::chrono::duration<double, std::milli>(l1_end-l1_start).count();
+		ttimer.l1+=l1_diff;
+
 		hm.congestionInfoFile.close();
 		if (!mappingSuccess)
 		{
@@ -279,6 +299,14 @@ int main(int argn, char *argc[])
 			}
 			
 		}
+		auto l0_end = std::chrono::high_resolution_clock::now();
+		double l0_diff = std::chrono::duration<double, std::milli>(l0_end-l0_start).count();
+		ttimer.l0+=l0_diff;
 	}
+	ofstream wdLog;
+	wdLog.open ("woodenLog.txt");
+	wdLog << "L0:\t"<<std::to_string(ttimer.l0)<<"\n";
+	wdLog << "L1:\t"<<std::to_string(ttimer.l1)<<"\n";
+	wdLog.close();
 	return 0;
 }

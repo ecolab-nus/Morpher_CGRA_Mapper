@@ -38,6 +38,21 @@
 #include <memory>
 #include <bitset>
 
+
+#include <chrono>
+#include <fstream>
+
+struct timer{
+	double l0 = 0;
+	double l1 = 0;
+	double l2 = 0;
+	double l3 = 0;
+	double l31 = 0;
+	double l32 = 0;
+	double l33 = 0;
+};
+
+
 namespace CGRAXMLCompile
 {
 
@@ -1307,7 +1322,8 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(LatPort src,
 }
 
 bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
-{
+{		
+	timer ttimer;
 	std::stack<DFGNode *> mappedNodes;
 	std::stack<DFGNode *> unmappedNodes;
 	std::map<DFGNode *, std::priority_queue<dest_with_cost>> estimatedRouteInfo;
@@ -1345,9 +1361,10 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 	congestionInfoFile.open(congestionInfoFileName.c_str());
 	assert(congestionInfoFile.is_open());
 
+	auto l2_start = std::chrono::high_resolution_clock::now();
+
 	for (int i = 0; i < this->maxIter; ++i)
 	{
-
 		std::string mappingLogFileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mapping.csv";
 		std::string mappingLog2FileName_withIter = mappingLog2FileName + "_Iter=" + std::to_string(i) + ".routeInfo.log";
 		std::string mappingLog4FileName_withIter = mappingLogFileName + "_II=" + std::to_string(cgra->get_t_max())+ "_Iter=" + std::to_string(i) + ".mappingwithlatency.txt";
@@ -1419,8 +1436,11 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 				//the routes are not estimated.
 				std::priority_queue<dest_with_cost> estimatedRoutes;
 				DFGNode *failedNode;
+				auto l3_start = std::chrono::high_resolution_clock::now();
 				isEstRouteSucc = estimateRouting(node, estimatedRoutes, &failedNode);
-
+				auto l3_end = std::chrono::high_resolution_clock::now();
+				double l3_diff = std::chrono::duration<double, std::milli>(l3_end-l3_start).count();
+				ttimer.l3 += l3_diff;
 				if (!isEstRouteSucc)
 				{
 					printMappingLog();
@@ -1588,7 +1608,11 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog2.close();
 		mappingLog4.close();
 	}
-
+	
+	auto l2_end = std::chrono::high_resolution_clock::now();
+	double l2_diff = std::chrono::duration<double, std::milli>(l2_end-l2_start).count();
+	ttimer.l2+=l2_diff;
+	
 	//	congestionInfoFile.close();
 
 	if (mapSuccess)
@@ -1629,6 +1653,11 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog2.close();
 		return false;
 	}
+	ofstream wdLog;
+	wdLog.open ("woodenLog.txt");
+	wdLog << "L2:\t"<<std::to_string(ttimer.l2)<<"\n";
+	wdLog << "L3:\t"<<std::to_string(ttimer.l3)<<"\n";
+	wdLog.close();
 }
 
 void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode *src, DFGNode *dest,
