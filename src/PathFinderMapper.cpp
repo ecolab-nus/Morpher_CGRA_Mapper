@@ -41,6 +41,7 @@
 
 #include <chrono>
 #include <fstream>
+#include <thread>  
 
 struct timer{
 	double l0 = 0;
@@ -564,10 +565,127 @@ bool CGRAXMLCompile::PathFinderMapper::LeastCostPathAstar(LatPort start,
 	return true;
 }
 
+void CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate(
+		DataPath *dest, int ii, int i, 
+		int v_minLatDests, 
+		bool* pathFromParentExist, bool* pathExistMappedChild,
+		DFGNode *node, std::map<DFGNode *, std::vector<Port *>> possibleStarts, 
+		std::map<DataPath *, int> dpPenaltyMap, int* minLatDestVal, int* minLatDestVal_prime,
+		std::priority_queue<parent_cand_src_with_cost>* parentStartLocs, DFGNode** failedNode)
+	{
+	bool detailedDebug = false;
+	// int minLatDestVal_prime = minLatDests[dest] + ii * i;
+	*minLatDestVal_prime = v_minLatDests + ii * i;
+	//		std::cout << "Candidate Dest =" ;
+	//		std::cout << dest->getPE()->getName() << ".";
+	//		std::cout << dest->getFU()->getName() << ".";
+	//		std::cout << dest->getName() << "\n";
+
+	//		std::map<DFGNode*,std::priority_queue<cand_src_with_cost>> parentStartLocs;
+	
+	*minLatDestVal = *minLatDestVal_prime;
+	(*pathFromParentExist) = true;
+	// std::cout<<"possibleStarts: "<< possibleStarts.size()<<std::endl;  // 1 in most cases
+	for (std::pair<DFGNode *, std::vector<Port *>> pair : possibleStarts)
+	{
+		DFGNode *parent = pair.first;
+
+		//Skip parent if the edge is pseudo
+		if (parent->getOPtype(node) == "PS")
+			continue;
+
+		Port *destPort = dest->getInPort(parent->getOPtype(node));
+		minLatDestVal = minLatDestVal_prime + parent->childNextIter[node] * ii;
+
+		std::priority_queue<cand_src_with_cost> res;
+		
+		// std::cout<<"Number of threads: "<< pair.second.size() <<std::endl; // 1 in most cases
+		for (Port *startCand : pair.second)
+		{
+			// threads.push_back(std::thread(&CGRAXMLCompile::PathFinderMapper::estimateRoutingEachPort, this, startCand, destPort, minLatDestVal, parent, dest, node, dpPenaltyMap, res));
+			int cost;
+			std::vector<LatPort> path;
+			std::map<Port *, std::set<DFGNode *>> mutexPaths;
+			if (detailedDebug)
+				std::cout << "par Estimating Path" << startCand->getFullName() << "," << startCand->getLat() << ","
+							<< "--->" << destPort->getFullName() << "," << minLatDestVal << "," << ",parent_node = " << parent->idx
+							<< "\n";
+
+			LatPort startCandLat = std::make_pair(startCand->getLat(), startCand);
+			assert(startCand->getLat() != -1);
+			LatPort destPortLat = std::make_pair(*minLatDestVal, destPort);
+
+			//	if(detailedDebug)               std::cout << "lat = " << destPortLat.first << ",PE=" << destPort->getMod()->getPE()->getName() << ",t=" <<  destPort->getMod()->getPE()->T << "\n";
+			assert((*minLatDestVal) % destPort->getMod()->getCGRA()->get_t_max() == destPort->getMod()->getPE()->T);
+
+			bool pathExist = false;
+			{
+				FU *parentFU = dest->getFU();
+				assert(parentFU->supportedOPs.find(node->op) != parentFU->supportedOPs.end());
+				int latency = parentFU->supportedOPs[node->op];
+				Port *destPort = dest->getOutputPort(latency);
+				LatPort destPortLat = std::make_pair(*minLatDestVal + latency, destPort);
+
+				if (canExitCurrPE(destPortLat))
+				{
+					pathExist = true;
+				}
+				else
+				{
+					std::cout << "Cannot exit from :" << destPortLat.second->getFullName() << "\n";
+				}
+			}
+
+			pathExist = pathExist & LeastCostPathAstar(startCandLat, destPortLat, dest, path, cost, parent, mutexPaths, node);
+			path.clear();
+			if (!pathExist)
+			{
+				if (detailedDebug)
+					std::cout << "par Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
+				continue;
+			}
+			cost += dpPenaltyMap[dest];
+			res.push(cand_src_with_cost(startCandLat, destPortLat, cost));
+
+		}
+
+		// for (auto &th : threads) {
+		// 	th.join();
+		// }
+
+		if (res.empty())
+		{
+			(*pathFromParentExist) = false;
+			*failedNode = parent;
+			break;
+		}
+		parent_cand_src_with_cost pcswc(parent, res);
+		(*parentStartLocs).push(pcswc);
+	}
+
+	if (!(*pathFromParentExist))
+	{
+		// continue;
+		return;
+	}
+
+	//		for(std::pair<DFGNode*,std::priority_queue<cand_src_with_cost>> pair : parentStartLocs){
+	//			DFGNode* parent = pair.first;
+	//			pathFromParentExist = pathFromParentExist & (!parentStartLocs[parent].empty());
+	//		}
+	//		if(!pathFromParentExist){
+	//			continue;
+	//		}
+
+	*pathExistMappedChild = true;
+	return;
+}
+
 bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 													   std::priority_queue<dest_with_cost> &estimatedRoutes,
 													   DFGNode **failedNode)
 {
+	timer ttimer;
 
 	std::map<DFGNode *, std::vector<Port *>> possibleStarts;
 	std::map<DFGNode *, Port *> alreadyMappedChildPorts;
@@ -577,6 +695,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 
 	//	std::cout << "EstimateEouting begin...\n";
 
+	auto l31_start= std::chrono::high_resolution_clock::now();
 	for (DFGNode *parent : node->parents)
 	{
 		//		std::cout << "parent = " << parent->idx << "\n";
@@ -593,7 +712,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			}
 		}
 	}
-
+	
 	for (DFGNode *child : node->children)
 	{
 		if (child->rootDP != NULL)
@@ -617,12 +736,18 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			alreadyMappedChildPorts[child] == NULL;
 		}
 	}
+	auto l31_end= std::chrono::high_resolution_clock::now();
+	double l31_diff = std::chrono::duration<double, std::milli>(l31_end-l31_start).count();
+	ttimer.l31+=l31_diff;
 
 	std::vector<DataPath *> candidateDests;
 	int penalty = 0;
 	std::map<DataPath *, int> dpPenaltyMap;
 
 	unordered_set<PE *> allPEs = cgra->getAllPEList();
+
+	auto l32_start= std::chrono::high_resolution_clock::now();
+	
 	for (PE *currPE : allPEs)
 	{
 		for (Module *submod : currPE->subModules)
@@ -702,7 +827,11 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			}
 		}
 	}
-
+	
+	auto l32_end= std::chrono::high_resolution_clock::now();
+	double l32_diff = std::chrono::duration<double, std::milli>(l32_end-l32_start).count();
+	ttimer.l32+=l32_diff;
+	
 	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
 	if (candidateDests.empty())
 		return false;
@@ -717,7 +846,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	bool changed = false;
 	std::cout << "modifyMaxLatCandDest\n";
 	candidateDests = modifyMaxLatCandDest(minLatDests, node, changed);
-	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
+	std::cout << "Candidate Dests = " << candidateDests.size() << "\n"; // 188
 	int ii = this->cgra->get_t_max();
 
 	int minLatSucc = 1000000000;
@@ -727,174 +856,123 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	int iterations = allowed_time_steps_for_connection;
 
 	//Route Estimation
+	auto l33_start= std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < iterations; ++i)
 	{
-		bool pathFromParentExist = false;
-		bool pathExistMappedChild = false;
+		const int n_max_thread = 10;
+		int n_rest = candidateDests.size()%n_max_thread;
+		for(int it_dest=0; it_dest<candidateDests.size(); it_dest+=n_max_thread){
+			
+			bool pathFromParentExist[n_max_thread] = {}; // number of thread equals to 10
+			bool pathExistMappedChild[n_max_thread] = {};
+			int minLatDestVal[n_max_thread] = {};
+			int minLatDestVal_prime[n_max_thread] = {};
+			std::priority_queue<parent_cand_src_with_cost> parentStartLocs[n_max_thread];
+			DFGNode* fail[n_max_thread] = {};
 
-		for (DataPath *dest : candidateDests)
-		{
-			int minLatDestVal_prime = minLatDests[dest] + ii * i;
-			//		std::cout << "Candidate Dest =" ;
-			//		std::cout << dest->getPE()->getName() << ".";
-			//		std::cout << dest->getFU()->getName() << ".";
-			//		std::cout << dest->getName() << "\n";
-
-			//		std::map<DFGNode*,std::priority_queue<cand_src_with_cost>> parentStartLocs;
-			std::priority_queue<parent_cand_src_with_cost> parentStartLocs;
-			int minLatDestVal = minLatDestVal_prime;
-			pathFromParentExist = true;
-			for (std::pair<DFGNode *, std::vector<Port *>> pair : possibleStarts)
-			{
-				DFGNode *parent = pair.first;
-
-				//Skip parent if the edge is pseudo
-				if (parent->getOPtype(node) == "PS")
-					continue;
-
-				Port *destPort = dest->getInPort(parent->getOPtype(node));
-				minLatDestVal = minLatDestVal_prime + parent->childNextIter[node] * ii;
-
-				std::priority_queue<cand_src_with_cost> res;
-
-				for (Port *startCand : pair.second)
+			bool pathExists = false;
+			std::vector<std::thread> threads;
+			int n_thread = n_max_thread;
+			if(it_dest+n_max_thread>=candidateDests.size()){ n_thread= n_rest; }
+			for (int it_thread = 0; it_thread<n_thread; it_thread++){
+				DataPath *dest = candidateDests[it_thread+it_dest];
+				// threads.push_back(std::thread(&CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate, this,
+				// 	dest, ii, i, minLatDests[dest], 
+				// 	pathFromParentExist+it_thread+it_dest, pathExistMappedChild+it_thread+it_dest,
+				// 	node, possibleStarts, dpPenaltyMap, minLatDestVal+it_thread, minLatDestVal_prime+it_thread,
+				// 	&(parentStartLocs[it_thread]), &(fail[it_thread])));
+				CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate(
+					dest, ii, i, minLatDests[dest], 
+					pathFromParentExist+it_thread+it_dest, pathExistMappedChild+it_thread+it_dest,
+					node, possibleStarts, dpPenaltyMap, minLatDestVal+it_thread, minLatDestVal_prime+it_thread,
+					&(parentStartLocs[it_thread]), &(fail[it_thread]));
+			}
+			// for (int it_thread = 0; it_thread<n_thread; it_thread++){
+			// 	threads[it_thread].join();
+			// }
+			for (int it_thread = 0; it_thread<n_thread; it_thread++){
+				if (!pathFromParentExist[it_thread])
 				{
-					int cost;
+					*failedNode = fail[it_thread];
+					continue;
+				}
+				DataPath *dest = candidateDests[it_thread+it_dest];
+				std::priority_queue<dest_child_with_cost> alreadyMappedChilds;
+				for (std::pair<DFGNode *, Port *> pair : alreadyMappedChildPorts)// 这里改写数值了，应该不能多线程了把
+				{
+					DFGNode *child = pair.first;
+					Port *childDestPort = pair.second;
+					DataPath* childDP = child->rootDP;
+
+					if (child->idx == node->idx)
+					{
+						childDestPort = dest->getInPort(node->childrenOPType[child]);
+						if (detailedDebug) cout << "setting latency = " << minLatDestVal[it_thread] + ii << "\n";
+						childDestPort->setLat(minLatDestVal[it_thread] + ii);
+						childDP = dest;
+					}
+
 					std::vector<LatPort> path;
+					int cost;
+
+					FU *parentFU = dest->getFU();
+					assert(parentFU->supportedOPs.find(node->op) != parentFU->supportedOPs.end());
+					int latency = parentFU->supportedOPs[node->op];
+					Port *destPort = dest->getOutputPort(latency);
+
 					std::map<Port *, std::set<DFGNode *>> mutexPaths;
 					if (detailedDebug)
-						std::cout << "par Estimating Path" << startCand->getFullName() << "," << startCand->getLat() << ","
-								  << "--->" << destPort->getFullName() << "," << minLatDestVal << "," << ",parent_node = " << parent->idx
-								  << "\n";
+						std::cout << "already child Estimating Path" << destPort->getFullName() << "," << minLatDestVal[it_thread] + latency << ","
+									<< "--->" << childDestPort->getFullName() << "," << childDestPort->getLat() << "," << "exist_child = " << child->idx  
+									<< "\n";
+					if (detailedDebug)
+						std::cout << "lat = " << childDestPort->getLat() << ",PE=" << childDestPort->getMod()->getPE()->getName() << ",t=" << childDestPort->getMod()->getPE()->T << "\n";
 
-					LatPort startCandLat = std::make_pair(startCand->getLat(), startCand);
-					assert(startCand->getLat() != -1);
-					LatPort destPortLat = std::make_pair(minLatDestVal, destPort);
+					LatPort childDestPortLat = std::make_pair(childDestPort->getLat(), childDestPort);
+					assert(childDestPort->getLat() != -1);
+					LatPort destPortLat = std::make_pair(minLatDestVal[it_thread] + latency, destPort);
 
-					//	if(detailedDebug)               std::cout << "lat = " << destPortLat.first << ",PE=" << destPort->getMod()->getPE()->getName() << ",t=" <<  destPort->getMod()->getPE()->T << "\n";
-					assert((minLatDestVal) % destPort->getMod()->getCGRA()->get_t_max() == destPort->getMod()->getPE()->T);
+					pathExistMappedChild[it_thread] = pathExistMappedChild[it_thread] & LeastCostPathAstar(destPortLat, childDestPortLat, childDP, path, cost, node, mutexPaths, child);
 
-					bool pathExist = false;
+					if (!pathExistMappedChild[it_thread])
 					{
-						FU *parentFU = dest->getFU();
-						assert(parentFU->supportedOPs.find(node->op) != parentFU->supportedOPs.end());
-						int latency = parentFU->supportedOPs[node->op];
-						Port *destPort = dest->getOutputPort(latency);
-						LatPort destPortLat = std::make_pair(minLatDestVal + latency, destPort);
-
-						if (canExitCurrPE(destPortLat))
-						{
-							pathExist = true;
-						}
-						else
-						{
-							std::cout << "Cannot exit from :" << destPortLat.second->getFullName() << "\n";
-						}
+						*failedNode = child;
+						break;
 					}
 
-					pathExist = pathExist & LeastCostPathAstar(startCandLat, destPortLat, dest, path, cost, parent, mutexPaths, node);
-					path.clear();
-					if (!pathExist)
-					{
-						if (detailedDebug)
-							std::cout << "par Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
-						continue;
-					}
-					cost += dpPenaltyMap[dest];
-					res.push(cand_src_with_cost(startCandLat, destPortLat, cost));
+					dest_child_with_cost dcwc(child,childDP, childDestPortLat, destPortLat, cost);
+					alreadyMappedChilds.push(dcwc);
 				}
-				if (res.empty())
+				if (!pathExistMappedChild[it_thread])
 				{
-					pathFromParentExist = false;
-					*failedNode = parent;
+					if (detailedDebug)
+						std::cout << "already child Estimating Path Failed!\n";
+					continue; //if it cannot be mapped to child abort the estimation for this dest
+				}
+
+				assert(pathFromParentExist[it_thread]);
+				assert(pathExistMappedChild[it_thread]);
+				dest_with_cost dest_with_cost_ins(parentStartLocs[it_thread], alreadyMappedChilds, dest, minLatDestVal_prime[it_thread], node, 0, this->dfg->unmappedMemOps, this);
+
+				if (minLatDestVal_prime[it_thread] < minLatSucc)
+				{
+					minLatSucc = minLatDestVal_prime[it_thread];
+				}
+
+				estimatedRoutesTemp.push(dest_with_cost_ins);
+
+				if (pathFromParentExist[it_thread] & pathExistMappedChild[it_thread]){
+					pathExists = true;
 					break;
 				}
-				parent_cand_src_with_cost pcswc(parent, res);
-				parentStartLocs.push(pcswc);
 			}
-
-			if (!pathFromParentExist)
-			{
-				continue;
-			}
-
-			//		for(std::pair<DFGNode*,std::priority_queue<cand_src_with_cost>> pair : parentStartLocs){
-			//			DFGNode* parent = pair.first;
-			//			pathFromParentExist = pathFromParentExist & (!parentStartLocs[parent].empty());
-			//		}
-			//		if(!pathFromParentExist){
-			//			continue;
-			//		}
-
-			pathExistMappedChild = true;
-			std::priority_queue<dest_child_with_cost> alreadyMappedChilds;
-			for (std::pair<DFGNode *, Port *> pair : alreadyMappedChildPorts)
-			{
-				DFGNode *child = pair.first;
-				Port *childDestPort = pair.second;
-				DataPath* childDP = child->rootDP;
-
-				if (child->idx == node->idx)
-				{
-					childDestPort = dest->getInPort(node->childrenOPType[child]);
-					if (detailedDebug) cout << "setting latency = " << minLatDestVal + ii << "\n";
-					childDestPort->setLat(minLatDestVal + ii);
-					childDP = dest;
-				}
-
-				std::vector<LatPort> path;
-				int cost;
-
-				FU *parentFU = dest->getFU();
-				assert(parentFU->supportedOPs.find(node->op) != parentFU->supportedOPs.end());
-				int latency = parentFU->supportedOPs[node->op];
-				Port *destPort = dest->getOutputPort(latency);
-
-				std::map<Port *, std::set<DFGNode *>> mutexPaths;
-				if (detailedDebug)
-					std::cout << "already child Estimating Path" << destPort->getFullName() << "," << minLatDestVal + latency << ","
-							  << "--->" << childDestPort->getFullName() << "," << childDestPort->getLat() << "," << "exist_child = " << child->idx  
-							  << "\n";
-				if (detailedDebug)
-					std::cout << "lat = " << childDestPort->getLat() << ",PE=" << childDestPort->getMod()->getPE()->getName() << ",t=" << childDestPort->getMod()->getPE()->T << "\n";
-
-				LatPort childDestPortLat = std::make_pair(childDestPort->getLat(), childDestPort);
-				assert(childDestPort->getLat() != -1);
-				LatPort destPortLat = std::make_pair(minLatDestVal + latency, destPort);
-
-				pathExistMappedChild = pathExistMappedChild & LeastCostPathAstar(destPortLat, childDestPortLat, childDP, path, cost, node, mutexPaths, child);
-
-				if (!pathExistMappedChild)
-				{
-					*failedNode = child;
-					break;
-				}
-
-				dest_child_with_cost dcwc(child,childDP, childDestPortLat, destPortLat, cost);
-				alreadyMappedChilds.push(dcwc);
-			}
-			if (!pathExistMappedChild)
-			{
-				if (detailedDebug)
-					std::cout << "already child Estimating Path Failed!\n";
-				continue; //if it cannot be mapped to child abort the estimation for this dest
-			}
-
-			assert(pathFromParentExist);
-			assert(pathExistMappedChild);
-			dest_with_cost dest_with_cost_ins(parentStartLocs, alreadyMappedChilds, dest, minLatDestVal_prime, node, 0, this->dfg->unmappedMemOps, this);
-
-			if (minLatDestVal_prime < minLatSucc)
-			{
-				minLatSucc = minLatDestVal_prime;
-			}
-
-			estimatedRoutesTemp.push(dest_with_cost_ins);
+			if(pathExists)
+				break;
 		}
-		if (pathFromParentExist & pathExistMappedChild)
-			break;
 	}
-
+	auto l33_end= std::chrono::high_resolution_clock::now();
+	double l33_diff = std::chrono::duration<double, std::milli>(l33_end-l33_start).count();
+	ttimer.l33+=l33_diff;
 	while (!estimatedRoutesTemp.empty())
 	{
 		dest_with_cost top = estimatedRoutesTemp.top();
@@ -905,6 +983,14 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 
 	//	std::cout << "EstimateEouting end!\n";
 	//	if(estimatedRoutes.empty()) assert(*failedNode!=NULL);
+	std::cout << "Write to log in Map Function.\n";
+	ofstream wdLog;
+	wdLog.open ("woodenLog.txt", std::ios_base::app);
+	wdLog << "L31:\t"<<std::to_string(ttimer.l31)<<"\n";
+	wdLog << "L32:\t"<<std::to_string(ttimer.l32)<<"\n";
+	wdLog << "L33:\t"<<std::to_string(ttimer.l33)<<"\n";
+	wdLog.close();
+
 	return !estimatedRoutes.empty();
 }
 
@@ -1362,7 +1448,6 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 	assert(congestionInfoFile.is_open());
 
 	auto l2_start = std::chrono::high_resolution_clock::now();
-
 	for (int i = 0; i < this->maxIter; ++i)
 	{
 		std::string mappingLogFileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mapping.csv";
@@ -1393,8 +1478,6 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		{
 			unmappedNodes.push(node);
 		}
-
-		std::cout << "MAP begin...\n";
 
 		while (!unmappedNodes.empty())
 		{
@@ -1506,7 +1589,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 				}
 				estimatedRouteInfo[node] = estimatedRoutes;
 			}
-
+			std::cout << "Entered Map After For Loop\n";
 			bool isRouteSucc = false;
 			DFGNode *failedNode = NULL;
 
@@ -1614,6 +1697,13 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 	ttimer.l2+=l2_diff;
 	
 	//	congestionInfoFile.close();
+	std::cout << "Write to log in Map Function.\n";
+	ofstream wdLog;
+	wdLog.open ("woodenLog.txt", std::ios_base::app);
+	wdLog << "L2:\t"<<std::to_string(ttimer.l2)<<"\n";
+	wdLog << "L3:\t"<<std::to_string(ttimer.l3)<<"\n";
+	wdLog.close();
+
 
 	if (mapSuccess)
 	{
@@ -1653,11 +1743,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog2.close();
 		return false;
 	}
-	ofstream wdLog;
-	wdLog.open ("woodenLog.txt");
-	wdLog << "L2:\t"<<std::to_string(ttimer.l2)<<"\n";
-	wdLog << "L3:\t"<<std::to_string(ttimer.l3)<<"\n";
-	wdLog.close();
+	
 }
 
 void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode *src, DFGNode *dest,

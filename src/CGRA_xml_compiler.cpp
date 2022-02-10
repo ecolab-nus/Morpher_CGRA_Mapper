@@ -304,7 +304,7 @@ int main(int argn, char *argc[])
 		ttimer.l0+=l0_diff;
 	}
 	ofstream wdLog;
-	wdLog.open ("woodenLog.txt");
+	wdLog.open ("woodenLog.txt",  std::ios_base::app);
 	wdLog << "L0:\t"<<std::to_string(ttimer.l0)<<"\n";
 	wdLog << "L1:\t"<<std::to_string(ttimer.l1)<<"\n";
 	wdLog.close();
