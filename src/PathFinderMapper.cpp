@@ -859,7 +859,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	auto l33_start= std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < iterations; ++i)
 	{
-		const int n_max_thread = 10;
+		const int n_max_thread = 5;
 		int n_rest = candidateDests.size()%n_max_thread;
 		for(int it_dest=0; it_dest<candidateDests.size(); it_dest+=n_max_thread){
 			
@@ -883,14 +883,15 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				// 	&(parentStartLocs[it_thread]), &(fail[it_thread])));
 				CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate(
 					dest, ii, i, minLatDests[dest], 
-					pathFromParentExist+it_thread+it_dest, pathExistMappedChild+it_thread+it_dest,
-					node, possibleStarts, dpPenaltyMap, minLatDestVal+it_thread, minLatDestVal_prime+it_thread,
+					&(pathFromParentExist[it_thread+it_dest]), &(pathExistMappedChild[it_thread+it_dest]),
+					node, possibleStarts, dpPenaltyMap, &(minLatDestVal[it_thread]), &(minLatDestVal_prime[it_thread]),
 					&(parentStartLocs[it_thread]), &(fail[it_thread]));
 			}
 			// for (int it_thread = 0; it_thread<n_thread; it_thread++){
 			// 	threads[it_thread].join();
 			// }
 			for (int it_thread = 0; it_thread<n_thread; it_thread++){
+				std::cout<<"Thread "<< it_thread<<std::endl;
 				if (!pathFromParentExist[it_thread])
 				{
 					*failedNode = fail[it_thread];
@@ -966,8 +967,11 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					break;
 				}
 			}
-			if(pathExists)
+			if(pathExists){
+				std::cout<<"Path exists"<<std::endl;
 				break;
+				}
+			std::cout<<"Process to the next "<< n_thread <<" threads"<<std::endl;
 		}
 	}
 	auto l33_end= std::chrono::high_resolution_clock::now();
