@@ -43,17 +43,6 @@
 #include <fstream>
 #include <thread>  
 
-struct timer{
-	double l0 = 0;
-	double l1 = 0;
-	double l2 = 0;
-	double l3 = 0;
-	double l31 = 0;
-	double l32 = 0;
-	double l33 = 0;
-};
-
-
 namespace CGRAXMLCompile
 {
 
@@ -687,7 +676,6 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 													   std::priority_queue<dest_with_cost> &estimatedRoutes,
 													   DFGNode **failedNode)
 {
-	timer ttimer;
 
 	std::map<DFGNode *, std::vector<Port *>> possibleStarts;
 	std::map<DFGNode *, Port *> alreadyMappedChildPorts;
@@ -697,7 +685,6 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 
 	//	std::cout << "EstimateEouting begin...\n";
 
-	auto l31_start= std::chrono::high_resolution_clock::now();
 	for (DFGNode *parent : node->parents)
 	{
 		//		std::cout << "parent = " << parent->idx << "\n";
@@ -738,17 +725,12 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			alreadyMappedChildPorts[child] == NULL;
 		}
 	}
-	auto l31_end= std::chrono::high_resolution_clock::now();
-	double l31_diff = std::chrono::duration<double, std::milli>(l31_end-l31_start).count();
-	ttimer.l31+=l31_diff;
 
 	std::vector<DataPath *> candidateDests;
 	int penalty = 0;
 	std::map<DataPath *, int> dpPenaltyMap;
 
 	unordered_set<PE *> allPEs = cgra->getAllPEList();
-
-	auto l32_start= std::chrono::high_resolution_clock::now();
 	
 	for (PE *currPE : allPEs)
 	{
@@ -829,11 +811,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			}
 		}
 	}
-	
-	auto l32_end= std::chrono::high_resolution_clock::now();
-	double l32_diff = std::chrono::duration<double, std::milli>(l32_end-l32_start).count();
-	ttimer.l32+=l32_diff;
-	
+
 	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
 	if (candidateDests.empty())
 		return false;
@@ -858,7 +836,6 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	int iterations = allowed_time_steps_for_connection;
 
 	//Route Estimation
-	auto l33_start= std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < iterations; ++i)
 	{
 		const int n_max_thread = 2;
@@ -979,9 +956,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			break;
 		}
 	}
-	auto l33_end= std::chrono::high_resolution_clock::now();
-	double l33_diff = std::chrono::duration<double, std::milli>(l33_end-l33_start).count();
-	ttimer.l33+=l33_diff;
+
 	while (!estimatedRoutesTemp.empty())
 	{
 		dest_with_cost top = estimatedRoutesTemp.top();
@@ -992,13 +967,6 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 
 	//	std::cout << "EstimateEouting end!\n";
 	//	if(estimatedRoutes.empty()) assert(*failedNode!=NULL);
-	std::cout << "Write to log in Map Function.\n";
-	ofstream wdLog;
-	wdLog.open ("woodenLog.txt", std::ios_base::app);
-	wdLog << "L31:\t"<<std::to_string(ttimer.l31)<<"\n";
-	wdLog << "L32:\t"<<std::to_string(ttimer.l32)<<"\n";
-	wdLog << "L33:\t"<<std::to_string(ttimer.l33)<<"\n";
-	wdLog.close();
 
 	return !estimatedRoutes.empty();
 }
@@ -1418,7 +1386,6 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(LatPort src,
 
 bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 {		
-	timer ttimer;
 	std::stack<DFGNode *> mappedNodes;
 	std::stack<DFGNode *> unmappedNodes;
 	std::map<DFGNode *, std::priority_queue<dest_with_cost>> estimatedRouteInfo;
@@ -1456,7 +1423,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 	congestionInfoFile.open(congestionInfoFileName.c_str());
 	assert(congestionInfoFile.is_open());
 
-	auto l2_start = std::chrono::high_resolution_clock::now();
+	
 	for (int i = 0; i < this->maxIter; ++i)
 	{
 		std::string mappingLogFileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mapping.csv";
@@ -1528,11 +1495,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 				//the routes are not estimated.
 				std::priority_queue<dest_with_cost> estimatedRoutes;
 				DFGNode *failedNode;
-				auto l3_start = std::chrono::high_resolution_clock::now();
-				isEstRouteSucc = estimateRouting(node, estimatedRoutes, &failedNode);
-				auto l3_end = std::chrono::high_resolution_clock::now();
-				double l3_diff = std::chrono::duration<double, std::milli>(l3_end-l3_start).count();
-				ttimer.l3 += l3_diff;
+
 				if (!isEstRouteSucc)
 				{
 					printMappingLog();
@@ -1701,18 +1664,8 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 		mappingLog4.close();
 	}
 	
-	auto l2_end = std::chrono::high_resolution_clock::now();
-	double l2_diff = std::chrono::duration<double, std::milli>(l2_end-l2_start).count();
-	ttimer.l2+=l2_diff;
-	
 	//	congestionInfoFile.close();
 	std::cout << "Write to log in Map Function.\n";
-	ofstream wdLog;
-	wdLog.open ("woodenLog.txt", std::ios_base::app);
-	wdLog << "L2:\t"<<std::to_string(ttimer.l2)<<"\n";
-	wdLog << "L3:\t"<<std::to_string(ttimer.l3)<<"\n";
-	wdLog.close();
-
 
 	if (mapSuccess)
 	{

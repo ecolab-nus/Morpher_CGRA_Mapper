@@ -42,14 +42,6 @@ struct arguments
 	int maxiter = 30;
 	int max_hops = 4;
 };
-struct timer{
-	double l0 = 0;
-	double l1 = 0;
-	double l2 = 0;
-	double l31 = 0;
-	double l32 = 0;
-	double l33 = 0;
-};
 
 arguments parse_arguments(int argn, char *argc[])
 {
@@ -161,7 +153,7 @@ void find_routing_resource(Module * md, std::set<Port*> & ports, std::set<port_e
 
 int main(int argn, char *argc[])
 {
-	timer ttimer;
+	auto app_start = std::chrono::high_resolution_clock::now();
 	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 
 	// if (argn < 7)
@@ -205,7 +197,7 @@ int main(int argn, char *argc[])
 
 	int II = hm.getMinimumII(testCGRA, &currDFG);
 	std::cout << "Minimum II = " << II << "\n";
-
+	int minII = II;
 	II = std::max(initUserII, II);
 
 	std::cout << "Using II = " << II << "\n";
@@ -224,8 +216,6 @@ int main(int argn, char *argc[])
 	bool mappingSuccess = false;
 	while (!mappingSuccess)
 	{
-		auto l0_start = std::chrono::high_resolution_clock::now();
-
 		DFG tempDFG;
 		tempDFG.parseXML(inputDFG_filename);
 		tempDFG.printDFG();
@@ -256,11 +246,7 @@ int main(int argn, char *argc[])
 		hm.getcongestedPortsPtr()->clear();
 		hm.getconflictedPortsPtr()->clear();
 
-		auto l1_start = std::chrono::high_resolution_clock::now();
 		mappingSuccess = hm.Map(tempCGRA, &tempDFG);
-		auto l1_end = std::chrono::high_resolution_clock::now();
-		double l1_diff = std::chrono::duration<double, std::milli>(l1_end-l1_start).count();
-		ttimer.l1+=l1_diff;
 
 		hm.congestionInfoFile.close();
 		if (!mappingSuccess)
@@ -291,6 +277,13 @@ int main(int argn, char *argc[])
 		}
 		else
 		{
+			auto app_end = std::chrono::high_resolution_clock::now();
+			double app_diff = std::chrono::duration<double, std::milli>(app_end-app_start).count();
+			std::ofstream outfile;
+			outfile.open("woodenLog.txt", std::ios_base::app);
+			std::string output = inputDFG_filename+" "+PEType+" "+std::to_string(xdim)+" "+std::to_string(ydim) +" "+std::to_string(minII)+" "+std::to_string(II)+" "+std::to_string(app_diff)+"\n";
+			outfile << output;
+
 			hm.sanityCheck();
 			//hm.assignLiveInOutAddr(&tempDFG);
 			if(PEType == "HyCUBE_4REG"){
@@ -299,14 +292,6 @@ int main(int argn, char *argc[])
 			}
 			
 		}
-		auto l0_end = std::chrono::high_resolution_clock::now();
-		double l0_diff = std::chrono::duration<double, std::milli>(l0_end-l0_start).count();
-		ttimer.l0+=l0_diff;
 	}
-	ofstream wdLog;
-	wdLog.open ("woodenLog.txt",  std::ios_base::app);
-	wdLog << "L0:\t"<<std::to_string(ttimer.l0)<<"\n";
-	wdLog << "L1:\t"<<std::to_string(ttimer.l1)<<"\n";
-	wdLog.close();
 	return 0;
 }
