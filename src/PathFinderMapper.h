@@ -8,6 +8,8 @@
 #include "HeuristicMapper.h"
 #include <string>
 
+#include <mutex>
+
 #ifndef PATHFINDERMAPPER_H_
 #define PATHFINDERMAPPER_H_
 
@@ -121,6 +123,9 @@ public:
 
 
 private:
+
+	std::mutex g_mutex;
+
 	std::map<Port *, std::set<DFGNode *>> congestedPorts;
 	std::map<Port *, std::set<DFGNode *>> conflictedPorts;
 	int maxIter = 30;
