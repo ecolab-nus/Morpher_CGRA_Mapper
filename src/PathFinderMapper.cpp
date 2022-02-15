@@ -838,7 +838,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	//Route Estimation
 	for (int i = 0; i < iterations; ++i)
 	{
-		const int n_max_thread = 2;
+		const int n_max_thread = 10;
 		int n_rest = candidateDests.size()%n_max_thread;
 		bool pathExists = false;
 		for(int it_dest=0; it_dest<candidateDests.size(); it_dest+=n_max_thread){
@@ -855,7 +855,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			int n_thread = n_max_thread;
 			if(it_dest+n_max_thread>=candidateDests.size()){ n_thread= n_rest; }
 			for (int it_thread = 0; it_thread<n_thread; it_thread++){
-				std::cout<<"Thread "<< it_thread<<std::endl;
+				// std::cout<<"Thread "<< it_thread<<std::endl;
 				DataPath *dest = candidateDests[it_thread+it_dest];
 				threads.push_back(std::thread(&CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate, this,
 					dest, ii, i, minLatDests[dest], 
@@ -1495,6 +1495,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 				//the routes are not estimated.
 				std::priority_queue<dest_with_cost> estimatedRoutes;
 				DFGNode *failedNode;
+				isEstRouteSucc = estimateRouting(node, estimatedRoutes, &failedNode);
 
 				if (!isEstRouteSucc)
 				{
