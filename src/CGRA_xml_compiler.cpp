@@ -280,10 +280,11 @@ int main(int argn, char *argc[])
 			auto app_end = std::chrono::high_resolution_clock::now();
 			double app_diff = std::chrono::duration<double, std::milli>(app_end-app_start).count();
 			std::ofstream outfile;
-			outfile.open("woodenLog.txt", std::ios_base::app);
+			outfile.open("woodenLog_MT.txt", std::ios_base::app);
 			std::string output = inputDFG_filename+" "+PEType+" "+std::to_string(xdim)+" "+std::to_string(ydim) +" "+std::to_string(minII)+" "+std::to_string(II)+" "+std::to_string(app_diff)+"\n";
 			outfile << output;
-
+			outfile.close();
+			
 			hm.sanityCheck();
 			//hm.assignLiveInOutAddr(&tempDFG);
 			if(PEType == "HyCUBE_4REG"){
