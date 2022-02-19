@@ -75,7 +75,7 @@ public:
 
 	void estimateRoutingEachCandidate(DataPath *dest, int ii, int i, int v_minLatDests, bool*, bool*, DFGNode *node,
 						std::map<DFGNode *, std::vector<Port *>> possibleStarts, std::map<DataPath *, int> dpPenaltyMap,
-						int*, int*, std::priority_queue<parent_cand_src_with_cost>* parentStartLocs, DFGNode **failedNode);
+						int*, std::priority_queue<parent_cand_src_with_cost>* parentStartLocs, DFGNode **failedNode);
 	
 	bool estimateRouting(DFGNode *node, std::priority_queue<dest_with_cost> &estimatedRoutes, DFGNode **failedNode);
 	int predictiveRoute(DFGNode *node,

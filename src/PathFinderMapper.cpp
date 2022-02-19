@@ -560,13 +560,13 @@ void CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate(
 		int v_minLatDests, 
 		bool* pathFromParentExist, bool* pathExistMappedChild,
 		DFGNode *node, std::map<DFGNode *, std::vector<Port *>> possibleStarts, 
-		std::map<DataPath *, int> dpPenaltyMap, int* minLatDestVal, int* minLatDestVal_prime,
+		std::map<DataPath *, int> dpPenaltyMap, int* minLatDestVal,
 		std::priority_queue<parent_cand_src_with_cost>* parentStartLocs, DFGNode** failedNode)
 	{
 	
 	bool detailedDebug = false;
 	// int minLatDestVal_prime = minLatDests[dest] + ii * i;
-	*minLatDestVal_prime = v_minLatDests + ii * i;
+	int minLatDestVal_prime = v_minLatDests + ii * i;
 	//		std::cout << "Candidate Dest =" ;
 	//		std::cout << dest->getPE()->getName() << ".";
 	//		std::cout << dest->getFU()->getName() << ".";
@@ -574,7 +574,7 @@ void CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate(
 
 	//		std::map<DFGNode*,std::priority_queue<cand_src_with_cost>> parentStartLocs;
 	
-	*minLatDestVal = *minLatDestVal_prime;
+	(*minLatDestVal) = minLatDestVal_prime;
 	(*pathFromParentExist) = true;
 	// std::cout<<"possibleStarts: "<< possibleStarts.size()<<std::endl;  // 1 in most cases
 	for (std::pair<DFGNode *, std::vector<Port *>> pair : possibleStarts)
@@ -586,7 +586,7 @@ void CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate(
 			continue;
 
 		Port *destPort = dest->getInPort(parent->getOPtype(node));
-		minLatDestVal = minLatDestVal_prime + parent->childNextIter[node] * ii;
+		(*minLatDestVal) = minLatDestVal_prime + parent->childNextIter[node] * ii;
 
 		std::priority_queue<cand_src_with_cost> res;
 		
@@ -599,15 +599,16 @@ void CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate(
 			std::map<Port *, std::set<DFGNode *>> mutexPaths;
 			if (detailedDebug)
 				std::cout << "par Estimating Path" << startCand->getFullName() << "," << startCand->getLat() << ","
-							<< "--->" << destPort->getFullName() << "," << minLatDestVal << "," << ",parent_node = " << parent->idx
+							<< "--->" << destPort->getFullName() << "," << *minLatDestVal << "," << ",parent_node = " << parent->idx
 							<< "\n";
 
 			LatPort startCandLat = std::make_pair(startCand->getLat(), startCand);
 			assert(startCand->getLat() != -1);
-			LatPort destPortLat = std::make_pair(*minLatDestVal, destPort);
+			LatPort destPortLat = std::make_pair((*minLatDestVal), destPort);
 
-			//	if(detailedDebug)               std::cout << "lat = " << destPortLat.first << ",PE=" << destPort->getMod()->getPE()->getName() << ",t=" <<  destPort->getMod()->getPE()->T << "\n";
-			assert((*minLatDestVal) % destPort->getMod()->getCGRA()->get_t_max() == destPort->getMod()->getPE()->T);
+			std::cout << "lat = " << destPortLat.first << ",PE=" << destPort->getMod()->getPE()->getName() << ",t=" <<  destPort->getMod()->getPE()->T << "\n";
+			bool cond = (*minLatDestVal) % destPort->getMod()->getCGRA()->get_t_max() == destPort->getMod()->getPE()->T;
+			assert(cond);
 
 			bool pathExist = false;
 			{
@@ -615,7 +616,7 @@ void CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate(
 				assert(parentFU->supportedOPs.find(node->op) != parentFU->supportedOPs.end());
 				int latency = parentFU->supportedOPs[node->op];
 				Port *destPort = dest->getOutputPort(latency);
-				LatPort destPortLat = std::make_pair(*minLatDestVal + latency, destPort);
+				LatPort destPortLat = std::make_pair((*minLatDestVal) + latency, destPort);
 
 				if (canExitCurrPE(destPortLat))
 				{
@@ -838,15 +839,21 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	//Route Estimation
 	for (int i = 0; i < iterations; ++i)
 	{
-		const int n_max_thread = 10;
+		const int n_max_thread = 5;
 		int n_rest = candidateDests.size()%n_max_thread;
 		bool pathExists = false;
+		bool pathFromParentExist[n_max_thread] = {}; // number of thread equals to 10
+		bool pathExistMappedChild[n_max_thread] = {};
+		int minLatDestVal[n_max_thread] = {};
+		int minLatDestVal_prime[n_max_thread] = {};
 		for(int it_dest=0; it_dest<candidateDests.size(); it_dest+=n_max_thread){
+			for (int it_thread = 0; it_thread<n_max_thread; it_thread++){
+				pathFromParentExist[it_thread] = false;
+				pathExistMappedChild[it_thread] = false;
+				minLatDestVal[it_thread] = 0;
+				minLatDestVal_prime[it_thread] = 0;
+			}
 			
-			bool pathFromParentExist[n_max_thread] = {}; // number of thread equals to 10
-			bool pathExistMappedChild[n_max_thread] = {};
-			int minLatDestVal[n_max_thread] = {};
-			int minLatDestVal_prime[n_max_thread] = {};
 			std::priority_queue<parent_cand_src_with_cost> parentStartLocs[n_max_thread];
 			DFGNode* fail[n_max_thread] = {};
 
@@ -857,10 +864,11 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			for (int it_thread = 0; it_thread<n_thread; it_thread++){
 				// std::cout<<"Thread "<< it_thread<<std::endl;
 				DataPath *dest = candidateDests[it_thread+it_dest];
+				minLatDestVal_prime[it_thread] = minLatDests[dest] + ii * i;
 				threads.push_back(std::thread(&CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate, this,
-					dest, ii, i, minLatDests[dest], 
+					dest, ii, i, minLatDests[dest],
 					&(pathFromParentExist[it_thread+it_dest]), &(pathExistMappedChild[it_thread+it_dest]),
-					node, possibleStarts, dpPenaltyMap, &(minLatDestVal[it_thread]), &(minLatDestVal_prime[it_thread]),
+					node, possibleStarts, dpPenaltyMap, &(minLatDestVal[it_thread]),
 					&(parentStartLocs[it_thread]), &(fail[it_thread])));
 				// CGRAXMLCompile::PathFinderMapper::estimateRoutingEachCandidate(
 				// 	dest, ii, i, minLatDests[dest], 
