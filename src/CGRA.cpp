@@ -28,7 +28,39 @@ namespace CGRAXMLCompile
 //}
 
 } /* namespace CGRAXMLCompile */
-
+// Begin Add by Wu Dan
+void CGRAXMLCompile::saveTimeDistInfo(TimeDistInfo* tdf, string filename_prefix){
+	json j_tdbp, j_tdbcm;
+	for(auto iter=tdf->TimeDistBetweenPEMap.begin(); iter!=tdf->TimeDistBetweenPEMap.end(); iter++){
+        for(auto iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++){
+			j_tdbp[iter->first][iter2->first] = iter2->second;
+		}
+    }
+	for(auto iter=tdf->TimeDistBetweenClosestMEMPEMap.begin(); iter!=tdf->TimeDistBetweenClosestMEMPEMap.end(); iter++){
+		j_tdbcm[iter->first] = iter->second;
+    }
+	std::ofstream o(filename_prefix+"_TimeDistBetweenPEMap.json");
+	o << std::setw(4) << j_tdbp << std::endl;
+	std::ofstream o1(filename_prefix+"_TimeDistBetweenClosestMEMPEMap.json");
+	o1 << std::setw(4) << j_tdbcm << std::endl;
+}
+TimeDistInfo* CGRAXMLCompile::loadTimeDistInfo(TimeDistInfo* tdf, string filename_prefix){
+	json j_tdbp, j_tdbcm;
+	std::ifstream in(filename_prefix+"_TimeDistBetweenPEMap.json");
+	in >> j_tdbp;
+	std::ifstream in1(filename_prefix+"_TimeDistBetweenClosestMEMPEMap.json");
+	in1 >> j_tdbcm;
+	for (auto& pair1 : j_tdbp.items()) {
+		for(auto& pair2: pair1.value().items()){
+			tdf->TimeDistBetweenPEMap[pair1.key()][pair2.key()] = pair2.value();
+		}
+	}
+	for (auto& pair1 : j_tdbcm.items()) {
+		tdf->TimeDistBetweenClosestMEMPEMap[pair1.key()]= pair1.value();		
+	}
+	return tdf;
+}
+// End Add by Wu Dan
 void CGRAXMLCompile::CGRA::createGenericCGRA(int x_max, int y_max, int t_max, std::string peType, int numberofDPs)
 {
 

@@ -14,6 +14,8 @@
 #include "DataPath.h"
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <fstream>
+#include <iomanip>
 
 using namespace std;
 using json = nlohmann::json;
@@ -28,7 +30,10 @@ struct TimeDistInfo{
 	unordered_map<string,unordered_map<string,int>> TimeDistBetweenPEMap;
 	unordered_map<string,int> TimeDistBetweenClosestMEMPEMap;
 };
-
+// Begin Add by Wu Dan
+void saveTimeDistInfo(TimeDistInfo* tdf, string filename_prefix);
+TimeDistInfo* loadTimeDistInfo(TimeDistInfo* tdf, string filename_prefix);
+// End Add by Wu Dan
 class CGRA : public Module
 {
 public:

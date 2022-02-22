@@ -41,6 +41,7 @@ struct arguments
 	int ndps = 1;
 	int maxiter = 30;
 	int max_hops = 4;
+	string tdi_file = "tmp"; // Add by Wu Dan
 };
 
 arguments parse_arguments(int argn, char *argc[])
@@ -55,7 +56,7 @@ arguments parse_arguments(int argn, char *argc[])
 
 	opterr = 0;
 
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:")) != -1)
+	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:f")) != -1)
 		switch (c)
 		{
 		case 'd':
@@ -92,6 +93,12 @@ arguments parse_arguments(int argn, char *argc[])
 		case 'h':
 			ret.max_hops = atoi(optarg);
 			break;
+		// Begin Add by Wu Dan
+		case 'f':
+			// ret.tdi_file = string(optarg); // WHY YOU CANNOT FETCH IT??
+			ret.tdi_file = string(argc[8]);
+			break;
+		// End Add by Wu Dan
 		case '?':
 			if (optopt == 'c')
 				fprintf(stderr, "Option -%c requires an argument.\n", optopt);
@@ -161,7 +168,8 @@ int main(int argn, char *argc[])
 	// 	std::cout << "arguments : <DFG.xml> <peType::\nGENERIC_8REGF,\nHyCUBE_8REGF,\nHyCUBE_4REG,\nN2N_4REGF,\nN2N_8REGF,\nSTDNOC_8REGF,\nSTDNOC_4REGF,\nSTDNOC_4REG,\nSTDNOC_4REGF_1P\nMFU_HyCUBE_4REG\nMFU_HyCUBE_4REGF\nMFU_STDNOC_4REG\nMFU_STDNOC_4REGF> <XYDim> <numberofDPS> <backtracklimit> <initII> <-arch_json> <-noMTpath>\n";
 	// }
 	// assert(argn >= 7);
-
+	std::cout<<argn<<std::endl;
+	std::cout<<argc<<std::endl;
 	arguments args = parse_arguments(argn,argc);
 	std::string inputDFG_filename = args.dfg_filename;\
 	int xdim = args.xdim;
@@ -189,7 +197,16 @@ int main(int argn, char *argc[])
 		testCGRA = new CGRA(json_file_name, 1,xdim,ydim);
 	}
 
-	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
+	TimeDistInfo tdi;
+	if(args.tdi_file == ""){
+		tdi = testCGRA->analyzeTimeDist();
+		saveTimeDistInfo(&tdi, to_string(xdim)+"x"+to_string(ydim));
+		std::cout<<"Save Time Distance Information to "+to_string(xdim)+"x"+to_string(ydim)+"_TimeDistBetweenPEMap.json and "+to_string(xdim)+"x"+to_string(ydim)+"_TimeDistBetweenClosestMEMPEMap.json"<<std::endl;
+		std::cout<<"Use argument -f \""+to_string(xdim)+"x"+to_string(ydim)+"\" to load saved data next time."<<std::endl;
+	}
+	else{
+		loadTimeDistInfo(&tdi, args.tdi_file);
+	}
 
 	//	HeuristicMapper hm(inputDFG_filename);
 	PathFinderMapper hm(inputDFG_filename);

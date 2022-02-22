@@ -73,9 +73,9 @@ public:
 	//	bool LeastCostPathAstar(Port* start, Port* end, DataPath* endDP, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
 	bool LeastCostPathAstar(LatPort start, LatPort end, DataPath *endDP, std::vector<LatPort> &path, int &cost, DFGNode *node, std::map<Port *, std::set<DFGNode *>> &mutexPaths, DFGNode *currNode);
 
-	void estimateRoutingEachCandidate(DataPath *dest, int ii, int i, int v_minLatDests, bool*, bool*, DFGNode *node,
+	void estimateRoutingEachCandidate(DataPath *dest, int ii, int i, int v_minLatDests, bool&, bool&, DFGNode *node,
 						std::map<DFGNode *, std::vector<Port *>> possibleStarts, std::map<DataPath *, int> dpPenaltyMap,
-						int*, std::priority_queue<parent_cand_src_with_cost>* parentStartLocs, DFGNode **failedNode);
+						int&, std::priority_queue<parent_cand_src_with_cost>& parentStartLocs, DFGNode *&failedNode);
 	
 	bool estimateRouting(DFGNode *node, std::priority_queue<dest_with_cost> &estimatedRoutes, DFGNode **failedNode);
 	int predictiveRoute(DFGNode *node,
