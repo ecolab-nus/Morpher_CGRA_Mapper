@@ -56,7 +56,7 @@ arguments parse_arguments(int argn, char *argc[])
 
 	opterr = 0;
 
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:f")) != -1)
+	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:f:")) != -1)
 		switch (c)
 		{
 		case 'd':
@@ -95,8 +95,7 @@ arguments parse_arguments(int argn, char *argc[])
 			break;
 		// Begin Add by Wu Dan
 		case 'f':
-			// ret.tdi_file = string(optarg); // WHY YOU CANNOT FETCH IT??
-			ret.tdi_file = string(argc[8]);
+			ret.tdi_file = string(optarg);
 			break;
 		// End Add by Wu Dan
 		case '?':
