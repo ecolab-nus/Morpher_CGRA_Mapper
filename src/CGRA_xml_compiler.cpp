@@ -41,7 +41,7 @@ struct arguments
 	int ndps = 1;
 	int maxiter = 30;
 	int max_hops = 4;
-	string tdi_file = "tmp"; // Add by Wu Dan
+	string tdi_file = ""; // Add by Wu Dan
 };
 
 arguments parse_arguments(int argn, char *argc[])
@@ -294,7 +294,7 @@ int main(int argn, char *argc[])
 		else
 		{
 			auto app_end = std::chrono::high_resolution_clock::now();
-			double app_diff = std::chrono::duration<double, std::milli>(app_end-app_start).count();
+			double app_diff = std::chrono::duration<double>(app_end-app_start).count();
 			std::ofstream outfile;
 			outfile.open("woodenLog_MT.txt", std::ios_base::app);
 			std::string output = inputDFG_filename+" "+PEType+" "+std::to_string(xdim)+" "+std::to_string(ydim) +" "+std::to_string(minII)+" "+std::to_string(II)+" "+std::to_string(app_diff)+"\n";

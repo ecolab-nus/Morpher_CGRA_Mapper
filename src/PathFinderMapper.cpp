@@ -848,6 +848,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				minLatDestVal_prime[it_thread] = 0;
 				fail[it_thread] = NULL;
 			}
+
 			std::priority_queue<parent_cand_src_with_cost> parentStartLocs[n_max_thread];
 
 			pathExists = false;
