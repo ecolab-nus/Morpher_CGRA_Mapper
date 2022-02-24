@@ -211,9 +211,20 @@ int main(int argn, char *argc[])
 	PathFinderMapper hm(inputDFG_filename);
 	hm.setMaxIter(args.maxiter);
 
+<<<<<<< HEAD
 	int II = hm.getMinimumII(testCGRA, &currDFG);
 	std::cout << "Minimum II = " << II << "\n";
 	int minII = II;
+=======
+	int resII = hm.getMinimumII(testCGRA, &currDFG);
+	int recII  = hm.getRecMinimumII(&currDFG);
+	// int recII = 0; // for SA initial mapping test.
+	std::cout << "Res Minimum II = " << resII << "\n";
+	std::cout << "Rec Minimum II = " << recII << "\n";
+	std::cout << "Init User II = " << initUserII << "\n";
+	int II = std::max(recII, resII);
+
+>>>>>>> 35f2975... add REC_MII calculation
 	II = std::max(initUserII, II);
 
 	std::cout << "Using II = " << II << "\n";
