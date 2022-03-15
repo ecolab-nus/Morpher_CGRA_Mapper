@@ -948,23 +948,6 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 
 				assert(pathFromParentExist[it_thread]);
 				assert(pathExistMappedChild[it_thread]);
-				// dest_with_cost dest_with_cost_ins(parentStartLocs_0, alreadyMappedChilds, dest, minLatDestVal_prime[it_thread], node, 0, this->dfg->unmappedMemOps, this);
-				// switch (it_thread){
-				// 	case 1:
-				// 		dest_with_cost_ins.parentStartLocs = parentStartLocs_1;
-				// 		break;
-				// 	case 2:
-				// 		dest_with_cost_ins.parentStartLocs = parentStartLocs_2;
-				// 		break;
-				// 	case 3:
-				// 		dest_with_cost_ins.parentStartLocs = parentStartLocs_3;
-				// 		break;
-				// 	case 4:
-				// 		dest_with_cost_ins.parentStartLocs = parentStartLocs_4;
-				// 		break;
-				// 	default:
-				// 		break;
-				// }
 				dest_with_cost dest_with_cost_ins(parentStartLocs[it_thread], alreadyMappedChilds, dest, minLatDestVal_prime[it_thread], node, 0, this->dfg->unmappedMemOps, this);
 
 				if (minLatDestVal_prime[it_thread] < minLatSucc)
@@ -976,12 +959,10 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 
 				if (pathFromParentExist[it_thread] & pathExistMappedChild[it_thread]){
 					pathExists = true;
-					break;
+					// break;
 				}
 			}
-			if(pathExists)
-				break;
-			}
+		}
 		if(pathExists){
 			break;
 		}
