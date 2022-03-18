@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 project(cgra_xml_mapper)
 find_package(Threads REQUIRED)
+set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS -pthread)
 add_subdirectory(src)

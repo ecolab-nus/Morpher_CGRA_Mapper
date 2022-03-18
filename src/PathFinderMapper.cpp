@@ -830,11 +830,11 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 
 	int exception_count = 0;
 	//Route Estimation
+	const int n_max_thread = thread::hardware_concurrency()/2> 10?10:thread::hardware_concurrency()/2;
+	std::cout<<"Hardware Concurrency: "<<n_max_thread<<std::endl;
 	for (int i = 0; i < iterations; ++i)
 	{
-		candidateDests.resize(20);
-		const int n_max_thread = thread::hardware_concurrency()/2> 10?10:thread::hardware_concurrency()/2;
-		std::cout<<"Hardware Concurrency: "<<n_max_thread<<std::endl;
+		// candidateDests.resize(20);
 		int n_total = candidateDests.size();
 		int n_rest = n_total%n_max_thread;
 		bool pathExists = false;
@@ -960,10 +960,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				}
 
 				estimatedRoutesTemp.push(dest_with_cost_ins);
-				std::cout<<"push at "<<it_thread+it_dest<<"th candidate"<<std::endl;
-				if(it_thread+it_dest==15){
-					exception_count ++;
-					}
+				// std::cout<<"push at "<<it_thread+it_dest<<"th candidate"<<std::endl;
 				if (pathFromParentExist[it_thread] & pathExistMappedChild[it_thread]){
 					pathExists = true;
 					// break;
@@ -3976,9 +3973,6 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 	//cout << "THILINI3  " <<  cgra->get_y_max() << "\n" ;
 	std::string binFName = fNameLog1 + cgra->peType + "_DP" + std::to_string(this->cgra->numberofDPs)  + "_XDim=" + std::to_string(this->cgra->get_x_max()) + "_YDim=" + std::to_string(this->cgra->get_y_max()) + "_II=" + std::to_string(cgra->get_t_max()) + "_MTP=" + std::to_string(enableMutexPaths) + "_binary.bin";
 	printBinFile(InsFArr,binFName,cgra);
-
-
-
 }
 
 
