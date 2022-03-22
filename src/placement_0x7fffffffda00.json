@@ -1,0 +1,937 @@
+{
+    "DFG_node_0": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 2,
+            "x": 1,
+            "y": 0
+        },
+        "to DFG_node_1": {
+            "routing": "(2,1,0,EAST)->(2,2,0)"
+        },
+        "to DFG_node_18": {
+            "routing": "no route information: mapped to the PE of parent!"
+        },
+        "to DFG_node_3": {
+            "routing": "(2,1,0,EAST)->(2,2,0,NORTH)->(2,2,1)"
+        },
+        "to DFG_node_4": {
+            "routing": "(2,1,0,NORTH)->(2,1,1,NORTH)->(2,1,2,NORTH)->(2,1,3)"
+        },
+        "to DFG_node_45": {
+            "routing": "(2,1,0,NORTH)->(2,1,1)"
+        },
+        "to DFG_node_56": {
+            "routing": "(2,1,0,NORTH)->(2,1,1,NORTH)->(2,1,2)"
+        }
+    },
+    "DFG_node_1": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 3,
+            "x": 2,
+            "y": 0
+        },
+        "to DFG_node_20074": {
+            "routing": "(3,2,0,WEST)->(3,1,0,WEST)->(3,0,0)"
+        },
+        "to DFG_node_65": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_10": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 3,
+            "x": 2,
+            "y": 3
+        },
+        "to DFG_node_11": {
+            "routing": "(4,2,3,SOUTH)->(4,2,2,WEST)->(4,1,2,WEST)->(4,0,2,NORTH)->(4,0,3)"
+        }
+    },
+    "DFG_node_11": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 4,
+            "x": 0,
+            "y": 3
+        }
+    },
+    "DFG_node_12": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 0,
+            "x": 2,
+            "y": 3
+        },
+        "to DFG_node_11": {
+            "routing": "(4,2,3,WEST)->(4,1,3,WEST)->(4,0,3)"
+        },
+        "to DFG_node_62": {
+            "routing": "(2,2,3,SOUTH)->(2,2,2,SOUTH)->(2,2,1,SOUTH)->(2,2,0,WEST)->(2,1,0,WEST)->(2,0,0)"
+        }
+    },
+    "DFG_node_13": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 1,
+            "x": 2,
+            "y": 1
+        },
+        "to DFG_node_14": {
+            "routing": "(1,2,1,EAST)->(1,3,1)"
+        }
+    },
+    "DFG_node_14": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 3,
+            "x": 3,
+            "y": 1
+        },
+        "to DFG_node_15": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_15": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 4,
+            "x": 3,
+            "y": 1
+        },
+        "to DFG_node_16": {
+            "routing": "(4,3,1,WEST)->(4,2,1,WEST)->(4,1,1,WEST)->(4,0,1)"
+        }
+    },
+    "DFG_node_16": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 5,
+            "x": 0,
+            "y": 1
+        }
+    },
+    "DFG_node_17": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 0,
+            "x": 2,
+            "y": 2
+        },
+        "to DFG_node_16": {
+            "routing": "(1,2,2,NORTH)->(1,2,3,WEST)->(1,1,3,SOUTH)->(1,1,2,SOUTH)->(1,1,1,WEST)->(1,0,1)"
+        },
+        "to DFG_node_61": {
+            "routing": "(1,2,2,NORTH)->(1,2,3,WEST)->(1,1,3,SOUTH)->(1,1,2,SOUTH)->(1,1,1,WEST)->(1,0,1)"
+        }
+    },
+    "DFG_node_18": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 3,
+            "x": 1,
+            "y": 0
+        },
+        "to DFG_node_19": {
+            "routing": "(3,1,0,NORTH)->(3,1,1,NORTH)->(3,1,2)"
+        },
+        "to DFG_node_24": {
+            "routing": "no route information: mapped to the PE of parent!"
+        },
+        "to DFG_node_41": {
+            "routing": "(3,1,0,EAST)->(3,2,0)"
+        }
+    },
+    "DFG_node_19": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 4,
+            "x": 1,
+            "y": 2
+        },
+        "to DFG_node_67": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_20": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 6,
+            "x": 1,
+            "y": 2
+        },
+        "to DFG_node_21": {
+            "routing": "(6,1,2,NORTH)->(6,1,3,WEST)->(6,0,3)"
+        }
+    },
+    "DFG_node_20074": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 4,
+            "x": 0,
+            "y": 0
+        }
+    },
+    "DFG_node_20075": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 0,
+            "x": 1,
+            "y": 1
+        },
+        "to DFG_node_20074": {
+            "routing": "(0,1,1,WEST)->(0,0,1,SOUTH)->(0,0,0)"
+        }
+    },
+    "DFG_node_21": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 0,
+            "x": 0,
+            "y": 3
+        },
+        "to DFG_node_22": {
+            "routing": "(0,0,3,EAST)->(0,1,3,EAST)->(0,2,3)"
+        },
+        "to DFG_node_23": {
+            "routing": "(0,0,3,EAST)->(0,1,3,EAST)->(0,2,3,EAST)->(0,3,3,SOUTH)->(0,3,2)"
+        }
+    },
+    "DFG_node_22": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 1,
+            "x": 2,
+            "y": 3
+        },
+        "to DFG_node_62": {
+            "routing": "(2,2,3,WEST)->(2,1,3,SOUTH)->(2,1,2,SOUTH)->(2,1,1,WEST)->(2,0,1,SOUTH)->(2,0,0)"
+        },
+        "to DFG_node_9": {
+            "routing": "(1,2,3,SOUTH)->(1,2,2)"
+        }
+    },
+    "DFG_node_23": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 1,
+            "x": 3,
+            "y": 2
+        },
+        "to DFG_node_15": {
+            "routing": "(1,3,2,SOUTH)->(1,3,1)"
+        }
+    },
+    "DFG_node_24": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 4,
+            "x": 1,
+            "y": 0
+        },
+        "to DFG_node_25": {
+            "routing": "(4,1,0,EAST)->(4,2,0,EAST)->(4,3,0)"
+        },
+        "to DFG_node_33": {
+            "routing": "(4,1,0,NORTH)->(4,1,1)"
+        }
+    },
+    "DFG_node_25": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 1,
+            "x": 3,
+            "y": 0
+        },
+        "to DFG_node_68": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_26": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 0,
+            "x": 3,
+            "y": 0
+        },
+        "to DFG_node_25": {
+            "routing": "no route information: mapped to the PE of parent!"
+        },
+        "to DFG_node_46": {
+            "routing": "(0,3,0,NORTH)->(0,3,1,WEST)->(0,2,1,WEST)->(0,1,1)"
+        }
+    },
+    "DFG_node_27": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 3,
+            "x": 3,
+            "y": 0
+        },
+        "to DFG_node_28": {
+            "routing": "(3,3,0,NORTH)->(3,3,1,WEST)->(3,2,1,WEST)->(3,1,1,WEST)->(3,0,1)"
+        }
+    },
+    "DFG_node_28": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 4,
+            "x": 0,
+            "y": 1
+        },
+        "to DFG_node_22": {
+            "routing": "(4,0,1,EAST)->(4,1,1,EAST)->(4,2,1,NORTH)->(4,2,2,NORTH)->(4,2,3)"
+        },
+        "to DFG_node_29": {
+            "routing": "(4,0,1,EAST)->(4,1,1,EAST)->(4,2,1,NORTH)->(4,2,2)"
+        }
+    },
+    "DFG_node_29": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 5,
+            "x": 2,
+            "y": 2
+        },
+        "to DFG_node_30": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_3": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 3,
+            "x": 2,
+            "y": 1
+        },
+        "to DFG_node_65": {
+            "routing": "(3,2,1,SOUTH)->(3,2,0)"
+        }
+    },
+    "DFG_node_30": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 6,
+            "x": 2,
+            "y": 2
+        },
+        "to DFG_node_31": {
+            "routing": "(3,2,2,EAST)->(3,3,2,NORTH)->(3,3,3,WEST)->(3,2,3,WEST)->(3,1,3,WEST)->(3,0,3)"
+        }
+    },
+    "DFG_node_31": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 2,
+            "x": 0,
+            "y": 3
+        }
+    },
+    "DFG_node_32": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 0,
+            "x": 2,
+            "y": 1
+        },
+        "to DFG_node_31": {
+            "routing": "(1,2,1,WEST)->(1,1,1,NORTH)->(1,1,2,NORTH)->(1,1,3,WEST)->(1,0,3)"
+        },
+        "to DFG_node_60": {
+            "routing": "(1,2,1,WEST)->(1,1,1,NORTH)->(1,1,2,NORTH)->(1,1,3,WEST)->(1,0,3)"
+        }
+    },
+    "DFG_node_33": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 1,
+            "x": 1,
+            "y": 1
+        },
+        "to DFG_node_69": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_34": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 0,
+            "x": 3,
+            "y": 1
+        },
+        "to DFG_node_33": {
+            "routing": "(0,3,1,SOUTH)->(0,3,0,WEST)->(0,2,0,WEST)->(0,1,0,NORTH)->(0,1,1)"
+        },
+        "to DFG_node_51": {
+            "routing": "(0,3,1,SOUTH)->(0,3,0,WEST)->(0,2,0,NORTH)->(0,2,1)"
+        }
+    },
+    "DFG_node_35": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 3,
+            "x": 2,
+            "y": 2
+        },
+        "to DFG_node_36": {
+            "routing": "(3,2,2,WEST)->(3,1,2,WEST)->(3,0,2)"
+        }
+    },
+    "DFG_node_36": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 4,
+            "x": 0,
+            "y": 2
+        },
+        "to DFG_node_23": {
+            "routing": "(4,0,2,EAST)->(4,1,2,EAST)->(4,2,2,EAST)->(4,3,2)"
+        },
+        "to DFG_node_37": {
+            "routing": "(4,0,2,EAST)->(4,1,2,SOUTH)->(4,1,1,SOUTH)->(4,1,0)"
+        }
+    },
+    "DFG_node_37": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 5,
+            "x": 1,
+            "y": 0
+        },
+        "to DFG_node_38": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_38": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 6,
+            "x": 1,
+            "y": 0
+        },
+        "to DFG_node_39": {
+            "routing": "(1,1,0,WEST)->(1,0,0,NORTH)->(1,0,1,NORTH)->(1,0,2)"
+        }
+    },
+    "DFG_node_39": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 2,
+            "x": 0,
+            "y": 2
+        }
+    },
+    "DFG_node_4": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 3,
+            "x": 1,
+            "y": 3
+        },
+        "to DFG_node_66": {
+            "routing": "(3,1,3,EAST)->(3,2,3)"
+        }
+    },
+    "DFG_node_40": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 0,
+            "x": 2,
+            "y": 0
+        },
+        "to DFG_node_39": {
+            "routing": "(1,2,0,NORTH)->(1,2,1,NORTH)->(1,2,2,WEST)->(1,1,2,WEST)->(1,0,2)"
+        },
+        "to DFG_node_59": {
+            "routing": "(1,2,0,NORTH)->(1,2,1,NORTH)->(1,2,2,WEST)->(1,1,2,WEST)->(1,0,2)"
+        }
+    },
+    "DFG_node_41": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 4,
+            "x": 2,
+            "y": 0
+        },
+        "to DFG_node_70": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_42": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 0,
+            "x": 3,
+            "y": 2
+        },
+        "to DFG_node_41": {
+            "routing": "(0,3,2,WEST)->(0,2,2,SOUTH)->(0,2,1,SOUTH)->(0,2,0)"
+        },
+        "to DFG_node_56": {
+            "routing": "(0,3,2,WEST)->(0,2,2,WEST)->(0,1,2)"
+        }
+    },
+    "DFG_node_43": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 6,
+            "x": 2,
+            "y": 0
+        },
+        "to DFG_node_44": {
+            "routing": "(6,2,0,WEST)->(6,1,0,WEST)->(6,0,0,NORTH)->(6,0,1)"
+        }
+    },
+    "DFG_node_44": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 1,
+            "x": 0,
+            "y": 1
+        },
+        "to DFG_node_29": {
+            "routing": "(1,0,1,EAST)->(1,1,1,EAST)->(1,2,1,SOUTH)->(1,2,0,EAST)->(1,3,0,NORTH)->(1,3,1,NORTH)->(1,3,2,WEST)->(1,2,2)"
+        },
+        "to DFG_node_37": {
+            "routing": "(1,0,1,EAST)->(1,1,1,SOUTH)->(1,1,0)"
+        }
+    },
+    "DFG_node_45": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 3,
+            "x": 1,
+            "y": 1
+        },
+        "to DFG_node_46": {
+            "routing": "no route information: mapped to the PE of parent!"
+        },
+        "to DFG_node_51": {
+            "routing": "(3,1,1,EAST)->(3,2,1)"
+        }
+    },
+    "DFG_node_46": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 4,
+            "x": 1,
+            "y": 1
+        },
+        "to DFG_node_71": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_47": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 6,
+            "x": 1,
+            "y": 1
+        },
+        "to DFG_node_48": {
+            "routing": "(6,1,1,NORTH)->(6,1,2,WEST)->(6,0,2)"
+        }
+    },
+    "DFG_node_48": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 0,
+            "x": 0,
+            "y": 2
+        },
+        "to DFG_node_49": {
+            "routing": "(0,0,2,EAST)->(0,1,2,EAST)->(0,2,2)"
+        },
+        "to DFG_node_60": {
+            "routing": "(0,0,2,NORTH)->(0,0,3)"
+        },
+        "to DFG_node_8": {
+            "routing": "(0,0,2,EAST)->(0,1,2)"
+        }
+    },
+    "DFG_node_49": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 1,
+            "x": 2,
+            "y": 2
+        },
+        "to DFG_node_50": {
+            "routing": "(2,2,2,WEST)->(2,1,2)"
+        }
+    },
+    "DFG_node_5": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 0,
+            "x": 3,
+            "y": 3
+        },
+        "to DFG_node_19": {
+            "routing": "(0,3,3,WEST)->(0,2,3,WEST)->(0,1,3,SOUTH)->(0,1,2)"
+        },
+        "to DFG_node_4": {
+            "routing": "(0,3,3,WEST)->(0,2,3,WEST)->(0,1,3)"
+        }
+    },
+    "DFG_node_50": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 2,
+            "x": 1,
+            "y": 2
+        },
+        "to DFG_node_30": {
+            "routing": "(2,1,2,WEST)->(2,0,2,NORTH)->(2,0,3,EAST)->(2,1,3,EAST)->(2,2,3,EAST)->(2,3,3,SOUTH)->(2,3,2,WEST)->(2,2,2)"
+        }
+    },
+    "DFG_node_51": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 4,
+            "x": 2,
+            "y": 1
+        },
+        "to DFG_node_72": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_52": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 6,
+            "x": 2,
+            "y": 1
+        },
+        "to DFG_node_53": {
+            "routing": "(6,2,1,WEST)->(6,1,1,WEST)->(6,0,1)"
+        }
+    },
+    "DFG_node_53": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 0,
+            "x": 0,
+            "y": 1
+        },
+        "to DFG_node_13": {
+            "routing": "(0,0,1,EAST)->(0,1,1,EAST)->(0,2,1)"
+        },
+        "to DFG_node_54": {
+            "routing": "(0,0,1,EAST)->(0,1,1,NORTH)->(0,1,2,NORTH)->(0,1,3)"
+        },
+        "to DFG_node_59": {
+            "routing": "(0,0,1,NORTH)->(0,0,2)"
+        },
+        "to DFG_node_61": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_54": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 1,
+            "x": 1,
+            "y": 3
+        },
+        "to DFG_node_55": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_55": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 2,
+            "x": 1,
+            "y": 3
+        },
+        "to DFG_node_38": {
+            "routing": "(2,1,3,WEST)->(2,0,3,SOUTH)->(2,0,2,SOUTH)->(2,0,1,EAST)->(2,1,1,SOUTH)->(2,1,0)"
+        }
+    },
+    "DFG_node_56": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 3,
+            "x": 1,
+            "y": 2
+        },
+        "to DFG_node_73": {
+            "routing": "(3,1,2,NORTH)->(3,1,3)"
+        }
+    },
+    "DFG_node_57": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 5,
+            "x": 1,
+            "y": 3
+        },
+        "to DFG_node_58": {
+            "routing": "(5,1,3,SOUTH)->(5,1,2,WEST)->(5,0,2)"
+        }
+    },
+    "DFG_node_58": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 6,
+            "x": 0,
+            "y": 2
+        },
+        "to DFG_node_49": {
+            "routing": "(6,0,2,EAST)->(6,1,2,EAST)->(6,2,2)"
+        },
+        "to DFG_node_54": {
+            "routing": "(6,0,2,EAST)->(6,1,2,EAST)->(6,2,2,NORTH)->(6,2,3,WEST)->(6,1,3)"
+        }
+    },
+    "DFG_node_59": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 1,
+            "x": 0,
+            "y": 2
+        },
+        "to DFG_node_39": {
+            "routing": "no route information: mapped to the PE of parent!"
+        },
+        "to DFG_node_55": {
+            "routing": "(1,0,2,NORTH)->(1,0,3,EAST)->(1,1,3)"
+        }
+    },
+    "DFG_node_6": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 5,
+            "x": 2,
+            "y": 3
+        },
+        "to DFG_node_7": {
+            "routing": "(5,2,3,WEST)->(5,1,3,WEST)->(5,0,3)"
+        }
+    },
+    "DFG_node_60": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 1,
+            "x": 0,
+            "y": 3
+        },
+        "to DFG_node_31": {
+            "routing": "no route information: mapped to the PE of parent!"
+        },
+        "to DFG_node_50": {
+            "routing": "(1,0,3,SOUTH)->(1,0,2,EAST)->(1,1,2)"
+        }
+    },
+    "DFG_node_61": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 2,
+            "x": 0,
+            "y": 1
+        },
+        "to DFG_node_14": {
+            "routing": "(2,0,1,NORTH)->(2,0,2,EAST)->(2,1,2,EAST)->(2,2,2,EAST)->(2,3,2,SOUTH)->(2,3,1)"
+        },
+        "to DFG_node_16": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_62": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 2,
+            "x": 0,
+            "y": 0
+        },
+        "to DFG_node_10": {
+            "routing": "(3,0,0,NORTH)->(3,0,1,NORTH)->(3,0,2,EAST)->(3,1,2,EAST)->(3,2,2,NORTH)->(3,2,3)"
+        },
+        "to DFG_node_11": {
+            "routing": "(3,0,0,NORTH)->(3,0,1,NORTH)->(3,0,2,NORTH)->(3,0,3)"
+        }
+    },
+    "DFG_node_63": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 0,
+            "x": 0,
+            "y": 0
+        },
+        "to DFG_node_64": {
+            "routing": "(0,0,0,EAST)->(0,1,0)"
+        },
+        "to DFG_node_76": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_64": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 1,
+            "x": 1,
+            "y": 0
+        },
+        "to DFG_node_0": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_65": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 1,
+            "x": 2,
+            "y": 0
+        },
+        "to DFG_node_0": {
+            "routing": "(1,2,0,WEST)->(1,1,0)"
+        }
+    },
+    "DFG_node_66": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 4,
+            "x": 2,
+            "y": 3
+        },
+        "to DFG_node_6": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_67": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 5,
+            "x": 1,
+            "y": 2
+        },
+        "to DFG_node_20": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_68": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 2,
+            "x": 3,
+            "y": 0
+        },
+        "to DFG_node_27": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_69": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 2,
+            "x": 1,
+            "y": 1
+        },
+        "to DFG_node_35": {
+            "routing": "(2,1,1,EAST)->(2,2,1,NORTH)->(2,2,2)"
+        }
+    },
+    "DFG_node_7": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 6,
+            "x": 0,
+            "y": 3
+        },
+        "to DFG_node_13": {
+            "routing": "(6,0,3,EAST)->(6,1,3,EAST)->(6,2,3,SOUTH)->(6,2,2,SOUTH)->(6,2,1)"
+        },
+        "to DFG_node_8": {
+            "routing": "(6,0,3,EAST)->(6,1,3,SOUTH)->(6,1,2)"
+        }
+    },
+    "DFG_node_70": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 5,
+            "x": 2,
+            "y": 0
+        },
+        "to DFG_node_43": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_71": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 5,
+            "x": 1,
+            "y": 1
+        },
+        "to DFG_node_47": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_72": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 5,
+            "x": 2,
+            "y": 1
+        },
+        "to DFG_node_52": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_73": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 4,
+            "x": 1,
+            "y": 3
+        },
+        "to DFG_node_57": {
+            "routing": "no route information: mapped to the PE of parent!"
+        }
+    },
+    "DFG_node_76": {
+        "is_MemOp": "true",
+        "mapped_PE": {
+            "t": 1,
+            "x": 0,
+            "y": 0
+        }
+    },
+    "DFG_node_77": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 0,
+            "x": 1,
+            "y": 0
+        },
+        "to DFG_node_76": {
+            "routing": "(0,1,0,WEST)->(0,0,0)"
+        }
+    },
+    "DFG_node_8": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 1,
+            "x": 1,
+            "y": 2
+        },
+        "to DFG_node_9": {
+            "routing": "(1,1,2,EAST)->(1,2,2)"
+        }
+    },
+    "DFG_node_9": {
+        "is_MemOp": "false",
+        "mapped_PE": {
+            "t": 2,
+            "x": 2,
+            "y": 2
+        },
+        "to DFG_node_10": {
+            "routing": "(2,2,2,NORTH)->(2,2,3)"
+        }
+    },
+    "II": 7
+}

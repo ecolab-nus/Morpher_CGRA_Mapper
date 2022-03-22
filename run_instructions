@@ -1,0 +1,6 @@
+in the directory /home/peng/Morpher/Morpher_CGRA_Mapper/build
+
+./src/cgra_xml_mapper -d ../applications/array_add/array_add_INNERMOST_LN1_PartPred_DFG.xml -x 4 -y 4 -j  ../json_arch/hycube_original.json -m 2
+
+
+./src/cgra_xml_mapper -d ../applications/hycube/gemm_2x2x2/gemm_INNERMOST_LN111_PartPred_DFG.xml -x 4 -y 4 -j  ../json_arch/hycube_original.json

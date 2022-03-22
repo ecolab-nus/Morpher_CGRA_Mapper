@@ -280,7 +280,8 @@
   },
   "DATA_LAYOUT" :{
     "A":0,
-    "B":80
+    "B":80,
+    "loopend":2047
   },
   "INIT_FILE" : "../json/test_data.json",
   "CONNECTIONS" : {
@@ -297,7 +298,8 @@
     "SPM" : [{"name" : "SPM0"}]
   },
   "DATA_LAYOUT" :{
-    "C":2048
+    "C":2048,
+    "loopstart":4094
   },
   "INIT_FILE" : "../json/test_data.json",
   "CONNECTIONS" : {

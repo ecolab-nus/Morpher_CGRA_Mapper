@@ -600,7 +600,10 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 		}
 		else if(child->idx == node->idx){
 			//adding a placeholder as this will be modified according to the destination in consideration.
-			alreadyMappedChildPorts[child] == NULL;
+			
+			// modified by Peng Chen
+			// alreadyMappedChildPorts[child] == NULL; //before modifying
+			alreadyMappedChildPorts[child] = NULL; //after modifying
 		}
 	}
 
@@ -1328,7 +1331,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 	//Testing 1 2 3
 	//getLongestDFGPath(dfg->findNode(1093),dfg->findNode(82));
 
-	//	SortSCCDFG();
+	//	SortSCCDFG(); r
 	//	SortTopoGraphicalDFG();
 	sortBackEdgePriorityASAP();
 	//	sortBackEdgePriorityALAP();
@@ -3395,7 +3398,85 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					//PE* prevPE = pe;
 
 					//XBar
-					if(north_o_node){
+					//by Peng Chen
+					std::cout<<"north_o_node="<<north_o_node;
+					if(north_o_node)
+					{
+						std::cout<<", id="<<north_o_node->idx;
+					}
+					std::cout<<"\n";
+
+					std::cout<<"east_o_node="<<east_o_node;
+					if(east_o_node)
+					{
+						std::cout<<", id="<<east_o_node->idx;
+					}
+					std::cout<<"\n";
+
+					std::cout<<"west_o_node="<<west_o_node;
+					if(west_o_node)
+					{
+						std::cout<<", id="<<west_o_node->idx;
+					}
+					std::cout<<"\n";
+
+					std::cout<<"south_o_node="<<south_o_node;
+					if(south_o_node)
+					{
+						std::cout<<", id="<<south_o_node->idx;
+					}
+					std::cout<<"\n";
+
+					std::cout<<"pe->getInternalPort(NORTH_XBARI)->getNode()="<<pe->getInternalPort("NORTH_XBARI")->getNode();
+					if(pe->getInternalPort("NORTH_XBARI")->getNode())
+					{
+						std::cout<<", id="<<pe->getInternalPort("NORTH_XBARI")->getNode()->idx;
+					}
+					std::cout<<"\n";
+
+					std::cout<<"pe->getInternalPort(EAST_XBARI)->getNode()="<<pe->getInternalPort("EAST_XBARI")->getNode();
+					if(pe->getInternalPort("EAST_XBARI")->getNode())
+					{
+						std::cout<<", id="<<pe->getInternalPort("EAST_XBARI")->getNode()->idx;
+					}
+					std::cout<<"\n";
+
+					std::cout<<"pe->getInternalPort(WEST_XBARI)->getNode()="<<pe->getInternalPort("WEST_XBARI")->getNode();
+					if(pe->getInternalPort("WEST_XBARI")->getNode())
+					{
+						std::cout<<", id="<<pe->getInternalPort("WEST_XBARI")->getNode()->idx;
+					}
+					std::cout<<"\n";
+
+					std::cout<<"pe->getInternalPort(SOUTH_XBARI)->getNode()="<<pe->getInternalPort("SOUTH_XBARI")->getNode();
+					if(pe->getInternalPort("SOUTH_XBARI")->getNode())
+					{
+						std::cout<<", id="<<pe->getInternalPort("SOUTH_XBARI")->getNode()->idx;
+					}
+					std::cout<<"\n";
+
+					std::cout<<"pe->getSingleRegPort(TREG_RI)->getNode()="<<pe->getSingleRegPort("TREG_RI")->getNode();
+					if(pe->getSingleRegPort("TREG_RI")->getNode())
+					{
+						std::cout<<", id="<<pe->getSingleRegPort("TREG_RI")->getNode()->idx;
+					}
+					std::cout<<"\n";
+
+					std::cout<<"fu->getOutPort(DP0_T)->getNode()="<<fu->getOutPort("DP0_T")->getNode();
+					if(fu->getOutPort("DP0_T")->getNode())
+					{
+						std::cout<<", id="<<fu->getOutPort("DP0_T")->getNode()->idx;
+					}
+					std::cout<<"\n";
+					//end by Peng Chen
+
+	     			if(north_o_node){
+						//by Peng Chen
+						std::cout<<"--------------------north_o_node="<<north_o_node<<", id="<<north_o_node->idx<<"\n";
+						int lacy = northo->getLat();
+						std::cout << "northo->getLat()="<<lacy<<"\n";
+						//end by Peng Chen
+
 						//	Port* In_n = mod->getJSONPort("NORTH_XBARI",true);
 						//Port* In_n = pe->getInPort("NORTH_I");
 						if(north_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
@@ -3423,18 +3504,31 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 							insF.northo = "100";
 						}
 						else{
+						//by Peng Chen
+						// std::cout<<"pe->getInternalPort(NORTH_XBARI)->getLat()="<<pe->getInternalPort("NORTH_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(EAST_XBARI)->getLat()="<<pe->getInternalPort("EAST_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(WEST_XBARI)->getLat()="<<pe->getInternalPort("WEST_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(SOUTH_XBARI)->getLat()="<<pe->getInternalPort("SOUTH_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getSingleRegPort(TREG_RI)->getLat()="<<pe->getSingleRegPort("TREG_RI")->getLat()<<"\n";
+						// std::cout<<"fu->getOutPort(DP0_T)->getLat()="<<fu->getOutPort("DP0_T")->getLat()<<"\n";
+						//end by Peng Chen
+
 							std::cout << "Port : " << northo->getFullName() << ",node = " << northo->getNode()->idx << ", source not found!\n";
 							assert(false);
 							insF.northo = "111";
 						}
 					}
-
-
 					else{
 						insF.northo = "111";
 					}
 
 					if(east_o_node){
+						//by Peng Chen
+						std::cout<<"--------------------east_o_node="<<east_o_node<<", id="<<east_o_node->idx<<"\n";
+						int lacy = easto->getLat();
+						std::cout << "easto->getLat()="<<lacy<<"\n";
+						//end by Peng Chen
+
 						if(east_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
 								easto->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
 							insF.easto = "011";
@@ -3459,6 +3553,15 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 							insF.easto = "100";
 						}
 						else{
+						//by Peng Chen
+						// std::cout<<"pe->getInternalPort(NORTH_XBARI)->getLat()="<<pe->getInternalPort("NORTH_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(EAST_XBARI)->getLat()="<<pe->getInternalPort("EAST_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(WEST_XBARI)->getLat()="<<pe->getInternalPort("WEST_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(SOUTH_XBARI)->getLat()="<<pe->getInternalPort("SOUTH_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getSingleRegPort(TREG_RI)->getLat()="<<pe->getSingleRegPort("TREG_RI")->getLat()<<"\n";
+						// std::cout<<"fu->getOutPort(DP0_T)->getLat()="<<fu->getOutPort("DP0_T")->getLat()<<"\n";
+						//end by Peng Chen
+
 							std::cout << "Port : " << easto->getFullName() << ",node = " << easto->getNode()->idx << ", source not found!\n";
 							assert(false);
 							insF.easto = "111";
@@ -3469,6 +3572,12 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					}
 
 					if(west_o_node){
+						//by Peng Chen
+						std::cout<<"--------------------west_o_node="<<west_o_node<<", id="<<west_o_node->idx<<"\n";
+						int lacy = westo->getLat();
+						std::cout << "westo->getLat()="<<lacy<<"\n";
+						//end by Peng Chen
+
 						if(west_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
 								westo->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
 							insF.westo = "011";
@@ -3494,6 +3603,15 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 							insF.westo = "100";
 						}
 						else{
+						//by Peng Chen
+						// std::cout<<"pe->getInternalPort(NORTH_XBARI)->getLat()="<<pe->getInternalPort("NORTH_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(EAST_XBARI)->getLat()="<<pe->getInternalPort("EAST_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(WEST_XBARI)->getLat()="<<pe->getInternalPort("WEST_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(SOUTH_XBARI)->getLat()="<<pe->getInternalPort("SOUTH_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getSingleRegPort(TREG_RI)->getLat()="<<pe->getSingleRegPort("TREG_RI")->getLat()<<"\n";
+						// std::cout<<"fu->getOutPort(DP0_T)->getLat()="<<fu->getOutPort("DP0_T")->getLat()<<"\n";
+						//end by Peng Chen
+
 							std::cout << "Port : " << westo->getFullName() << ",node = " << westo->getNode()->idx << ", source not found!\n";
 							assert(false);
 							insF.westo = "111";
@@ -3504,6 +3622,12 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					}
 
 					if(south_o_node){
+						//by Peng Chen
+						std::cout<<"--------------------south_o_node="<<south_o_node<<", id="<<south_o_node->idx<<"\n";
+						int lacy = southo->getLat();
+						std::cout << "southo->getLat()="<<lacy<<"\n";
+						//end by Peng Chen
+
 						if(south_o_node == pe->getInternalPort("NORTH_XBARI")->getNode() &&
 								southo->getLat() == pe->getInternalPort("NORTH_XBARI")->getLat()){
 							insF.southo = "011";
@@ -3528,7 +3652,15 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 							insF.southo = "100";
 						}
 						else{
-							//std::cout << "";
+						//by Peng Chen
+						// std::cout<<"pe->getInternalPort(NORTH_XBARI)->getLat()="<<pe->getInternalPort("NORTH_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(EAST_XBARI)->getLat()="<<pe->getInternalPort("EAST_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(WEST_XBARI)->getLat()="<<pe->getInternalPort("WEST_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getInternalPort(SOUTH_XBARI)->getLat()="<<pe->getInternalPort("SOUTH_XBARI")->getLat()<<"\n";
+						// std::cout<<"pe->getSingleRegPort(TREG_RI)->getLat()="<<pe->getSingleRegPort("TREG_RI")->getLat()<<"\n";
+						// std::cout<<"fu->getOutPort(DP0_T)->getLat()="<<fu->getOutPort("DP0_T")->getLat()<<"\n";
+						//end by Peng Chen
+
 							std::cout << "Port : " << southo->getFullName() << ",node = " << southo->getNode()->idx << ", source not found!\n";
 							assert(false);
 							insF.southo = "111";

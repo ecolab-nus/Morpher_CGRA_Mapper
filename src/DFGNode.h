@@ -16,55 +16,64 @@
 namespace CGRAXMLCompile
 {
 
-class DataPath;
-class Port;
-class DFG;
+	class DataPath;
+	class Port;
+	class DFG;
 
-class DFGNode
-{
-public:
-	DFGNode();
-	int idx;
-	int ASAP;
-	int ALAP;
-	int constant;
-	bool hasConst = false;
-	bool npb=false;
-	bool type_i1i2 = false; //  true if i1 and i2 both get the data from same source (to support x*x)
-	bool negated=false;
-	std::string op;
-	std::string base_pointer_name;
-	int gep_offset = -1;
-	std::vector<DFGNode *> parents;
-	std::vector<DFGNode *> phiParents;
-	std::vector<DFGNode *> recParents;
-	std::vector<DFGNode *> children;
-	std::vector<DFGNode *> phiChildren;
-
-	DataPath *rootDP = NULL;
-	std::vector<std::pair<Port *, int>> routingPorts;
-	//	std::map<Port*,int> routingPortDestMap;
-
-	std::map<DFGNode *, std::string> childrenOPType;
-	std::map<DFGNode *, int> childNextIter;
-
-	std::string BB;
-
-	int align;
-	void clear(DFG *dfg);
-	std::string getOPtype(DFGNode *child);
-	bool isMemOp();
-
-	bool operator==(const DFGNode &rhs)
+	class DFGNode
 	{
-		return this->idx == rhs.idx;
-	}
-	std::set<DataPath *> blacklistDest;
-	std::string getBinaryString();
-	std::string get27bitConstantBinaryString();
+	public:
+		DFGNode();
+		int idx;
+		int ASAP;
+		int ALAP;
+		int constant;
+		bool hasConst = false;
+		bool npb = false;
+		bool type_i1i2 = false; //  true if i1 and i2 both get the data from same source (to support x*x)
+		bool negated = false;
+		std::string op;
+		std::string base_pointer_name;
+		int gep_offset = -1;
+		std::vector<DFGNode *> parents;
+		std::vector<DFGNode *> phiParents;
+		std::vector<DFGNode *> recParents;
+		std::vector<DFGNode *> children;
+		std::vector<DFGNode *> phiChildren;
 
-private:
-};
+		DataPath *rootDP = NULL;
+		std::vector<std::pair<Port *, int>> routingPorts;
+		//	std::map<Port*,int> routingPortDestMap;
+
+		std::map<DFGNode *, std::string> childrenOPType;
+		std::map<DFGNode *, int> childNextIter;
+
+		std::string BB;
+
+		int align;
+		void clear(DFG *dfg);
+		std::string getOPtype(DFGNode *child);
+		bool isMemOp();
+
+		bool operator==(const DFGNode &rhs)
+		{
+			return this->idx == rhs.idx;
+		}
+		std::set<DataPath *> blacklistDest;
+		std::string getBinaryString();
+		std::string get27bitConstantBinaryString();
+
+		// used for abstract mapping
+		bool isMapped = false;
+		int t;
+		int x;
+		int y;
+		void setMappedState(bool isMapped, int t, int x, int y);
+		bool selfLoopNode(); //if there is a self edge, return true
+		//end of used for abstract mapping
+
+	private:
+	};
 
 } /* namespace CGRAXMLCompile */
 

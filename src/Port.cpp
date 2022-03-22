@@ -17,120 +17,120 @@
 namespace CGRAXMLCompile
 {
 
-Port::Port(std::string name, PortType pType, Module *mod)
-{
-	// TODO Auto-generated constructor stub
-	this->name = name;
-	this->pType = pType;
-	this->mod = mod;
-	this->pe = mod->getPE();
-}
-
-void Port::increaseUse(HeuristicMapper *hm)
-{
-
-	if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
+	Port::Port(std::string name, PortType pType, Module *mod)
 	{
-		number_signals = 1;
-
-		for (DFGNode *node : (*pfm->getcongestedPortsPtr())[this])
-		{
-			if (this->node == node)
-				continue;
-			if (pfm->dfg->isMutexNodes(this->node, node, this))
-				continue;
-			number_signals++;
-			//			break;
-		}
-
-		for (DFGNode *node : (*pfm->getconflictedPortsPtr())[this])
-		{
-			if (this->node == node)
-				continue;
-			if (pfm->dfg->isMutexNodes(this->node, node, this))
-				continue;
-			number_signals++;
-			break;
-		}
-
-		int timeStep = this->getMod()->getPE()->T;
-		int alreadyConflicts = pfm->getTimeStepConflicts(timeStep);
-		pfm->updateConflictedTimeSteps(timeStep, number_signals - 1);
-		number_signals = number_signals - alreadyConflicts;
+		// TODO Auto-generated constructor stub
+		this->name = name;
+		this->pType = pType;
+		this->mod = mod;
+		this->pe = mod->getPE();
 	}
-	else
-	{
-		number_signals++;
-	}
-}
 
-void Port::decreaseUse(DFGNode *extnode, HeuristicMapper *hm)
-{
-	if (number_signals > 0)
+	void Port::increaseUse(HeuristicMapper *hm)
 	{
+
 		if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
 		{
-			for (DFGNode *con_node : (*pfm->getcongestedPortsPtr())[this])
+			number_signals = 1;
+
+			for (DFGNode *node : (*pfm->getcongestedPortsPtr())[this])
 			{
-				if (extnode == con_node)
+				if (this->node == node)
 					continue;
-				if (pfm->dfg->isMutexNodes(extnode, con_node, this))
+				if (pfm->dfg->isMutexNodes(this->node, node, this))
 					continue;
-				number_signals--;
+				number_signals++;
+				//			break;
+			}
+
+			for (DFGNode *node : (*pfm->getconflictedPortsPtr())[this])
+			{
+				if (this->node == node)
+					continue;
+				if (pfm->dfg->isMutexNodes(this->node, node, this))
+					continue;
+				number_signals++;
 				break;
 			}
+
+			int timeStep = this->getMod()->getPE()->T;
+			int alreadyConflicts = pfm->getTimeStepConflicts(timeStep);
+			pfm->updateConflictedTimeSteps(timeStep, number_signals - 1);
+			number_signals = number_signals - alreadyConflicts;
 		}
 		else
 		{
-			number_signals--;
+			number_signals++;
 		}
 	}
-}
 
-void Port::setNode(DFGNode *node, int latency, HeuristicMapper *hm)
-{
-	this->node = node;
-	setLat(latency);
-
-	PE *pe = getMod()->getPE();
-	CGRA *cgra = getMod()->getCGRA();
-	assert(pe->T == latency % cgra->get_t_max());
-
-	if (hm == NULL)
-		return;
-
-	if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
+	void Port::decreaseUse(DFGNode *extnode, HeuristicMapper *hm)
 	{
-		//		for(Port* p : getMod()->getConflictPorts(this)){
-		//			(*pfm->getcongestedPortsPtr())[p].insert(node);
-		//		}
-	}
-}
-
-void Port::increaseConflictedUse(DFGNode *node, HeuristicMapper *hm)
-{
-	increaseUse();
-
-	if (!getMod()->isConflictPortsEmpty(this))
-	{
-		for (Port *p : getMod()->getConflictPorts(this))
+		if (number_signals > 0)
 		{
-			assert(p != NULL);
-
 			if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
 			{
-				(*pfm->getconflictedPortsPtr())[p].insert(node);
+				for (DFGNode *con_node : (*pfm->getcongestedPortsPtr())[this])
+				{
+					if (extnode == con_node)
+						continue;
+					if (pfm->dfg->isMutexNodes(extnode, con_node, this))
+						continue;
+					number_signals--;
+					break;
+				}
 			}
-			p->increaseUse();
+			else
+			{
+				number_signals--;
+			}
 		}
 	}
 
-	//	if(this->getType()==OUT){
-	//		for(Port* p : getMod()->getParent()->getConflictPorts(this)){
-	//			p->increaseUse();
-	//		}
-	//	}
-}
+	void Port::setNode(DFGNode *node, int latency, HeuristicMapper *hm)
+	{
+		this->node = node;
+		setLat(latency);
+
+		PE *pe = getMod()->getPE();
+		CGRA *cgra = getMod()->getCGRA();
+		assert(pe->T == latency % cgra->get_t_max());
+
+		if (hm == NULL)
+			return;
+
+		if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
+		{
+			//		for(Port* p : getMod()->getConflictPorts(this)){
+			//			(*pfm->getcongestedPortsPtr())[p].insert(node);
+			//		}
+		}
+	}
+
+	void Port::increaseConflictedUse(DFGNode *node, HeuristicMapper *hm)
+	{
+		increaseUse();
+
+		if (!getMod()->isConflictPortsEmpty(this))
+		{
+			for (Port *p : getMod()->getConflictPorts(this))
+			{
+				assert(p != NULL);
+
+				if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
+				{
+					(*pfm->getconflictedPortsPtr())[p].insert(node);
+				}
+				p->increaseUse();
+			}
+		}
+
+		//	if(this->getType()==OUT){
+		//		for(Port* p : getMod()->getParent()->getConflictPorts(this)){
+		//			p->increaseUse();
+		//		}
+		//	}
+	}
 
 } /* namespace CGRAXMLCompile */
 
@@ -232,6 +232,8 @@ int CGRAXMLCompile::Port::getLat()
 {
 	CGRA *cgra = this->getMod()->getCGRA();
 	int ii = cgra->get_t_max();
+	// cout << "PE=(" << getPE()->X << getPE()->Y << getPE()->T << ")," << getFullName() << ", latency="
+	// 	 << latency << ", ii=" << ii << ", getPE()->T=" << this->getMod()->getPE()->T << "\n";
 	assert(latency % ii == this->getMod()->getPE()->T);
 	return latency;
 }

@@ -1,0 +1,528 @@
+<MutexBB>
+<BB1 name="for.body6_0_0">
+	<BB2 name="for.body6_0_1"/>
+</BB1>
+<BB1 name="for.body6_0_1">
+	<BB2 name="for.body6_0_0"/>
+</BB1>
+<BB1 name="for.body6_3_0">
+	<BB2 name="for.body6_3_1"/>
+</BB1>
+<BB1 name="for.body6_3_1">
+	<BB2 name="for.body6_3_0"/>
+</BB1>
+</MutexBB>
+<DFG count="39">
+<Node idx="25" ASAP="0" ALAP="0"BB="for.body6.lr.ph"CONST="4094">
+<OP>LOADB</OP>
+<BasePointerName size="1">loopstart</BasePointerName>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="26" nextiter="0" NPB="0" type="P"/>
+	<Output idx="28" nextiter="0" NPB="0" type="P"/>
+	<Output idx="38" nextiter="0" NPB="0" type="P"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="28" ASAP="1" ALAP="1"BB="for.body6_3_0"CONST="0">
+<OP>CMERGE</OP>
+<Inputs>
+	<Input idx="25"/>
+</Inputs>
+<Outputs>
+	<Output idx="3" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="3" ASAP="2" ALAP="2"BB="for.body6">
+<OP>SELECT</OP>
+<Inputs>
+	<Input idx="28"/>
+	<Input idx="29"/>
+</Inputs>
+<Outputs>
+	<Output idx="4" nextiter="0" type="I1"/>
+	<Output idx="31" nextiter="0" type="I1"/>
+	<Output idx="33" nextiter="0" type="I1"/>
+	<Output idx="35" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="17" ASAP="0" ALAP="2"BB="for.body6"CONST="2184">
+<OP>OLOAD</OP>
+<BasePointerName size="4">i.06</BasePointerName>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="34" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="34" ASAP="1" ALAP="3"BB="for.body6"CONST="2">
+<OP>LS</OP>
+<Inputs>
+	<Input idx="17"/>
+</Inputs>
+<Outputs>
+	<Output idx="16" nextiter="0" type="I3"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="9" ASAP="0" ALAP="3"BB="for.body6"CONST="2188">
+<OP>OLOAD</OP>
+<BasePointerName size="4">j.04</BasePointerName>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="30" nextiter="0" type="I1"/>
+	<Output idx="32" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="35" ASAP="3" ALAP="3"BB="for.body6"CONST="2">
+<OP>LS</OP>
+<Inputs>
+	<Input idx="3"/>
+</Inputs>
+<Outputs>
+	<Output idx="16" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="16" ASAP="4" ALAP="4"BB="for.body6"CONST="128">
+<OP>ADD</OP>
+<BasePointerName size="128">A</BasePointerName>
+<GEPOffset>0</GEPOffset>
+<Inputs>
+	<Input idx="34"/>
+	<Input idx="35"/>
+</Inputs>
+<Outputs>
+	<Output idx="18" nextiter="0" type="I2"/>
+	<Output idx="19" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="31" ASAP="3" ALAP="4"BB="for.body6"CONST="2">
+<OP>LS</OP>
+<Inputs>
+	<Input idx="3"/>
+</Inputs>
+<Outputs>
+	<Output idx="8" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="30" ASAP="1" ALAP="4"BB="for.body6"CONST="2">
+<OP>LS</OP>
+<Inputs>
+	<Input idx="9"/>
+</Inputs>
+<Outputs>
+	<Output idx="8" nextiter="0" type="I3"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="32" ASAP="1" ALAP="5"BB="for.body6"CONST="2">
+<OP>LS</OP>
+<Inputs>
+	<Input idx="9"/>
+</Inputs>
+<Outputs>
+	<Output idx="12" nextiter="0" type="I3"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="24" ASAP="0" ALAP="5"BB="for.body6"CONST="2176">
+<OP>OLOAD</OP>
+<BasePointerName size="4">arrayidx9</BasePointerName>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="23" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="33" ASAP="3" ALAP="5"BB="for.body6"CONST="2">
+<OP>LS</OP>
+<Inputs>
+	<Input idx="3"/>
+</Inputs>
+<Outputs>
+	<Output idx="12" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="8" ASAP="4" ALAP="5"BB="for.body6"CONST="0">
+<OP>ADD</OP>
+<BasePointerName size="128">B</BasePointerName>
+<GEPOffset>0</GEPOffset>
+<Inputs>
+	<Input idx="30"/>
+	<Input idx="31"/>
+</Inputs>
+<Outputs>
+	<Output idx="10" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="21" ASAP="0" ALAP="5"BB="for.body6"CONST="2192">
+<OP>OLOAD</OP>
+<BasePointerName size="4">alpha</BasePointerName>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="20" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="19" ASAP="5" ALAP="5"BB="for.body6">
+<OP>LOAD</OP>
+<BasePointerName size="128">A</BasePointerName>
+<Inputs>
+	<Input idx="16"/>
+</Inputs>
+<Outputs>
+	<Output idx="20" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="12" ASAP="4" ALAP="6"BB="for.body6"CONST="2048">
+<OP>ADD</OP>
+<BasePointerName size="128">C</BasePointerName>
+<GEPOffset>0</GEPOffset>
+<Inputs>
+	<Input idx="32"/>
+	<Input idx="33"/>
+</Inputs>
+<Outputs>
+	<Output idx="13" nextiter="0" type="I2"/>
+	<Output idx="14" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="26" ASAP="1" ALAP="6"BB="for.body6_0_0"CONST="0">
+<OP>CMERGE</OP>
+<Inputs>
+	<Input idx="25"/>
+</Inputs>
+<Outputs>
+	<Output idx="0" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="23" ASAP="1" ALAP="6"BB="for.body6">
+<OP>LOAD</OP>
+<BasePointerName size="128">B</BasePointerName>
+<Inputs>
+	<Input idx="24"/>
+</Inputs>
+<Outputs>
+	<Output idx="22" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="20" ASAP="6" ALAP="6"BB="for.body6">
+<OP>MUL</OP>
+<Inputs>
+	<Input idx="21"/>
+	<Input idx="19"/>
+</Inputs>
+<Outputs>
+	<Output idx="22" nextiter="0" type="I1"/>
+	<Output idx="14" nextiter="0" type="PS"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="18" ASAP="5" ALAP="6"BB="for.body6">
+<OP>LOAD</OP>
+<BasePointerName size="128">A</BasePointerName>
+<Inputs>
+	<Input idx="16"/>
+</Inputs>
+<Outputs>
+	<Output idx="11" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="10" ASAP="5" ALAP="6"BB="for.body6">
+<OP>LOAD</OP>
+<BasePointerName size="128">B</BasePointerName>
+<Inputs>
+	<Input idx="8"/>
+</Inputs>
+<Outputs>
+	<Output idx="11" nextiter="0" type="I2"/>
+	<Output idx="0" nextiter="0" type="PS"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="22" ASAP="7" ALAP="7"BB="for.body6">
+<OP>MUL</OP>
+<Inputs>
+	<Input idx="20"/>
+	<Input idx="23"/>
+</Inputs>
+<Outputs>
+	<Output idx="15" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="14" ASAP="7" ALAP="7"BB="for.body6">
+<OP>LOAD</OP>
+<BasePointerName size="128">C</BasePointerName>
+<Inputs>
+	<Input idx="12"/>
+	<Input idx="20"/>
+</Inputs>
+<Outputs>
+	<Output idx="15" nextiter="0" type="I1"/>
+	<Output idx="13" nextiter="0" type="PS"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="6" ASAP="0" ALAP="7"BB="for.body6"CONST="256">
+<OP>OLOAD</OP>
+<BasePointerName size="4">indvars.iv</BasePointerName>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="5" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="11" ASAP="6" ALAP="7"BB="for.body6">
+<OP>MUL</OP>
+<Inputs>
+	<Input idx="10"/>
+	<Input idx="18"/>
+</Inputs>
+<Outputs>
+	<Output idx="1" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="4" ASAP="3" ALAP="7"BB="for.body6"CONST="1">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="3"/>
+</Inputs>
+<Outputs>
+	<Output idx="5" nextiter="0" type="I1"/>
+	<Output idx="29" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="0" ASAP="6" ALAP="7"BB="for.body6">
+<OP>SELECT</OP>
+<Inputs>
+	<Input idx="26"/>
+	<Input idx="27"/>
+	<Input idx="10"/>
+</Inputs>
+<Outputs>
+	<Output idx="1" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="39" ASAP="0" ALAP="8"BB="for.body6.lr.ph"CONST="0">
+<OP>MOVC</OP>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="38" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="20037" ASAP="0" ALAP="8"BB="for.end.loopexit"CONST="1">
+<OP>MOVC</OP>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="20036" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="15" ASAP="8" ALAP="8"BB="for.body6">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="14"/>
+	<Input idx="22"/>
+</Inputs>
+<Outputs>
+	<Output idx="13" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="5" ASAP="4" ALAP="8"BB="for.body6">
+<OP>CMP</OP>
+<Inputs>
+	<Input idx="6"/>
+	<Input idx="4"/>
+</Inputs>
+<Outputs>
+	<Output idx="27" nextiter="0" NPB="1" type="P"/>
+	<Output idx="29" nextiter="0" NPB="1" type="P"/>
+	<Output idx="20036" nextiter="0" NPB="0" type="P"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="1" ASAP="7" ALAP="8"BB="for.body6">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="0"/>
+	<Input idx="11"/>
+</Inputs>
+<Outputs>
+	<Output idx="2" nextiter="0" type="I1"/>
+	<Output idx="27" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="29" ASAP="5" ALAP="9"BB="for.body6_3_1">
+<OP>CMERGE</OP>
+<Inputs>
+	<Input idx="5"/>
+	<Input idx="4"/>
+</Inputs>
+<Outputs>
+	<Output idx="3" nextiter="1" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="27" ASAP="8" ALAP="9"BB="for.body6_0_1">
+<OP>CMERGE</OP>
+<Inputs>
+	<Input idx="5"/>
+	<Input idx="1"/>
+</Inputs>
+<Outputs>
+	<Output idx="0" nextiter="1" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="13" ASAP="9" ALAP="9"BB="for.body6">
+<OP>STORE</OP>
+<BasePointerName size="128">C</BasePointerName>
+<Inputs>
+	<Input idx="12"/>
+	<Input idx="15"/>
+	<Input idx="14"/>
+</Inputs>
+<Outputs>
+</Outputs>
+<RecParents>
+	<RecParent idx="14"/>
+</RecParents>
+</Node>
+
+<Node idx="20036" ASAP="5" ALAP="9"BB="for.end.loopexit"CONST="2047">
+<OP>STOREB</OP>
+<BasePointerName size="1">loopend</BasePointerName>
+<Inputs>
+	<Input idx="20037"/>
+	<Input idx="5"/>
+</Inputs>
+<Outputs>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="2" ASAP="8" ALAP="9"BB="for.body6"CONST="2180">
+<OP>OSTORE</OP>
+<BasePointerName size="4">add18</BasePointerName>
+<Inputs>
+	<Input idx="1"/>
+</Inputs>
+<Outputs>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="38" ASAP="1" ALAP="9"BB="for.body6.lr.ph"CONST="4094">
+<OP>STOREB</OP>
+<BasePointerName size="1">loopstart</BasePointerName>
+<Inputs>
+	<Input idx="25"/>
+	<Input idx="39"/>
+</Inputs>
+<Outputs>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+</DFG>

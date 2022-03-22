@@ -143,6 +143,7 @@ public:
 	void getArithmeticIns(std::map<std::string, int> &supportedOPs);
 	void getMemOnlyIns(std::map<std::string, int> &supportedOPs);
 	void getOutMemOnlyIns(std::map<std::string, int> &supportedOPs);
+	
 
 	void insertRegConPort(std::pair<Port *, Port *> portPair) { allRegConPorts.insert(portPair); }
 	std::pair<Port *, Port *> getRegConPort(std::string pName);

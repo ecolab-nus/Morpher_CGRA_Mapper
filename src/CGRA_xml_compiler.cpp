@@ -15,6 +15,7 @@
 #include "HeuristicMapper.h"
 #include "PathFinderMapper.h"
 #include "SimulatedAnnealingMapper.h"
+#include "AMRRG.h"
 #include <math.h>
 
 #include <ctype.h>
@@ -25,296 +26,351 @@
 using namespace std;
 using namespace CGRAXMLCompile;
 
+string benchmarkAddr[] = {
+    // small example with 9 nodes
+    "../applications/cgra_me_bench/mac/main_INNERMOST_LN1_noSemiOLOAD_PartPred_DFG.xml",                // 0:cgra_me_bench
+    "../applications/hycube/array_add/array_add_INNERMOST_LN1_PartPred_DFG.xml",                        // 1:array_add
+    "../applications/hycube/gemm_2x2x2/gemm_INNERMOST_LN111_PartPred_DFG.xml",                          // 2:gemm_2x2x2
+    "../applications/hycube/gemm_no_unroll/gemm_INNERMOST_LN111_PartPred_DFG.xml",                      // 3:gemm_no_unroll
+    "../applications/hycube/gemm_no_unroll_flattened/gemm_INNERMOST_LN1_PartPred_DFG.xml",              // 4:gemm_no_unroll_flattened
+    "../applications/hycube/gemm_unroll_4_flattened/gemm_INNERMOST_LN1_PartPred_DFG.xml",               // 5:gemm_unroll_4_flattened
+    "../applications/hycube/pedometer/pedometer_INNERMOST_LN1_PartPred_DFG.xml",                        // 6:pedometer
+    "../applications/hycube/aes/encrypt_INNERMOST_LN1_PartPred_DFG.xml",                                // 7:aes
+    "../applications/hycube/fft/fix_fft_INNERMOST_LN111_PartPred_DFG.xml",                              // 8:fft
+    "../applications/hycube/hpcg/hpcg_INNERMOST_LN11_PartPred_DFG.xml",                                 // 9:hpcg
+    "../applications/hycube/Microspeech/microspeech_conv_layer_hycube_INNERMOST_LN13_PartPred_DFG.xml", // 10:Microspeech
+    "../applications/hycube/kernel_symm/kernel_symm_INNERMOST_LN111_PartPred_DFG.xml"                   // 11:symm
+
+};
+
+static string arch_json_file = "../json_arch/hycube_original.json";
+
 struct arguments
 {
-	string dfg_filename;
-	int xdim = -1;
-	int ydim = -1;
-	string PEType;
-	string json_file_name;
-	int userII = 0;
-	bool noMutexPaths=false;
-	int backtracklimit = 2; // for PathFinderMapper, do not set this for a high number.  
-	bool use_json = false;
-	int ndps = 1;
-	int maxiter = 30;  // for PathFinderMapper,
-	int max_hops = 4;  // for HyCUBE
-	int mapping_method = 0; // 0: PathFinderMapper, 1: SAMapper (SimulatedAnnealing),  HeuristicMapper will not be used
+    string dfg_filename;
+    int xdim = -1;
+    int ydim = -1;
+    string PEType;
+    string json_file_name;
+    int userII = 0;
+    bool noMutexPaths = false;
+    int backtracklimit = 2; // for PathFinderMapper, do not set this for a high number.
+    bool use_json = false;
+    int ndps = 1;
+    int maxiter = 30;       // for PathFinderMapper,
+    int max_hops = 4;       // for HyCUBE
+    int maxII = 100;        // maximum II
+    int mapping_method = 0; // 0: PathFinderMapper, 1: SAMapper (SimulatedAnnealing),  HeuristicMapper will not be used
 };
 
 arguments parse_arguments(int argn, char *argc[])
 {
-	arguments ret;
+    arguments ret;
 
-	int aflag = 0;
-	int bflag = 0;
-	char *cvalue = NULL;
-	int index;
-	int c;
+    int aflag = 0;
+    int bflag = 0;
+    char *cvalue = NULL;
+    int index;
+    int c;
 
-	opterr = 0;
+    opterr = 0;
 
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:r:h:")) != -1)
-		switch (c)
-		{
-		case 'd':
-			ret.dfg_filename = string(optarg);
-			break;
-		case 'x':
-			ret.xdim = atoi(optarg);
-			break;
-		case 'y':
-			ret.ydim = atoi(optarg);
-			break;
-		case 't':
-			ret.PEType = string(optarg);
-			break;
-		case 'n':
-			ret.ndps = atoi(optarg);
-			break;
-		case 'j':
-			ret.json_file_name = string(optarg);
-			ret.use_json = true;
-			break;
-		case 'i':
-			ret.userII = atoi(optarg);
-			break;
-		case 'e':
-			ret.noMutexPaths = true;
-			break;
-		case 'b':
-			ret.backtracklimit = atoi(optarg);
-			break;
-		case 'r':
-			ret.maxiter = atoi(optarg);
-		case 'm':
-			ret.mapping_method = atoi(optarg);
-			break;
-		case 'h':
-			ret.max_hops = atoi(optarg);
-			break;
-		case '?':
-			if (optopt == 'c')
-				fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-			else if (isprint(optopt))
-				fprintf(stderr, "Unknown option `-%c'.\n", optopt);
-			else
-				fprintf(stderr,
-						"Unknown option character `\\x%x'.\n",
-						optopt);
-		default:
-			abort();
-		}
-		return ret;
+    while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:r:h:")) != -1)
+        switch (c)
+        {
+        case 'd':
+            ret.dfg_filename = string(optarg);
+            break;
+        case 'x':
+            ret.xdim = atoi(optarg);
+            break;
+        case 'y':
+            ret.ydim = atoi(optarg);
+            break;
+        case 't':
+            ret.PEType = string(optarg);
+            break;
+        case 'n':
+            ret.ndps = atoi(optarg);
+            break;
+        case 'j':
+            ret.json_file_name = string(optarg);
+            ret.use_json = true;
+            break;
+        case 'i':
+            ret.userII = atoi(optarg);
+            break;
+        case 'e':
+            ret.noMutexPaths = true;
+            break;
+        case 'b':
+            ret.backtracklimit = atoi(optarg);
+            break;
+        case 'r':
+            ret.maxiter = atoi(optarg);
+        case 'm':
+            ret.mapping_method = atoi(optarg);
+            break;
+        case 'h':
+            ret.max_hops = atoi(optarg);
+            break;
+        case '?':
+            if (optopt == 'c')
+                fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+            else if (isprint(optopt))
+                fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+            else
+                fprintf(stderr,
+                        "Unknown option character `\\x%x'.\n",
+                        optopt);
+        default:
+            abort();
+        }
+    return ret;
 }
 
 struct port_edge
 {
-	Port* a;
-	Port* b;
-	bool operator==(const port_edge &other) const
-	{
-		
-		return other.a == a && other.b == b;
-	}
+    Port *a;
+    Port *b;
+    bool operator==(const port_edge &other) const
+    {
 
-	bool operator<(const port_edge &other) const
-	{
-		
-		return a < other.a || b < other.b;
-	}
+        return other.a == a && other.b == b;
+    }
+
+    bool operator<(const port_edge &other) const
+    {
+
+        return a < other.a || b < other.b;
+    }
 };
 
-void find_routing_resource(Module * md, std::set<Port*> & ports, std::set<port_edge> & port_edges){
+void find_routing_resource(Module *md, std::set<Port *> &ports, std::set<port_edge> &port_edges)
+{
 
-		// std::cout<<"vist "<<md->getFullName()<<"\n";
-	for (auto & port_conn: md->getconnectedTo()){
-		auto master_port = port_conn.first;
-		ports.insert(master_port);
-		for(auto slave_port: port_conn.second ){
-			ports.insert(slave_port);
-			port_edges.insert(port_edge{master_port, slave_port});
-		}
-	}
+    // std::cout<<"vist "<<md->getFullName()<<"\n";
+    for (auto &port_conn : md->getconnectedTo())
+    {
+        auto master_port = port_conn.first;
+        ports.insert(master_port);
+        for (auto slave_port : port_conn.second)
+        {
+            ports.insert(slave_port);
+            port_edges.insert(port_edge{master_port, slave_port});
+        }
+    }
 
-	for (auto & port_conn: md->getconnectedFrom()){
-		auto slave_port = port_conn.first;
-		ports.insert(slave_port);
-		for(auto master_port: port_conn.second ){
-			ports.insert(slave_port);
-			port_edges.insert(port_edge{master_port, slave_port});
-		}
-	}
+    for (auto &port_conn : md->getconnectedFrom())
+    {
+        auto slave_port = port_conn.first;
+        ports.insert(slave_port);
+        for (auto master_port : port_conn.second)
+        {
+            ports.insert(slave_port);
+            port_edges.insert(port_edge{master_port, slave_port});
+        }
+    }
 
-	for(auto submod: md->subModules){
-		find_routing_resource(submod, ports, port_edges);
-	}
-
+    for (auto submod : md->subModules)
+    {
+        find_routing_resource(submod, ports, port_edges);
+    }
 }
 
 int main(int argn, char *argc[])
 {
-	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
+    cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 
-	// if (argn < 7)
-	// {
-	// 	std::cout << "arguments : <DFG.xml> <peType::\nGENERIC_8REGF,\nHyCUBE_8REGF,\nHyCUBE_4REG,\nN2N_4REGF,\nN2N_8REGF,\nSTDNOC_8REGF,\nSTDNOC_4REGF,\nSTDNOC_4REG,\nSTDNOC_4REGF_1P\nMFU_HyCUBE_4REG\nMFU_HyCUBE_4REGF\nMFU_STDNOC_4REG\nMFU_STDNOC_4REGF> <XYDim> <numberofDPS> <backtracklimit> <initII> <-arch_json> <-noMTpath>\n";
-	// }
-	// assert(argn >= 7);
+    arguments args = parse_arguments(argn, argc);
 
-	arguments args = parse_arguments(argn,argc);
-	std::string inputDFG_filename = args.dfg_filename;\
-	int xdim = args.xdim;
-	int ydim = args.ydim;
-	string PEType = args.PEType;
-	int numberOfDPs = args.ndps;
-	string json_file_name = args.json_file_name;
-	int initUserII = args.userII;
-	int mapping_method = args.mapping_method;
-	
-	DFG currDFG;
-	currDFG.parseXML(inputDFG_filename);
-	currDFG.printDFG();
+    clock_t start_time, end_time;
+    start_time = clock();
 
-	bool isGenericPE;
+    // by peng
+    // arguments args;
+    // args.dfg_filename = benchmarkAddr[2];
+    // args.xdim = 4;
+    // args.ydim = 4;
+    // args.use_json = true;
+    // args.json_file_name = arch_json_file;
+    // args.mapping_method = 2;
+    // end by peng
 
-	std::cout<<"mapping method:"<<mapping_method<<"\n";
+    std::string inputDFG_filename = args.dfg_filename;
+    int xdim = args.xdim;
+    int ydim = args.ydim;
+    string PEType = args.PEType;
+    int numberOfDPs = args.ndps;
+    string json_file_name = args.json_file_name;
+    int initUserII = args.userII;
+    int mapping_method = args.mapping_method;
 
-	// CGRA testCGRA(NULL, "testCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
+    DFG currDFG;
+    currDFG.parseXML(inputDFG_filename);
+    currDFG.printDFG();
 
-	CGRA *testCGRA;
-	if (!args.use_json)
-	{
-		testCGRA = new CGRA(NULL, "coreCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
-	}
-	else
-	{
-		testCGRA = new CGRA(json_file_name, 1,xdim,ydim);
-	}
+    bool isGenericPE;
 
-	
+    std::cout << "mapping method:" << mapping_method << "\n";
 
-	//	HeuristicMapper mapper(inputDFG_filename);
-	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
-	PathFinderMapper * mapper;
-	if (mapping_method == 0){
-		mapper = new PathFinderMapper(inputDFG_filename);
-	}else if(mapping_method  == 1){
-		mapper = new SAMapper(inputDFG_filename);
-		
-		// assert(false && "convert to SA");
-	}else{
-		assert(false && "did not set a valid mapping method");
-	}
+    // CGRA testCGRA(NULL, "testCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
 
-	
-	mapper->setMaxIter(args.maxiter);
+    CGRA *testCGRA;
+    if (!args.use_json)
+    {
+        testCGRA = new CGRA(NULL, "coreCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
+    }
+    else
+    {
+        testCGRA = new CGRA(json_file_name, 1, xdim, ydim);
+    }
 
-	int resII = mapper->getMinimumII(testCGRA, &currDFG);
-	int recII  = mapper->getRecMinimumII(&currDFG);
-	// int recII = 0; // for SA initial mapping test.
-	std::cout << "Res Minimum II = " << resII << "\n";
-	std::cout << "Rec Minimum II = " << recII << "\n";
-	std::cout << "Init User II = " << initUserII << "\n";
-	int II = std::max(recII, resII);
+    //	HeuristicMapper mapper(inputDFG_filename);
+    TimeDistInfo tdi = testCGRA->analyzeTimeDist();
+    PathFinderMapper *mapper;
+    if (mapping_method == 0)
+    {
+        mapper = new PathFinderMapper(inputDFG_filename);
+    }
+    else if (mapping_method == 1 || mapping_method == 2)
+    {
+        mapper = new SAMapper(inputDFG_filename);
+        // assert(false && "convert to SA");
+    }
+    else
+    {
+        assert(false && "did not set a valid mapping method");
+    }
 
-	II = std::max(initUserII, II);
+    mapper->setMaxIter(args.maxiter);
 
-	std::cout << "Using II = " << II << "\n";
+    int resII = mapper->getMinimumII(testCGRA, &currDFG);
+    int recII = mapper->getRecMinimumII(&currDFG);
+    // int recII = 0; // for SA initial mapping test.
+    std::cout << "Res Minimum II = " << resII << "\n";
+    std::cout << "Rec Minimum II = " << recII << "\n";
+    std::cout << "Init User II = " << initUserII << "\n";
+    int II = std::max(recII, resII);
+    int minII = II;
+    int abstractII = -1;
+    II = std::max(initUserII, II);
 
-	mapper->enableMutexPaths = true;
-	if (args.noMutexPaths)
-	{
-		mapper->enableMutexPaths = false;
-	}
-	mapper->enableBackTracking = true;
-	mapper->backTrackLimit = args.backtracklimit;
+    // get the new starting II for SA-based mapping
+    if (mapping_method == 2)
+    {
+        SAMapper *sa_mapper = static_cast<SAMapper *>(mapper);
+        abstractII = sa_mapper->getAbstractII(testCGRA, &currDFG); // II of abstract mapping
+        II = std::max(abstractII, II);
+    }
 
-	cout << "json_file_name = " << json_file_name << "\n";
-	// exit(EXIT_SUCCESS);
+    std::cout << "Using II = " << II << "\n";
 
-	bool mappingSuccess = false;
-	while (!mappingSuccess)
-	{
-		DFG tempDFG;
-		tempDFG.parseXML(inputDFG_filename);
-		tempDFG.printDFG();
+    mapper->enableMutexPaths = true;
+    if (args.noMutexPaths)
+    {
+        mapper->enableMutexPaths = false;
+    }
+    mapper->enableBackTracking = true;
+    mapper->backTrackLimit = args.backtracklimit;
 
-		CGRA *tempCGRA;
-		if (json_file_name.empty())
-		{
-			tempCGRA = new CGRA(NULL, "coreCGRA", II, ydim, xdim, &tempDFG, PEType, numberOfDPs, mapper->getcongestedPortsPtr());
-		}
-		else
-		{
-			tempCGRA = new CGRA(json_file_name, II,xdim,ydim, mapper->getcongestedPortsPtr());
-		}
+    cout << "json_file_name = " << json_file_name << "\n";
+    // exit(EXIT_SUCCESS);
 
-		std::set<Port*>  ports; std::set<port_edge>  port_edges;
-		for(auto submod: tempCGRA->Name2SubMod){
-		
-			find_routing_resource(submod.second, ports, port_edges);
-		}
-		std::cout << "Using II = " << II << "\n";
-		std::cout<<"number of ports: "<<ports.size()<<" number of edge: "<<port_edges.size();
-		// return 0;
-		// tempCGRA->analyzeTimeDist(tdi);
-		tempCGRA->max_hops = args.max_hops;
+    bool mappingSuccess = false;
+    while (!mappingSuccess)
+    {
+        DFG tempDFG;
+        tempDFG.parseXML(inputDFG_filename);
+        tempDFG.printDFG();
 
-		// return 0;
+        CGRA *tempCGRA;
+        if (json_file_name.empty())
+        {
+            tempCGRA = new CGRA(NULL, "coreCGRA", II, ydim, xdim, &tempDFG, PEType, numberOfDPs, mapper->getcongestedPortsPtr());
+        }
+        else
+        {
+            tempCGRA = new CGRA(json_file_name, II, xdim, ydim, mapper->getcongestedPortsPtr());
+        }
 
-		mapper->getcongestedPortsPtr()->clear();
-		mapper->getconflictedPortsPtr()->clear();
-		tempCGRA->analyzeTimeDist(tdi);
-		// mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
-		if (mapping_method == 0){
-			mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
-		}else if(mapping_method  == 1){
-			SAMapper * sa_mapper = static_cast<SAMapper*>(mapper);
-			mappingSuccess = sa_mapper->SAMap(tempCGRA, &tempDFG);
-		}else{
-			assert(false && "did not set a valid mapping method");
-		}
+        std::set<Port *> ports;
+        std::set<port_edge> port_edges;
+        for (auto submod : tempCGRA->Name2SubMod)
+        {
 
-		mapper->congestionInfoFile.close();
-		if (!mappingSuccess)
-		{
+            find_routing_resource(submod.second, ports, port_edges);
+        }
+        std::cout << "Using II = " << II << "\n";
+        std::cout << "number of ports: " << ports.size() << " number of edge: " << port_edges.size();
+        // return 0;
+        // tempCGRA->analyzeTimeDist(tdi);
+        tempCGRA->max_hops = args.max_hops;
 
-			for (DFGNode &node : currDFG.nodeList)
-			{
-				assert(node.rootDP == NULL);
-			}
+        // return 0;
 
-			delete tempCGRA;
-			II++;
+        mapper->getcongestedPortsPtr()->clear();
+        mapper->getconflictedPortsPtr()->clear();
+        tempCGRA->analyzeTimeDist(tdi);
+        // mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
+        if (mapping_method == 0) // stable mapping
+        {
+            mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
+        }
+        // with different initial values for SA
+        else if (mapping_method == 1 || mapping_method == 2)
+        {
+            SAMapper *sa_mapper = static_cast<SAMapper *>(mapper);
+            mappingSuccess = sa_mapper->SAMap(tempCGRA, &tempDFG, mapping_method);
+        }
+        else
+        {
+            assert(false && "did not set a valid mapping method");
+        }
 
-			if (II == 65)
-			{
-				std::cout << "II max of 65 has been reached and exiting...\n";
-				// return 0;
-			}
+        mapper->congestionInfoFile.close();
+        if (!mappingSuccess)
+        {
 
-			if (II > mapper->upperboundII)
-			{
-				std::cout << "upperbound II reached : " << mapper->upperboundII << "\n";
-				std::cout << "Please use the mapping with II = " << mapper->upperboundFoundBy << ",with Iter = " << mapper->upperboundIter << "\n";
-				//return 0;
-			}
+            for (DFGNode &node : currDFG.nodeList)
+            {
+                assert(node.rootDP == NULL);
+            }
 
-			std::cout << "Increasing II to " << II << "\n";
-		}
-		else
-		{
-			mapper->sanityCheck();
-			//mapper.assignLiveInOutAddr(&tempDFG);
-			if(PEType == "HyCUBE_4REG"){
-				std::cout << "Printing HyCUBE Binary...\n";
-				mapper->printHyCUBEBinary(tempCGRA);
-			}
-			
-		}
-	}
-	 
+            delete tempCGRA;
+            II++;
 
-	return 0;
+            if (II == 65)
+            {
+                std::cout << "II max of 65 has been reached and exiting...\n";
+                // return 0;
+            }
+
+            if (II > mapper->upperboundII)
+            {
+                std::cout << "upperbound II reached : " << mapper->upperboundII << "\n";
+                std::cout << "Please use the mapping with II = " << mapper->upperboundFoundBy << ",with Iter = " << mapper->upperboundIter << "\n";
+                // return 0;
+            }
+
+            std::cout << "Increasing II to " << II << "\n";
+        }
+        else
+        {
+            mapper->sanityCheck();
+            // mapper.assignLiveInOutAddr(&tempDFG);
+            if (PEType == "HyCUBE_4REG")
+            {
+                std::cout << "Printing HyCUBE Binary...\n";
+                mapper->printHyCUBEBinary(tempCGRA);
+            }
+        }
+    }
+
+    end_time = clock();
+    cout << "mapping_method=" << mapping_method;
+    cout << ", total seconds=" << (double)(end_time - start_time) / CLOCKS_PER_SEC << std::endl;
+    cout << "minII=" << minII << ", abstractII=" << abstractII << ", final II = " << II << std::endl;
+
+    return 0;
 }
