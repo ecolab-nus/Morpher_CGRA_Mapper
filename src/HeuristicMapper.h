@@ -278,6 +278,8 @@ protected:
 
 	int getlatMinStarts(const std::map<DFGNode *, std::vector<Port *>> &possibleStarts);
 	std::map<DataPath *, int> getLatCandDests(const std::vector<DataPath *> &candidateDests, int minlat);
+
+	bool check_parent_violation = true;
 };
 
 } /* namespace CGRAXMLCompile */

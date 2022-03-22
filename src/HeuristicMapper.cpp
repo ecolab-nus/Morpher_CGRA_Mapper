@@ -1904,6 +1904,7 @@ bool CGRAXMLCompile::HeuristicMapper::checkRecParentViolation(DFGNode *node,
 															  LatPort nextPort)
 {
 	//assert(false);
+	if(!check_parent_violation) { return false;}
 	for (DFGNode *recParent : node->recParents)
 	{
 		assert(recParent->rootDP != NULL); //should be mapped

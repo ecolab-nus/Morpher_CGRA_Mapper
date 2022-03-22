@@ -102,11 +102,11 @@ private:
 	int congest_num;
 	int routing_num;
 
-	float maximum_temp = 100;
+	float maximum_temp = 200;
 	float minimim_temp = 10;
 	float curr_temp;
 	int movement_in_each_temp = 100;
-  float cold_accept_rate = 0.01;
+ 	float cold_accept_rate = 0.01;
 	std::map<DFGNode*, std::pair<DataPath*, int>> dfg_node_placement;
 	std::map<dfg_data, std::vector<LatPort>> data_routing_path;
 	int maximum_routing_iteration = 3;
