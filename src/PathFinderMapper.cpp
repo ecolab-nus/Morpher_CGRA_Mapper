@@ -1295,7 +1295,9 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(LatPort src,
 		FU *fu = next_to_src.second->getMod()->getFU();
 		if ((fu->supportedOPs.find("LOAD") != fu->supportedOPs.end()) && (dest == next_to_src))
 		{
-			double memrescost_dbl = (double)this->dfg->unmappedMemOps / (double)cgra->freeMemNodes;
+			int freeMemNodes = cgra->freeMemNodes;
+			freeMemNodes = freeMemNodes>0? freeMemNodes:1;
+			double memrescost_dbl = (double)this->dfg->unmappedMemOps / (double)freeMemNodes;
 			memrescost_dbl = memrescost_dbl * (double)MEMResourceCost;
 			distance = distance + (int)memrescost_dbl;
 			if (this->dfg->unmappedMemOps == cgra->freeMemNodes)

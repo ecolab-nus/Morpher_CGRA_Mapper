@@ -49,21 +49,6 @@ namespace CGRAXMLCompile
             : srcDFGNode(sd), destDFGNode(dd), srcMRRGNode(sm), destMRRGNode(dm) {}
     };
 
-    struct abstractArgs
-    {
-        string CGRAType;
-        int minII;
-        int maxII;
-        int curII;
-        int x_dim;
-        int y_dim;
-        DFG *dfg;
-        CGRA *cgra;
-
-        abstractArgs(string CGRAType, int minII, int maxII, int x_dim, int y_dim, DFG *dfg, CGRA *cgra)
-            : CGRAType(CGRAType), minII(minII), maxII(maxII), x_dim(x_dim), y_dim(y_dim), dfg(dfg), cgra(cgra) {}
-    };
-
     class AMRRG
     {
 
@@ -78,6 +63,7 @@ namespace CGRAXMLCompile
         ~AMRRG();
 
         void getTopoOrder();
+        void getTopoOrderBackEdge();
         void printTopoOrder();
         int get2DDistance(int x1, int y1, int x2, int y2);
         int get3DDistance(int t1, int x1, int y1, int t2, int x2, int y2);
@@ -104,7 +90,7 @@ namespace CGRAXMLCompile
         // node is the DFG node to be mapped
         bool findValidPE(DFGNode *node, MRRGNode *targetPE, vector<MappedPath> &paths);
         bool abstractMap(DFG *dfg, string dfgAddr);
-        
+
         int get_x_dim() { return x_dim; }
         int get_y_dim() { return y_dim; }
         int get_ii() { return ii_len; }
@@ -113,6 +99,8 @@ namespace CGRAXMLCompile
         int ii_len; // initiation interval
         int x_dim;
         int y_dim;
+        std::map<BackEdge, std::set<DFGNode *>> RecCycles;   // real backedge
+        std::map<BackEdge, std::set<DFGNode *>> RecCyclesLS; // the recurrent edge for load store.
 
     }; // class AMRRG
 

@@ -189,7 +189,7 @@ int main(int argn, char *argc[])
 
     // by peng
     // arguments args;
-    // args.dfg_filename = benchmarkAddr[2];
+    // args.dfg_filename = benchmarkAddr[6];
     // args.xdim = 4;
     // args.ydim = 4;
     // args.use_json = true;

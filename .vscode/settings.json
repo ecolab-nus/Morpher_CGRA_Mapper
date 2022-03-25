@@ -80,6 +80,9 @@
         "__bit_reference": "cpp",
         "__tree": "cpp",
         "regex": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "hash_map": "cpp",
+        "hashtable": "cpp",
+        "__hash_table": "cpp"
     }
 }
