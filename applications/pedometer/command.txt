@@ -1,2 +1,0 @@
-../../Release/CGRA_xml_compiler -d pedometer_INNERMOST_LN1_PartPred_DFG.xml -x 4 -y 4 -j hycube_original_mem.json -t HyCUBE_4REG
-

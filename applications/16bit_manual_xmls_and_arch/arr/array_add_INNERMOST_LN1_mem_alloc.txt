@@ -1,7 +1,0 @@
-var_name,base_addr
-A,0
-C,8192
-B,40
-loopstart,16383
-loopend,16382
-startstop,16383
