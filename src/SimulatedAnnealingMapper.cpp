@@ -138,7 +138,8 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg, int iniMethod)
 	{
 		std::cout << "*******************************current temperature:" << curr_temp << "\n";
 		float accept_rate = inner_map();
-		std::cout << "accept_rate:" << accept_rate << " # of overuse:" << getCongestionNumber() << " unmapped nodes:" << getNumberOfUnmappedNodes() << "\n";
+		std::cout << "accept_rate:" << accept_rate << " # of overuse:" << getCongestionNumber()
+				  << " unmapped nodes:" << getNumberOfUnmappedNodes() << "\n";
 		curr_temp = updateTemperature(curr_temp, accept_rate);
 
 		if (isCurrMappingValid())
@@ -269,15 +270,15 @@ bool CGRAXMLCompile::SAMapper::initMapWithAbsMap()
 	// assign other nodes and route edges according to placement
 	for (auto it = absNodePlacement.begin(); it != absNodePlacement.end(); ++it)
 	{
-		cout << "node " << it->first->idx << " mapped on " << it->second->getFullName() << ", ";
+		cout << "node " << it->first->idx << " mapped on " << it->second->getFullName() << "\n";
 		bool route_succ = iniSARoute(it->first, it->second);
 		if (!route_succ)
 		{
-			cout << "SARoute after abstract mapping " << BOLDRED << "unsuccessfully" << RESET << "\n";
+			cout << "\t SARoute after abstract mapping " << BOLDRED << "unsuccessfully" << RESET << "\n";
 		}
 		else
 		{
-			cout << "SARoute after abstract mapping " << GREEN << "successfully" << RESET << "\n";
+			cout << "\t SARoute after abstract mapping " << GREEN << "successfully" << RESET << "\n";
 		}
 	}
 	return true;
@@ -857,7 +858,9 @@ bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath *candidateDP)
 
 			std::map<Port *, std::set<DFGNode *>> mutexPaths;
 			childDestPort->setLat(childDP->getLat());
-			LatPort childDestPortLat = std::make_pair(childDestPort->getLat(), childDestPort);
+			// LatPort childDestPortLat = std::make_pair(childDestPort->getLat(), childDestPort);
+			LatPort childDestPortLat = std::make_pair(childDestPort->getLat() + II * node->childNextIter[child], childDestPort);
+
 			assert(childDestPort->getLat() != -1);
 			LatPort destPortLat = std::make_pair(minLatDestVal + latency, destPort);
 
@@ -939,7 +942,7 @@ bool CGRAXMLCompile::SAMapper::iniSARoute(DFGNode *node, DataPath *candidateDP)
 			else if (child->idx == node->idx)
 			{
 				// adding a placeholder as this will be modified according to the destination in consideration.
-				alreadyMappedChildPorts[child] = NULL;
+				alreadyMappedChildPorts[child] == NULL;
 			}
 		}
 
@@ -971,9 +974,6 @@ bool CGRAXMLCompile::SAMapper::iniSARoute(DFGNode *node, DataPath *candidateDP)
 		LatPort candiLatport; // get a latency according to the iteration
 		std::map<DFGNode *, std::vector<LatPort>> mappedChildPaths;
 
-		// FU *parentFU = candidateDP->getFU();
-		// assert(parentFU->supportedOPs.find(node->op) != parentFU->supportedOPs.end());
-		// int latency = parentFU->supportedOPs[node->op];
 		int minLatDestVal = minLatDestVal_prime;
 		// route parent nodes
 		for (auto &parent_info : parent_output_ports)
@@ -1065,7 +1065,8 @@ bool CGRAXMLCompile::SAMapper::iniSARoute(DFGNode *node, DataPath *candidateDP)
 				std::map<Port *, std::set<DFGNode *>> mutexPaths;
 				childDestPort->setLat(childDP->getLat());
 
-				LatPort childDestPortLat = std::make_pair(childDestPort->getLat() + II * iter, childDestPort);
+				int childPortLat = II * iter + childDestPort->getLat() + node->childNextIter[child] * II;
+				LatPort childDestPortLat = std::make_pair(childPortLat, childDestPort);
 				assert(childDestPort->getLat() != -1);
 				LatPort destPortLat = std::make_pair(minLatDestVal + latency, destPort);
 
