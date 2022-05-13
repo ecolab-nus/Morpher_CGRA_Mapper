@@ -222,6 +222,7 @@ void CGRAXMLCompile::Port::clear()
 
 void CGRAXMLCompile::Port::setLat(int lat)
 {
+	// std::cout<<this->getFullName()<<"set latency:"<<lat<<"\n";
 	CGRA *cgra = this->getMod()->getCGRA();
 	int ii = cgra->get_t_max();
 	assert(lat % ii == this->getMod()->getPE()->T);

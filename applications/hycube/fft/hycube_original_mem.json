@@ -267,46 +267,51 @@
         }
     },
 
-    "SPM_B0_WRAPPER" : {
-      "TSOCKETS" : [
-        "MEMPORT_P0", "MEMPORT_P1"
-      ],
-      "SUBMODS" : {
-        "SPM" : [{"name" : "SPM0"}]
-      },
-      "DATA_LAYOUT" :{
-        "conv30249":136,
-        "fi":0,
-        "shl28":132,
-        "l.1250":128
-      },
-      "INIT_FILE" : "../json/test_data.json",
-      "CONNECTIONS" : {
-        "SPM0.PORT0" : "THIS.MEMPORT_P0",
-        "SPM0.PORT1" : "THIS.MEMPORT_P1"
-      }
-    },
-
-    "SPM_B1_WRAPPER" : {
-      "TSOCKETS" : [
-        "MEMPORT_P0", "MEMPORT_P1"
-      ],
-      "SUBMODS" : {
-        "SPM" : [{"name" : "SPM0"}]
-      },
-      "DATA_LAYOUT" :{
-        "conv.i238":2176,
-        "manupa1":2184,
-        "fr":2048,
-        "conv.i":2180
-      },
-      "INIT_FILE" : "../json/test_data.json",
-      "CONNECTIONS" : {
-        "SPM0.PORT0" : "THIS.MEMPORT_P0",
-        "SPM0.PORT1" : "THIS.MEMPORT_P1"
-      }
-    },
     
+
+
+
+"SPM_B0_WRAPPER" : {
+  "TSOCKETS" : [
+    "MEMPORT_P0", "MEMPORT_P1"
+  ],
+  "SUBMODS" : {
+    "SPM" : [{"name" : "SPM0"}]
+  },
+  "DATA_LAYOUT" :{
+    "l.1250":132,
+    "conv.i":128,
+    "fr":0,
+    "manupa1":136,
+    "loopend":2047
+  },
+  "INIT_FILE" : "../json/test_data.json",
+  "CONNECTIONS" : {
+    "SPM0.PORT0" : "THIS.MEMPORT_P0",
+    "SPM0.PORT1" : "THIS.MEMPORT_P1"
+  }
+},
+
+"SPM_B1_WRAPPER" : {
+  "TSOCKETS" : [
+    "MEMPORT_P0", "MEMPORT_P1"
+  ],
+  "SUBMODS" : {
+    "SPM" : [{"name" : "SPM0"}]
+  },
+  "DATA_LAYOUT" :{
+    "conv30249":2176,
+    "conv.i238":2180,
+    "fi":2048,
+    "shl28":2184,
+    "loopstart":4094
+  },
+  "INIT_FILE" : "../json/test_data.json",
+  "CONNECTIONS" : {
+    "SPM0.PORT0" : "THIS.MEMPORT_P0",
+    "SPM0.PORT1" : "THIS.MEMPORT_P1"
+  }
+},
     "CGRA" :{
       "SUBMODS" :[
           { "PATTERN" : "GRID",

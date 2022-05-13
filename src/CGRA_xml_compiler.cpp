@@ -7,6 +7,8 @@
 //============================================================================
 
 #include <iostream>
+#include <chrono>
+
 #include <assert.h>
 #include <string.h>
 
@@ -233,6 +235,8 @@ int main(int argn, char *argc[])
 	cout << "json_file_name = " << json_file_name << "\n";
 	// exit(EXIT_SUCCESS);
 
+	auto start = chrono::steady_clock::now();
+
 	bool mappingSuccess = false;
 	while (!mappingSuccess)
 	{
@@ -290,7 +294,14 @@ int main(int argn, char *argc[])
 
 			if (II == 65)
 			{
-				std::cout << "II max of 65 has been reached and exiting...\n";
+				std::cout << "############ cannot map:  II max of 65 has been reached and exiting...\n";
+				auto end = chrono::steady_clock::now();
+				std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec";
+				std::ofstream result_file;
+				result_file.open ("result.txt", std::ios_base::app); 
+				result_file << xdim<<"x"<<ydim<<" "<<inputDFG_filename<<" method:"<<mapping_method<<" "<<II<<" "<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
+				result_file.close();
+
 				// return 0;
 			}
 
@@ -306,6 +317,14 @@ int main(int argn, char *argc[])
 		else
 		{
 			mapper->sanityCheck();
+
+			auto end = chrono::steady_clock::now();
+			std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec";
+			std::ofstream result_file;
+			result_file.open ("result.txt", std::ios_base::app); 
+			result_file << xdim<<"x"<<ydim<<" "<<inputDFG_filename<<" method:"<<mapping_method<<" "<<II<<" "<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
+			result_file.close();
+
 			//mapper.assignLiveInOutAddr(&tempDFG);
 			if(PEType == "HyCUBE_4REG"){
 				std::cout << "Printing HyCUBE Binary...\n";

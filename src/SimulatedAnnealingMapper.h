@@ -46,11 +46,15 @@ public:
 	int getCongestionNumber();
 	int getPortUsage();
 	int getNumberOfUnmappedNodes();
+	int checkAnyUnroutedEdge();
 	std::string mapStatus();
 	bool isCurrMappingValid(){
 		int overuse_number = getCongestionNumber();
-		int unmapped_node_numer = getNumberOfUnmappedNodes();
-		if(unmapped_node_numer == 0 && overuse_number == 0){
+		int unmapped_node_number = getNumberOfUnmappedNodes();
+		int unrouted_edge = checkAnyUnroutedEdge();
+		if(unmapped_node_number == 0 && unrouted_edge > 0) assert(false && "some edges are not routed!");
+		
+		if(unmapped_node_number == 0 && overuse_number == 0){
 			return true;
 		}else{
 			return false;

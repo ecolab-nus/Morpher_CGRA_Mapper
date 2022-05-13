@@ -1292,13 +1292,18 @@ int CGRAXMLCompile::PathFinderMapper::calculateCost(LatPort src,
 		FU *fu = next_to_src.second->getMod()->getFU();
 		if ((fu->supportedOPs.find("LOAD") != fu->supportedOPs.end()) && (dest == next_to_src))
 		{
-			double memrescost_dbl = (double)this->dfg->unmappedMemOps / (double)cgra->freeMemNodes;
+			int freeMemNodes = cgra->freeMemNodes;
+			freeMemNodes = freeMemNodes>0? freeMemNodes:1;
+			double memrescost_dbl = (double)this->dfg->unmappedMemOps / (double)freeMemNodes;
 			memrescost_dbl = memrescost_dbl * (double)MEMResourceCost;
+			
 			distance = distance + (int)memrescost_dbl;
 			if (this->dfg->unmappedMemOps == cgra->freeMemNodes)
 			{
 				distance = distance + MRC * 10;
+				
 			}
+
 		}
 	}
 
@@ -1676,6 +1681,7 @@ void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode *src, DFGNode *dest,
 			if (std::find(src->routingPorts.begin(), src->routingPorts.end(), std::make_pair(p.second, src->idx)) == src->routingPorts.end())
 			{
 				src->routingPorts.push_back(std::make_pair(p.second, dest->idx));
+				// std::cout<<"push back route" << p.second->getFullName() << "\n";
 			}
 			else
 			{
