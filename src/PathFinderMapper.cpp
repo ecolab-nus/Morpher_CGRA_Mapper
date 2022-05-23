@@ -3812,6 +3812,7 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 						// if nop, select constant 1 to enable power gating.
 					    insF.constant_valid = "1";
 						insF.constant = "000000000000000000000000001";
+
 					}
 					else{
 						insF.constant_valid = "0";
@@ -3832,6 +3833,36 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					//		}
 					//	}
 				}
+	}
+
+
+	for (int t = 0; t < this->cgra->get_t_max(); ++t)
+	{
+		// the code to count continuous nop
+		vector<PE *> PEList = this->cgra->getSpatialPEList(t);
+		
+		for (PE *currPE : PEList)
+		{
+			int x = currPE->X;
+			int y = currPE->Y;	
+			
+			InsFormat & tempIns  = InsFArr[t][y][x];
+			if(tempIns.opcode != "00000"){
+				continue;
+			}
+
+			int nop_count  = 1;
+			int temp_t = t + 1;
+			while( temp_t <=  cgra->get_t_max()){
+				if(InsFArr[temp_t][y][x].opcode == "00000"){
+					nop_count++;
+					temp_t++;
+				}else{
+					break;
+				}
+			}
+			tempIns.constant = "00000000000000000000000000" + std::to_string(nop_count);
+		}
 	}
 	InsFormat jumpl;
 	jumpl.negated_predicate = "0";
