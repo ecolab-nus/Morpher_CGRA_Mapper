@@ -3808,6 +3808,10 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					if(mappedOP && mappedOP->hasConst){
 						insF.constant_valid = "1";
 						insF.constant = mappedOP->get27bitConstantBinaryString();
+					}else if(insF.opcode == "00000"){
+						// if nop, select constant 1 to enable power gating.
+					    insF.constant_valid = "1";
+						insF.constant = "000000000000000000000000001";
 					}
 					else{
 						insF.constant_valid = "0";
