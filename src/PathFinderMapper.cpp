@@ -3861,7 +3861,7 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					break;
 				}
 			}
-			tempIns.constant = "00000000000000000000000000" + std::to_string(nop_count);
+			tempIns.constant = std::bitset<27>(nop_count).to_string();;
 		}
 	}
 	InsFormat jumpl;
