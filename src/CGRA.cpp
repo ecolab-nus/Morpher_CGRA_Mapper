@@ -953,7 +953,7 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 		TimeDistBetweenClosestMEMPEMap[pe1->getName()] = INT32_MAX;
 		for (Module *m2 : subModArr[0])
 		{
-			cout << "m2 name = " << m2->getName() << "\n";
+			cout << "m2 name = " << m2->getName() ;
 			if (!dynamic_cast<PE *>(m2))
 			{
 				cout << "\t not a PE skipping...\n";
@@ -962,7 +962,9 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 			PE *pe2 = static_cast<PE *>(m2);
 			// if (pe1 == pe2)
 			// continue;
-			TimeDistBetweenPEMap[pe1->getName()][pe2->getName()] = getTimeDistBetweenPEs(pe1, pe2);
+			int dist = getTimeDistBetweenPEs(pe1, pe2);
+			cout<<"  dist:"<<dist <<"\n";
+			TimeDistBetweenPEMap[pe1->getName()][pe2->getName()] =dist;
 		}
 	}
 	if (get_t_max() == 1)
@@ -1081,7 +1083,7 @@ int CGRAXMLCompile::CGRA::getTimeDistBetweenPEs(PE *srcPE, PE *destPE)
 	for (Port *op : srcPE->outputPorts)
 	{
 		unordered_map<Port *, int> already_traversed;
-		int tmp = -1;
+		int tmp = 0;
 		traverseUntil(srcPE, destPE, op, 0, already_traversed, tmp);
 		if (tmp != -1 && tmp < ret_val)
 			ret_val = tmp;
