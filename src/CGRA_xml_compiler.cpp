@@ -182,6 +182,8 @@ int main(int argn, char *argc[])
 
 	std::cout<<"mapping method:"<<mapping_method<<"\n";
 
+	std::cout<<"json file:"<<json_file_name<<"\n";
+
 	// CGRA testCGRA(NULL, "testCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
 
 	CGRA *testCGRA;
@@ -299,7 +301,7 @@ int main(int argn, char *argc[])
 				std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec";
 				std::ofstream result_file;
 				result_file.open ("result.txt", std::ios_base::app); 
-				result_file << xdim<<"x"<<ydim<<" "<<inputDFG_filename<<" method:"<<mapping_method<<" "<<II<<" "<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
+				result_file << xdim<<"x"<<ydim<<" "<<inputDFG_filename<<" method:"<<mapper->getMappingMethodName()<<" "<<II<<" "<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
 				result_file.close();
 
 				// return 0;
@@ -322,7 +324,7 @@ int main(int argn, char *argc[])
 			std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec";
 			std::ofstream result_file;
 			result_file.open ("result.txt", std::ios_base::app); 
-			result_file << xdim<<"x"<<ydim<<" "<<inputDFG_filename<<" method:"<<mapping_method<<" "<<II<<" "<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
+			result_file << xdim<<"x"<<ydim<<" "<<inputDFG_filename<<" method:"<<mapper->getMappingMethodName()<<" "<<II<<" "<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
 			result_file.close();
 
 			//mapper.assignLiveInOutAddr(&tempDFG);

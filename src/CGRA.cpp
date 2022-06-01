@@ -1081,8 +1081,8 @@ int CGRAXMLCompile::CGRA::getTimeDistBetweenPEs(PE *srcPE, PE *destPE)
 	for (Port *op : srcPE->outputPorts)
 	{
 		unordered_map<Port *, int> already_traversed;
-		int tmp = -1;
-		traverseUntil(srcPE, destPE, op, 0, already_traversed, tmp);
+		int tmp = 0;
+		// traverseUntil(srcPE, destPE, op, 0, already_traversed, tmp);
 		if (tmp != -1 && tmp < ret_val)
 			ret_val = tmp;
 	}

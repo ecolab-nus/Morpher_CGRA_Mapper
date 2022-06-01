@@ -101,8 +101,9 @@ public:
 
 
 
+protected:
+	std::string mapping_method_name  = "SA";
 
-private:
 	int congest_num;
 	int routing_num;
 
@@ -118,6 +119,8 @@ private:
 	int curr_cost;
 
 	int backtrack_credit = 3; // this is different from the PathFinder one.
+
+
 
 	
 

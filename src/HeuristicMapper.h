@@ -255,9 +255,13 @@ public:
 
 	bool checkRecParentViolation(DFGNode *node, LatPort nextPort);
 
+
+	std::string getMappingMethodName(){return mapping_method_name;}
+
 	int upperboundII = 1000000;
 	int upperboundIter = -1;
 	int upperboundFoundBy = -1;
+	std::string mapping_method_name  = "heuristic";
 
 protected:
 	int regDiscourageFactor = 10;

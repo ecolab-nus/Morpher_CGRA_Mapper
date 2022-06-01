@@ -121,6 +121,8 @@ public:
 	}
 	std::tuple<int, int, int> getIndexOfBin(int index);
 
+	
+
 protected:
 	int getlatMinStartsPHI(const DFGNode *currNode, const std::map<DFGNode *, std::vector<Port *>> &possibleStarts);
 
@@ -128,6 +130,8 @@ protected:
 	std::map<Port *, std::set<DFGNode *>> conflictedPorts;
 
 // private:
+	
+	std::string mapping_method_name  = "PathFinder";
 	
 	int maxIter = 30;
 

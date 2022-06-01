@@ -2766,9 +2766,9 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 {
 
 	std::set<BackEdge> setBackEdges;
-	std::cout << "getMaxLatencyBE started!\n";
+	LOG(ROUTE) << "getMaxLatencyBE started!\n";
 
-	std::cout << "NODE ASAP = " << node->ASAP << "\n";
+	LOG(ROUTE) << "NODE ASAP = " << node->ASAP << "\n";
 
 	for (std::pair<BackEdge, std::set<DFGNode *>> pair : RecCycles)
 	{
@@ -2778,13 +2778,13 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 		{
 			if (be.second->rootDP != NULL)
 			{
-				std::cout << "RecSet(" << be.first->idx << "," << be.second->idx << ")"
+				LOG(ROUTE) << "RecSet(" << be.first->idx << "," << be.second->idx << ")"
 						  << " : ";
 				for (DFGNode *n : rec_nodes)
 				{
-					std::cout << n->idx << ",";
+					LOG(ROUTE) << n->idx << ",";
 				}
-				std::cout << "\n";
+				LOG(ROUTE) << "\n";
 				setBackEdges.insert(pair.first);
 			}
 		}
@@ -2798,13 +2798,13 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 		{
 			if (be.second->rootDP != NULL)
 			{
-				std::cout << "RecSet(" << be.first->idx << "," << be.second->idx << ")"
+				LOG(ROUTE) << "RecSet(" << be.first->idx << "," << be.second->idx << ")"
 						  << " : ";
 				for (DFGNode *n : rec_nodes)
 				{
-					std::cout << n->idx << ",";
+					LOG(ROUTE) << n->idx << ",";
 				}
-				std::cout << "\n";
+				LOG(ROUTE) << "\n";
 				setBackEdges.insert(pair.first);
 			}
 		}
@@ -2822,7 +2822,7 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 		int maxLatency = be.second->rootDP->getLat() + cgra->get_t_max();
 		int noDownStreamOps = 0;
 		//		maxLatency = maxLatency - OpLatency[be.first->op];
-		std::cout << "maxLatency = " << maxLatency << "\n";
+		LOG(ROUTE) << "maxLatency = " << maxLatency << "\n";
 		std::map<int, std::set<DFGNode *>> asapOrder;
 		std::map<int, int> asapMaxOpLat;
 		std::map<int, int> asapMaxLat;
@@ -2860,24 +2860,24 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 		for (std::pair<int, std::set<DFGNode *>> pair : asapOrder)
 		{
 			int maxOplatency = 0;
-			std::cout << "ops : ";
+			LOG(ROUTE)<< "ops : ";
 			for (DFGNode *n : pair.second)
 			{
-				std::cout << "idx=" << n->idx << "[" << n->op << "]"
+				LOG(ROUTE) << "idx=" << n->idx << "[" << n->op << "]"
 						  << "(" << OpLatency[n->op] << ")"
 						  << ",";
 				int new_lat = OpLatency[n->op];
 				if (new_lat > maxOplatency)
 					maxOplatency = new_lat;
 			}
-			std::cout << "\n";
-			std::cout << "ASAP=" << pair.first << ",OPLAT=" << maxOplatency << "\n";
+			LOG(ROUTE) << "\n";
+			LOG(ROUTE) << "ASAP=" << pair.first << ",OPLAT=" << maxOplatency << "\n";
 
 			if ((bpi.dsMEMfound == false) && (node->ASAP < pair.first))
 			{
 				if (maxOplatency == 2)
 				{
-					std::cout << "MEM FOUND SET TRUE!\n";
+					LOG(ROUTE) << "MEM FOUND SET TRUE!\n";
 					bpi.dsMEMfound = true;
 					bpi.uptoMEMops = upstreamOPs;
 				}
@@ -2923,10 +2923,10 @@ int CGRAXMLCompile::PathFinderMapper::getMaxLatencyBE(DFGNode *node, std::map<Da
 
 	if (maxLat != LARGE_VALUE)
 	{
-		std::cout << "getMaxLatencyBE :: node=" << node->idx << " maxLat = " << maxLat << "\n";
+		LOG(ROUTE) << "getMaxLatencyBE :: node=" << node->idx << " maxLat = " << maxLat << "\n";
 		//		assert(false);
 	}
-	std::cout << "getMaxLatencyBE done!\n";
+	LOG(ROUTE) << "getMaxLatencyBE done!\n";
 	return maxLat;
 }
 
@@ -3024,7 +3024,7 @@ std::vector<CGRAXMLCompile::DFGNode *> CGRAXMLCompile::PathFinderMapper::getLong
 				cameFrom[child][nextLat] = node;
 			}
 		}
-		std::cout << "\n";
+		LOG(ROUTE) << "\n";
 		if (!next.empty())
 			q.push(next);
 	}
@@ -3034,12 +3034,12 @@ std::vector<CGRAXMLCompile::DFGNode *> CGRAXMLCompile::PathFinderMapper::getLong
 	DFGNode *temp = dest;
 	while (temp != src)
 	{
-		std::cout << temp->idx << " <-- ";
+		LOG(ROUTE)<< temp->idx << " <-- ";
 		result.push_back(temp);
 		temp = (*cameFrom[temp].rbegin()).second;
 	}
 	result.push_back(src);
-	std::cout << "\n";
+	LOG(ROUTE) << "\n";
 	//	assert(false);
 
 	std::reverse(result.begin(), result.end());
@@ -3074,9 +3074,9 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 
 	bool isMeMOp = checkMEMOp(node->op);
 
-	std::cout << "MaxLat = " << maxLat << "\n";
-	std::cout << "IsMEMOp = " << isMeMOp << "\n";
-	std::cout << "candDestIn size = " << candDestIn.size() << "\n";
+	LOG(ROUTE) << "MaxLat = " << maxLat << "\n";
+	LOG(ROUTE) << "IsMEMOp = " << isMeMOp << "\n";
+	LOG(ROUTE) << "candDestIn size = " << candDestIn.size() << "\n";
 
 	for (std::pair<DataPath *, int> pair : candDestIn)
 	{
@@ -3116,15 +3116,15 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::PathFinderMapper::modify
 					// dist = pe->X;
 					dist = cgra->getTimeClosestMEMPE(pe);
 					dsOps = pair.second.uptoMEMops;
-					std::cout << "**MEM FOUND DOWN**\n";
+					LOG(ROUTE) << "**MEM FOUND DOWN**\n";
 				}
 
 				if (maxLat != LARGE_VALUE)
 				{
-					std::cout << "pe=" << pe->getName() << ",";
-					std::cout << "dist=" << dist << ",";
-					std::cout << "slack=" << pair.second.lat - maxLat << ",";
-					std::cout << "downstreamOps=" << dsOps << "\n";
+					LOG(ROUTE)<< "pe=" << pe->getName() << ",";
+					LOG(ROUTE) << "dist=" << dist << ",";
+					LOG(ROUTE) << "slack=" << pair.second.lat - maxLat << ",";
+					LOG(ROUTE)<< "downstreamOps=" << dsOps << "\n";
 				}
 
 				int lat_slack = pair.second.lat - maxLat;

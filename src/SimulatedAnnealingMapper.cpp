@@ -23,26 +23,15 @@ namespace CGRAXMLCompile
 
 } /* namespace CGRAXMLCompile */
 
-/*
-@TODO Verify
-0. Initial mapping
-1. Resotre mapping.
-2. Parent and Child Node
-3. Congestion
 
-*/
-/* Things migh need to be improved
-1. When selected node to unmap, I select unmapped nodes first and unmap one of their parents. 
-	If no umapped nodes, I will randomly select one node.
-	Will it be better if we randomly select from any node, or we just give a bit higher priority to unmapped nodes?
-*/
-bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg){
-  std::stack<DFGNode *> mappedNodes;
+
+bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
+{
+	std::stack<DFGNode *> mappedNodes;
 	std::stack<DFGNode *> unmappedNodes;
 	std::map<DFGNode *, std::priority_queue<dest_with_cost>> estimatedRouteInfo;
 
-
-	//Disable mutex paths to test pathfinder
+	// Disable mutex paths to test pathfinder
 	this->enableMutexPaths = true;
 
 	check_parent_violation = false;
@@ -52,15 +41,14 @@ bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg){
 
 	Check_DFG_CGRA_Compatibility();
 
-	if(cgra->is_spm_modelled){
+	if (cgra->is_spm_modelled)
+	{
 		UpdateVariableBaseAddr();
 	}
 	sortBackEdgePriorityASAP();
 
-	std::string mappingLogFileName = fNameLog1 + cgra->getCGRAName() + "_MTP=" + std::to_string(enableMutexPaths);  // + ".mapping.csv";
+	std::string mappingLogFileName = fNameLog1 + cgra->getCGRAName() + "_MTP=" + std::to_string(enableMutexPaths);	// + ".mapping.csv";
 	std::string mappingLog2FileName = fNameLog1 + cgra->getCGRAName() + "_MTP=" + std::to_string(enableMutexPaths); // + ".routeInfo.log";
-	
-	
 
 	bool mapSuccess = false;
 
@@ -69,75 +57,101 @@ bool  CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg){
 	congestionInfoFile.open(congestionInfoFileName.c_str());
 	assert(congestionInfoFile.is_open());
 
-	
+	std::string mappingLogFileName_withIter = mappingLogFileName + "_SA" + ".mapping.csv";
+	std::string mappingLog2FileName_withIter = mappingLog2FileName + "_SA" + ".routeInfo.log";
+	std::string mappingLog4FileName_withIter = mappingLogFileName + "_II=" + std::to_string(cgra->get_t_max()) + "_SA" + ".mappingwithlatency.txt";
 
-  std::string mappingLogFileName_withIter = mappingLogFileName + "_SA" + ".mapping.csv";
-  std::string mappingLog2FileName_withIter = mappingLog2FileName + "_SA" + ".routeInfo.log";
-  std::string mappingLog4FileName_withIter = mappingLogFileName + "_II=" + std::to_string(cgra->get_t_max())+ "_SA" + ".mappingwithlatency.txt";
+	mappingLog.open(mappingLogFileName_withIter.c_str());
+	mappingLog2.open(mappingLog2FileName_withIter.c_str());
+	mappingLog4.open(mappingLog4FileName_withIter.c_str());
 
-  mappingLog.open(mappingLogFileName_withIter.c_str());
-  mappingLog2.open(mappingLog2FileName_withIter.c_str());
-  mappingLog4.open(mappingLog4FileName_withIter.c_str());
+	cout << "Opening mapping csv file : " << mappingLogFileName_withIter << "\n";
+	cout << "Opening routeInfo log file : " << mappingLog2FileName_withIter << "\n";
 
-  cout << "Opening mapping csv file : " << mappingLogFileName_withIter << "\n";
-  cout << "Opening routeInfo log file : " << mappingLog2FileName_withIter << "\n";
+	assert(mappingLog.is_open());
+	assert(mappingLog2.is_open());
+	assert(mappingLog4.is_open());
 
-  assert(mappingLog.is_open());
-  assert(mappingLog2.is_open());
-  assert(mappingLog4.is_open());
+	while (!mappedNodes.empty())
+	{
+		mappedNodes.pop();
+	}
+	while (!unmappedNodes.empty())
+	{
+		unmappedNodes.pop();
+	}
 
-  while (!mappedNodes.empty())
-  {
-    mappedNodes.pop();
-  }
-  while (!unmappedNodes.empty())
-  {
-    unmappedNodes.pop();
-  }
+	for (DFGNode *node : sortedNodeList)
+	{
+		unmappedNodes.push(node);
+	}
 
-  for (DFGNode *node : sortedNodeList)
-  {
-    unmappedNodes.push(node);
-  }
+	std::cout << "*******************************************************SA MAP begin***************************\n";
 
-  std::cout << "*******************************************************SA MAP begin***************************\n";
-  
-
-  data_routing_path.clear();
+	data_routing_path.clear();
 	dfg_node_placement.clear();
-	if(!initMap()){
+	//initial mapping
+	if (!initMap())
+	{
 		// assert(false && "how come?");
-		std::cout<<"cannot find an initial mapping, exit....\n";
+		std::cout << "cannot find an initial mapping, exit....\n";
 		return false;
 	}
-  
+
+	//get mapping information
+	
 	int unmapped_node_numer = getNumberOfUnmappedNodes();
 	int overuse_number = getCongestionNumber();
-	std::cout<<"Initial mapping done. unmapped node:"<<unmapped_node_numer<<" overuse:" <<overuse_number<<" \n";
+	std::cout << "Initial mapping done. unmapped node:" << unmapped_node_numer << " overuse:" << overuse_number<<" cost:"<<getCost() << " \n";
+	std::cout<<"unmapped node: \n";
+	for (auto node : sortedNodeList)
+	{
+		if (dfg_node_placement.find(node) == dfg_node_placement.end())
+		{
+			std::cout<<"\t"<<node->idx<<"  "<<node->op<<"\n";
+		}
+	}
+
 	
-	if(unmapped_node_numer == 0 && overuse_number == 0){
-		std::cout<<"find a valid initial mapping, exit....II ="<<this->cgra->get_t_max()<<"\n";
+	if (unmapped_node_numer == 0 && overuse_number == 0)
+	{
+		std::cout << "find a valid initial mapping, exit....II =" << this->cgra->get_t_max() << "\n";
 		return true;
 	}
-	std::cout<<"maximum temperature:"<<maximum_temp<<" minimum temperature:"<<minimim_temp<<"\n";
+
+
+	//start Simulated Annealing mapping
+	std::cout << "maximum temperature:" << maximum_temp << " minimum temperature:" << minimim_temp << "\n";
 	curr_cost = getCost();
 	curr_temp = maximum_temp;
-	while(curr_temp > minimim_temp){
-		std::cout<<"*******************************current temperature:"<<curr_temp<<"\n";
+
+	while (curr_temp > minimim_temp)
+	{
+		std::cout << "*******************************current temperature:" << curr_temp << "\n";
 		float accept_rate = inner_map();
-		std::cout << "accept_rate:" << accept_rate << " # of overuse:" << getCongestionNumber() << " unmapped nodes:" << getNumberOfUnmappedNodes() << "\n";
+		std::cout << "accept_rate:" << accept_rate << " # of overuse:" << getCongestionNumber() << " unmapped nodes:" << getNumberOfUnmappedNodes()<<" cost:"<<curr_cost << "\n";
+		std::cout<<"unmapped node: \n";
+		for (auto node : sortedNodeList)
+		{
+			if (dfg_node_placement.find(node) == dfg_node_placement.end())
+			{
+				std::cout<<"\t"<<node->idx<<"  "<<node->op<<"\n";
+			}
+		}
 		curr_temp = updateTemperature(curr_temp, accept_rate);
-		
-		if(isCurrMappingValid()){
-			std::cout<<"find a valid mapping, exit...II ="<<this->cgra->get_t_max()<<"\n";
+
+		if (isCurrMappingValid())
+		{
+			std::cout << "find a valid mapping, exit...II =" << this->cgra->get_t_max() << "\n";
 			break;
 		}
 	}
-  
-	return  isCurrMappingValid();
+
+	return isCurrMappingValid();
 }
 
-bool CGRAXMLCompile::SAMapper::initMap(){
+bool CGRAXMLCompile::SAMapper::initMap()
+{
 
 	std::stack<DFGNode *> mappedNodes;
 	std::stack<DFGNode *> unmappedNodes;
@@ -187,25 +201,22 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 		MapHeader << ",mutexPathEn = " << this->enableMutexPaths;
 		MapHeader << "\n";
 
-			std::cout << MapHeader.str();
-
+		std::cout << MapHeader.str();
 
 		bool isEstRouteSucc = false;
 
-		
-
-		//fill the routing information
+		// fill the routing information
 		if (estimatedRouteInfo.find(node) == estimatedRouteInfo.end())
 		{
-			//the routes are not estimated.
-			
+			// the routes are not estimated.
+
 			DFGNode *failedNode;
 			std::priority_queue<dest_with_cost> estimatedRoutes;
 			isEstRouteSucc = estimateRouting(node, estimatedRoutes, &failedNode);
-			if(isEstRouteSucc){
+			if (isEstRouteSucc)
+			{
 				estimatedRouteInfo[node] = estimatedRoutes;
 			}
-			
 		}
 
 		bool isRouteSucc = false;
@@ -216,22 +227,24 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 		if (!estimatedRouteInfo[node].empty())
 		{
 			isRouteSucc = Route(node, estimatedRouteInfo[node], &failedNode);
-			if (!isRouteSucc){
+			if (!isRouteSucc)
+			{
 				LOG(ROUTE) << "route not successful!\n";
-				
 			}
 			// else if(!estimatedRouteInfo[node].empty()){
 			// 	//route not successful
 			// }
-		} else{
+		}
+		else
+		{
 			isRouteSucc = false;
 		}
 
 		if (!isRouteSucc)
 		{
-			std::cout<<"----------node" <<node->idx<<" not mapped in initial mapping\n";
+			std::cout << "----------node" << node->idx << " not mapped in initial mapping\n";
 
-			return false;
+			// return false;
 
 			if (enableBackTracking) // always false
 			{
@@ -256,7 +269,7 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 			{
 
 				node->clear(this->dfg);
-				std::cout<<"----------node" <<node->idx<<" not mapped in initial mapping\n";
+				std::cout << "----------node" << node->idx << " not mapped in initial mapping\n";
 			}
 		}
 		backTrackCredits = std::min(this->backTrackLimit, backTrackCredits + 1);
@@ -264,72 +277,74 @@ bool CGRAXMLCompile::SAMapper::initMap(){
 	}
 
 	return true;
-
 }
 
-
-float CGRAXMLCompile::SAMapper::inner_map(){
+float CGRAXMLCompile::SAMapper::inner_map()
+{
 	int accepted_number = 0;
-  
-  for(int i = 0 ; i < movement_in_each_temp; i ++ ){
-		LOG(SA)<<"************ NO."<<i<<" movement, unmapped nodes:"<<getNumberOfUnmappedNodes()<< ", congestion:"<<getCongestionNumber();
 
+	for (int i = 0; i < movement_in_each_temp; i++)
+	{
+		LOG(SA) << "************ NO." << i << " movement, unmapped nodes:" << getNumberOfUnmappedNodes() << ", congestion:" << getCongestionNumber();
 
-		//select DFG node to unmap. If this node is not mapped yet, will select a parent to unmap as well.
+		// select DFG node to unmap. If this node is not mapped yet, will select a parent to unmap as well.
 		std::vector<DFGNode *> moved_nodes;
-    	auto selected_dfg_node = selectDFGNodeToUnmap();
-		DFGNode * child_node = NULL;
-		if(dfg_node_placement.find(selected_dfg_node)== dfg_node_placement.end()){
+		auto selected_dfg_node = selectDFGNodeToUnmap();
+		DFGNode *child_node = NULL;
+		if (dfg_node_placement.find(selected_dfg_node) == dfg_node_placement.end())
+		{
 			// this node is not placed yet because of routing failure.
 			// The reason for routing failure is that it cannot route to its parent nodes or recurrent dependency constraint;
 			child_node = selected_dfg_node;
 			selected_dfg_node = selectAParentForDFGNode(child_node);
-			LOG(SA)<<"----------be careful. Have a child node "<<child_node->idx<<"\n";
+			LOG(SA) << "----------be careful. Have a child node " << child_node->idx << "\n";
 		}
 		// assert(dfg_node_placement.find(selected_dfg_node)!= dfg_node_placement.end());
-		std::map<DFGNode*, std::pair<DataPath*, int>> old_dfg_node_placement ;
+		std::map<DFGNode *, std::pair<DataPath *, int>> old_dfg_node_placement;
 		old_dfg_node_placement.insert(dfg_node_placement.begin(), dfg_node_placement.end());
 		std::map<dfg_data, std::vector<LatPort>> old_data_routing_path;
 		old_data_routing_path.insert(data_routing_path.begin(), data_routing_path.end());
-		
-    	
-		
-		//start map
+
+		// start map
 		clearNodeMapping(selected_dfg_node);
 		auto dp_candidate = getRandomDPCandidate(selected_dfg_node).front();
-		LOG(SA)<<"map selected DFG node:"<<selected_dfg_node->idx<<" op:"<<selected_dfg_node->op<<" current_pe:"<<dp_candidate->getPE()->getName()<<"\n";
+		LOG(SA) << "map selected DFG node:" << selected_dfg_node->idx << " op:" << selected_dfg_node->op << " current_pe:" << dp_candidate->getPE()->getName() << "\n";
 		bool route_succ = SARoute(selected_dfg_node, dp_candidate);
 		moved_nodes.push_back(selected_dfg_node);
 
-		//map the unmapped parents of this child node
-		if(route_succ && child_node!= NULL && false  ){
-			//or skip this
+		// map the unmapped parents of this child node
+		if (route_succ && child_node != NULL && false)
+		{
+			// or skip this
 
-
-			//find the unmapped nodes
-			std::vector<DFGNode*> unmappedParents;
-			for(auto parent: child_node->parents){
-				if(dfg_node_placement.find(parent)== dfg_node_placement.end()){
+			// find the unmapped nodes
+			std::vector<DFGNode *> unmappedParents;
+			for (auto parent : child_node->parents)
+			{
+				if (dfg_node_placement.find(parent) == dfg_node_placement.end())
+				{
 					unmappedParents.push_back(parent);
 				}
 			}
 
-			for(auto parent: unmappedParents){
+			for (auto parent : unmappedParents)
+			{
 				moved_nodes.push_back(parent);
 				clearNodeMapping(parent);
 				auto dp_candidate = getRandomDPCandidate(parent).front();
-				LOG(SA)<<"route other parent node = "<<parent->idx<<" op:"<<parent->op<<" current_pe:"<<dp_candidate->getPE()->getName()<<"\n";
-				if( !SARoute(parent, dp_candidate)){
+				LOG(SA) << "route other parent node = " << parent->idx << " op:" << parent->op << " current_pe:" << dp_candidate->getPE()->getName() << "\n";
+				if (!SARoute(parent, dp_candidate))
+				{
 					route_succ = false;
 					break;
 				}
-				
 			}
 		}
 
-		//process the child node
-		if(route_succ && child_node!= NULL  ){
-			LOG(SA)<<"----------be careful. Processing the child node = "<<child_node->idx<<"\n";
+		// process the child node
+		if (route_succ && child_node != NULL)
+		{
+			LOG(SA) << "----------be careful. Processing the child node = " << child_node->idx << "\n";
 			std::priority_queue<dest_with_cost> estimatedRoutes;
 			DFGNode *failedNode;
 			bool isEstRouteSucc = estimateRouting(child_node, estimatedRoutes, &failedNode);
@@ -338,148 +353,171 @@ float CGRAXMLCompile::SAMapper::inner_map(){
 			{
 				isRouteSucc = Route(child_node, estimatedRoutes, &failedNode);
 			}
-			if(!isRouteSucc){
+			if (!isRouteSucc)
+			{
 				clearNodeMapping(child_node);
 			}
 			moved_nodes.push_back(child_node);
 		}
 
-		//decide accept or node
-    	bool accept = false;
+		// decide accept or node
+		bool accept = false;
 		int attempted_cost = getCost();
-		if(route_succ && child_node!= NULL && dfg_node_placement.find(child_node)!= dfg_node_placement.end()){
+		if (route_succ && child_node != NULL && dfg_node_placement.find(child_node) != dfg_node_placement.end())
+		{
 			// if route success, has a child_node and successfully route
 			accept = true;
-		}else if(route_succ){
+		}
+		else if (route_succ)
+		{
 			// if not route success, then nothing changes and should restore mapping
-			accept = whetherAcceptNewMapping(attempted_cost,curr_cost,  curr_temp); 
+			accept = whetherAcceptNewMapping(attempted_cost, curr_cost, curr_temp);
 		}
-    
-		LOG(SA)<<"accept "<<accept<<" route_succ:"<<route_succ<<" curr_cost:"<<curr_cost<<" attepmted cost:"<<attempted_cost<<"\n";
 
-		if(accept){
-		//update overuse
-		// save the mapping state
-				curr_cost =  attempted_cost;
-				accepted_number ++;
+		LOG(SA) << "accept " << accept << " route_succ:" << route_succ << " curr_cost:" << curr_cost << " attepmted cost:" << attempted_cost << "\n";
 
-				old_dfg_node_placement.clear();
-				old_data_routing_path.clear();
-				if(isCurrMappingValid()){
-					std::cout<<"find a valid mapping, exit inner_map....\n";
-					return (float(accepted_number))/movement_in_each_temp;
-				}
-				
-		}else{
-				for(auto node: moved_nodes){
-					clearNodeMapping(node);
-					restoreMapping(node, old_dfg_node_placement, old_data_routing_path);
-				}
-				
-				dfg_node_placement.clear();
-				dfg_node_placement.insert(old_dfg_node_placement.begin(), old_dfg_node_placement.end());
-				data_routing_path.clear();
-				data_routing_path.insert(old_data_routing_path.begin(), old_data_routing_path.end());
-				old_dfg_node_placement.clear();
-				old_data_routing_path.clear();
+		if (accept)
+		{
+			// update overuse
+			//  save the mapping state
+			curr_cost = attempted_cost;
+			accepted_number++;
+
+			old_dfg_node_placement.clear();
+			old_data_routing_path.clear();
+			if (isCurrMappingValid())
+			{
+				std::cout << "find a valid mapping, exit inner_map....\n";
+				return (float(accepted_number)) / movement_in_each_temp;
+			}
 		}
-		
+		else
+		{
+			for (auto node : moved_nodes)
+			{
+				clearNodeMapping(node);
+				restoreMapping(node, old_dfg_node_placement, old_data_routing_path);
+			}
+
+			dfg_node_placement.clear();
+			dfg_node_placement.insert(old_dfg_node_placement.begin(), old_dfg_node_placement.end());
+			data_routing_path.clear();
+			data_routing_path.insert(old_data_routing_path.begin(), old_data_routing_path.end());
+			old_dfg_node_placement.clear();
+			old_data_routing_path.clear();
+		}
 	}
-	return (float(accepted_number))/movement_in_each_temp;
- 
+	return (float(accepted_number)) / movement_in_each_temp;
 }
 
+CGRAXMLCompile::DFGNode *CGRAXMLCompile::SAMapper::selectDFGNodeToUnmap()
+{
 
-CGRAXMLCompile::DFGNode * CGRAXMLCompile::SAMapper::selectDFGNodeToUnmap(){
-	std::vector<DFGNode*> unmapped_node;
-	for(auto node: sortedNodeList)
+	std::random_device r;
+	std::default_random_engine e1(r());
+	std::uniform_int_distribution<int> uniform_dist(0, sortedNodeList.size() - 1);
+	return sortedNodeList[std::abs(std::round(uniform_dist(e1)))];
+
+	// select random node;
+
+	std::vector<DFGNode *> unmapped_node;
+	for (auto node : sortedNodeList)
 	{
-		if(dfg_node_placement.find(node) == dfg_node_placement.end()){
+		if (dfg_node_placement.find(node) == dfg_node_placement.end())
+		{
 			unmapped_node.push_back(node);
 		}
 	}
-	std::random_device r;
-	std::default_random_engine e1(r());
-
 	
-	if(unmapped_node.size() == 0){
- 	  std::uniform_int_distribution<int> uniform_dist(0, sortedNodeList.size()-1);
+
+	if (unmapped_node.size() == 0)
+	{
+		std::uniform_int_distribution<int> uniform_dist(0, sortedNodeList.size() - 1);
 		return sortedNodeList[std::abs(std::round(uniform_dist(e1)))];
-	}else{
-		std::uniform_int_distribution<int> uniform_dist(0, unmapped_node.size()-1);
+	}
+	else
+	{
+		std::uniform_int_distribution<int> uniform_dist(0, unmapped_node.size() - 1);
 		return unmapped_node[std::abs(std::round(uniform_dist(e1)))];
 	}
-}	
+}
 
-CGRAXMLCompile::DFGNode* CGRAXMLCompile::SAMapper::selectAParentForDFGNode(DFGNode* target_node){
+CGRAXMLCompile::DFGNode *CGRAXMLCompile::SAMapper::selectAParentForDFGNode(DFGNode *target_node)
+{
 	// the parent node include: nodes has data dependency, or ones which has recurrent dependency (load/Store constraint)
-	std::vector<DFGNode*> candidates;
-	candidates.insert( candidates.end(), target_node->parents.begin(), target_node->parents.end() );
-	for(auto node: sortedNodeList){
+	std::vector<DFGNode *> candidates;
+	candidates.insert(candidates.end(), target_node->parents.begin(), target_node->parents.end());
+	for (auto node : sortedNodeList)
+	{
 		auto rec_parent = node->recParents;
 		// as the rec_parent is reversed in DFG, the rec_parent means rec_child actually.
-		if ( std::find(rec_parent.begin(), rec_parent.end(), target_node) != rec_parent.end() ){
+		if (std::find(rec_parent.begin(), rec_parent.end(), target_node) != rec_parent.end())
+		{
 			candidates.push_back(node);
 		}
 	}
 	assert(candidates.size() > 0);
 	std::random_device r;
 	std::default_random_engine e1(r());
-	std::uniform_int_distribution<int> uniform_dist(0, candidates.size()-1);
+	std::uniform_int_distribution<int> uniform_dist(0, candidates.size() - 1);
 	return candidates[std::abs(std::round(uniform_dist(e1)))];
 }
 
-
-bool CGRAXMLCompile::SAMapper::clearNodeMapping(DFGNode * node){
-	LOG(SA)<<"clear node ="<<node->idx; 
+bool CGRAXMLCompile::SAMapper::clearNodeMapping(DFGNode *node)
+{
+	LOG(SA) << "clear node =" << node->idx;
 	bool mapped = (dfg_node_placement.find(node) != dfg_node_placement.end());
-	if(mapped){
+	if (mapped)
+	{
 		dfg_node_placement.erase(dfg_node_placement.find(node));
 	}
 	bool routed = false;
-	for(auto it = data_routing_path.begin(); it != data_routing_path.end();){
+	for (auto it = data_routing_path.begin(); it != data_routing_path.end();)
+	{
 		// LOG(SA)<<"routing path:" << it->first.first->idx<<" -> "<<it->first.second->idx;
-		if(it->first.first == node || it->first.second == node ){
+		if (it->first.first == node || it->first.second == node)
+		{
 			routed = true;
 			it = data_routing_path.erase(it);
 		}
-		else{
-			it ++ ;
+		else
+		{
+			it++;
 		}
 	}
 	// assert(mapped ==  routed);
 
 	node->clear(this->dfg);
 	return true;
-
 }
 
-
-bool CGRAXMLCompile::SAMapper::restoreMapping(DFGNode *node, 	std::map<DFGNode*, std::pair<DataPath*, int>> & dfg_node_placement, 
-std::map<dfg_data, std::vector<LatPort>>& data_routing_path){
-	//assign placement
-	if(dfg_node_placement.find(node)!= dfg_node_placement.end()) {
+bool CGRAXMLCompile::SAMapper::restoreMapping(DFGNode *node, std::map<DFGNode *, std::pair<DataPath *, int>> &dfg_node_placement,
+											  std::map<dfg_data, std::vector<LatPort>> &data_routing_path)
+{
+	// assign placement
+	if (dfg_node_placement.find(node) != dfg_node_placement.end())
+	{
 		auto placement_info = dfg_node_placement[node];
 		placement_info.first->assignNode(node, placement_info.second, this->dfg);
 		node->rootDP = placement_info.first;
 	}
 
-	
-	
-
-	//assign routing
-	for(auto & data_path: data_routing_path){
-		if(data_path.first.first == node || data_path.first.second == node){
-		 assignPath(data_path.first.first, data_path.first.second,  data_path.second);
+	// assign routing
+	for (auto &data_path : data_routing_path)
+	{
+		if (data_path.first.first == node || data_path.first.second == node)
+		{
+			assignPath(data_path.first.first, data_path.first.second, data_path.second);
 		}
 	}
 
 	return true;
 }
 
-int CGRAXMLCompile::SAMapper::getCongestionNumber(){
+int CGRAXMLCompile::SAMapper::getCongestionNumber()
+{
 	int congestion_number = 0;
-	
+
 	for (std::pair<Port *, std::set<DFGNode *>> pair : congestedPorts)
 	{
 		Port *p = pair.first;
@@ -501,37 +539,38 @@ int CGRAXMLCompile::SAMapper::getCongestionNumber(){
 						LOG(CONGEST) << "," << node->idx << "|BB=" << node->BB;
 					}
 					LOG(CONGEST) << "\n";
-					congestion_number ++;
+					congestion_number++;
 					//					break;
 				}
-			
 			}
 		}
 	}
 	return congestion_number;
 }
 
-int CGRAXMLCompile::SAMapper::getPortUsage(){
+int CGRAXMLCompile::SAMapper::getPortUsage()
+{
 	int usage_number = 0;
-	
+
 	for (std::pair<Port *, std::set<DFGNode *>> pair : congestedPorts)
 	{
 		usage_number += pair.second.size();
-		
 	}
 	return usage_number;
 }
 
-int CGRAXMLCompile::SAMapper::getCost(){
+int CGRAXMLCompile::SAMapper::getCost()
+{
 	int unmapped_node_number = getNumberOfUnmappedNodes();
 	int port_usage = getPortUsage();
 	int congestion_number = getCongestionNumber();
-	int total_cost = unmapped_node_number *  100 + congestion_number * 10 + port_usage  ;
-	LOG(COST)<<"unmapped node:"<<unmapped_node_number<<" port usage:"<<port_usage<<" congestion:"<<congestion_number<<" total cost:"<<total_cost<<"\n";
+	int total_cost = unmapped_node_number * 100 + congestion_number * 10 + port_usage;
+	LOG(COST) << "unmapped node:" << unmapped_node_number << " port usage:" << port_usage << " congestion:" << congestion_number << " total cost:" << total_cost << "\n";
 	return total_cost;
 }
 
-bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath * candidateDP){
+bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath *candidateDP)
+{
 	std::map<DFGNode *, std::vector<Port *>> parent_output_ports;
 	std::map<DFGNode *, Port *> alreadyMappedChildPorts;
 
@@ -544,7 +583,7 @@ bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath * candidateDP){
 		{
 			//		std::cout << "parent = " << parent->idx << "\n";
 			if (parent->rootDP != NULL)
-			{ //already mapped
+			{ // already mapped
 				assert(parent->rootDP->getOutputDP()->getOutPort("T"));
 				parent_output_ports[parent].push_back(parent->rootDP->getOutputDP()->getOutPort("T"));
 			}
@@ -566,10 +605,11 @@ bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath * candidateDP){
 
 				int ii = child->rootDP->getCGRA()->get_t_max();
 				assert(child->rootDP->getLat() != -1);
-				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() + ii); //next iteration?
+				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() + ii); // next iteration?
 			}
-			else if(child->idx == node->idx){
-				//adding a placeholder as this will be modified according to the destination in consideration.
+			else if (child->idx == node->idx)
+			{
+				// adding a placeholder as this will be modified according to the destination in consideration.
 				alreadyMappedChildPorts[child] == NULL;
 			}
 		}
@@ -577,7 +617,7 @@ bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath * candidateDP){
 		minLat = getlatMinStartsPHI(node, parent_output_ports);
 		PE *pe = candidateDP->getPE();
 		CGRA *cgra = candidateDP->getCGRA();
-		II= cgra->get_t_max();
+		II = cgra->get_t_max();
 		int t = pe->T;
 		int minLatmodii = minLat % II;
 
@@ -591,77 +631,82 @@ bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath * candidateDP){
 		}
 	}
 
-
-	LOG(ROUTE)<<"***routing destination:"<<candidateDP->getFullName()<<"\n";
-  //check latency constraint before mapping
-	bool route_success = false; 
-	for(int iteration  = 0;iteration < maximum_routing_iteration; iteration++){
-		 //
-		LOG(ROUTE)<<"routing iteration:"<<iteration<<"\n";
+	LOG(ROUTE) << "***routing destination:" << candidateDP->getFullName() << "\n";
+	// check latency constraint before mapping
+	bool route_success = false;
+	for (int iteration = 0; iteration < maximum_routing_iteration; iteration++)
+	{
+		//
+		LOG(ROUTE) << "routing iteration:" << iteration << "\n";
 		int minLatDestVal_prime = minLat + II * iteration;
 
-		LatPort candiLatport ; // get a latency according to the iteration
-	
+		LatPort candiLatport; // get a latency according to the iteration
+
 		std::map<DFGNode *, std::vector<LatPort>> mappedChildPaths;
-		
+
 		FU *parentFU = candidateDP->getFU();
 		assert(parentFU->supportedOPs.find(node->op) != parentFU->supportedOPs.end());
 		int latency = parentFU->supportedOPs[node->op];
 		int minLatDestVal = minLatDestVal_prime;
-		//route parent nodes
-		for(auto& parent_info: parent_output_ports){
+		// route parent nodes
+		for (auto &parent_info : parent_output_ports)
+		{
 			auto parent = parent_info.first;
 			minLatDestVal = minLatDestVal_prime + parent->childNextIter[node] * II;
-			if (parent->getOPtype(node) == "PS"){
-				LOG(ROUTE)<< "Skipping.....\n";
+			if (parent->getOPtype(node) == "PS")
+			{
+				LOG(ROUTE) << "Skipping.....\n";
 				continue;
 			}
-					
+
 			Port *destPort = candidateDP->getInPort(parent->getOPtype(node));
-			LatPort destPortLat = std::make_pair(minLatDestVal , destPort);
+			LatPort destPortLat = std::make_pair(minLatDestVal, destPort);
 			if (!canExitCurrPE(destPortLat))
 			{
-					LOG(ROUTE)<< "cannot exit current PE. Continue.....\n";
-					route_success = false;
-					break;
+				LOG(ROUTE) << "cannot exit current PE. Continue.....\n";
+				route_success = false;
+				break;
 			}
 			auto startCand = parent_info.second.front();
 			LatPort startCandLat = std::make_pair(startCand->getLat(), startCand);
-			int cost; 
+			int cost;
 			std::vector<LatPort> path;
 			std::map<Port *, std::set<DFGNode *>> mutexPaths;
-			route_success  = LeastCostPathAstar(startCandLat, destPortLat, candidateDP, path, cost, parent, mutexPaths, node);
-			
-			if(route_success){
-				
-				LOG(SA)<<"routing success from " <<parent->idx<<","<< startCand->getFullName()<<","<<startCandLat.first<<" to "
-				<<node->idx<<","<< destPort->getFullName()<<","<<destPortLat.first<<"\n";
+			route_success = LeastCostPathAstar(startCandLat, destPortLat, candidateDP, path, cost, parent, mutexPaths, node);
+
+			if (route_success)
+			{
+
+				LOG(SA) << "routing success from " << parent->idx << "," << startCand->getFullName() << "," << startCandLat.first << " to "
+						<< node->idx << "," << destPort->getFullName() << "," << destPortLat.first << "\n";
 				assignPath(parent, node, path);
-				data_routing_path.emplace(std::make_pair(parent, node),path );
-			}else{
-				
-				LOG(SA)<<"routing failure from " <<parent->idx<<","<< startCand->getFullName()<<","<<startCandLat.first<<" to "
-				<<node->idx<<","<< destPort->getFullName()<<","<<destPortLat.first<<"\n";
+				data_routing_path.emplace(std::make_pair(parent, node), path);
+			}
+			else
+			{
+
+				LOG(SA) << "routing failure from " << parent->idx << "," << startCand->getFullName() << "," << startCandLat.first << " to "
+						<< node->idx << "," << destPort->getFullName() << "," << destPortLat.first << "\n";
 				break;
 			}
 		}
 
-		if(!route_success){
+		if (!route_success)
+		{
 			node->clear(this->dfg);
 			continue;
 		}
 
-
-		//route child nodes
+		// route child nodes
 		for (std::pair<DFGNode *, Port *> pair : alreadyMappedChildPorts)
 		{
 			DFGNode *child = pair.first;
 			Port *childDestPort = pair.second;
-			DataPath* childDP = child->rootDP;
+			DataPath *childDP = child->rootDP;
 
 			if (node->childrenOPType[child] == "PS")
 			{
-				LOG(ROUTE)<< "Skipping.....\n";
+				LOG(ROUTE) << "Skipping.....\n";
 				continue;
 			}
 
@@ -684,7 +729,7 @@ bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath * candidateDP){
 			std::map<Port *, std::set<DFGNode *>> mutexPaths;
 			// if (detailedDebug)
 			// 	std::cout << "already child Estimating Path" << destPort->getFullName() << "," << minLatDestVal + latency << ","
-			// 				<< "--->" << childDestPort->getFullName() << "," << childDestPort->getLat() << "," << "exist_child = " << child->idx  
+			// 				<< "--->" << childDestPort->getFullName() << "," << childDestPort->getLat() << "," << "exist_child = " << child->idx
 			// 				<< "\n";
 			// if (detailedDebug)
 			// 	std::cout << "lat = " << childDestPort->getLat() << ",PE=" << childDestPort->getMod()->getPE()->getName() << ",t=" << childDestPort->getMod()->getPE()->T << "\n";
@@ -693,46 +738,45 @@ bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath * candidateDP){
 			assert(childDestPort->getLat() != -1);
 			LatPort destPortLat = std::make_pair(minLatDestVal + latency, destPort);
 
-			route_success  = LeastCostPathAstar(destPortLat, childDestPortLat, childDP, path, cost, node, mutexPaths, child);
+			route_success = LeastCostPathAstar(destPortLat, childDestPortLat, childDP, path, cost, node, mutexPaths, child);
 
+			if (route_success)
+			{
 
-			if(route_success){
-			
-				LOG(SA)<<"routing success from " <<node->idx<<","<< destPort->getFullName()<<","<<destPortLat.first<<" to "
-				<<child->idx<<","<< childDestPort->getFullName()<<","<<childDestPortLat.first<<"\n";
+				LOG(SA) << "routing success from " << node->idx << "," << destPort->getFullName() << "," << destPortLat.first << " to "
+						<< child->idx << "," << childDestPort->getFullName() << "," << childDestPortLat.first << "\n";
 				assignPath(node, child, path);
-				data_routing_path.emplace(std::make_pair(node, child),path );
-			}else{
-				
-				LOG(SA)<<"routing failure from " <<node->idx<<","<< destPort->getFullName()<<","<<destPortLat.first<<" to "
-				<<child->idx<<","<< childDestPort->getFullName()<<","<<childDestPortLat.first<<"\n";
+				data_routing_path.emplace(std::make_pair(node, child), path);
+			}
+			else
+			{
+
+				LOG(SA) << "routing failure from " << node->idx << "," << destPort->getFullName() << "," << destPortLat.first << " to "
+						<< child->idx << "," << childDestPort->getFullName() << "," << childDestPortLat.first << "\n";
 				break;
 			}
 		}
-		if(!route_success){
+		if (!route_success)
+		{
 			node->clear(this->dfg);
 			continue;
 		}
-
 
 		candidateDP->assignNode(node, minLatDestVal, this->dfg);
 		dfg_node_placement.emplace(node, std::make_pair(candidateDP, minLatDestVal));
 		node->rootDP = candidateDP;
 		break;
 	}
-	// if(route_success) 
+	// if(route_success)
 	return route_success;
-  
-
 }
 
-
-
-std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::SAMapper::getRandomDPCandidate(DFGNode *node){
-  std::vector<DataPath *> candidateDests;
+std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::SAMapper::getRandomDPCandidate(DFGNode *node)
+{
+	std::vector<DataPath *> candidateDests;
 	int penalty = 0;
 	std::map<DataPath *, int> dpPenaltyMap;
-  unordered_set<PE *> allPEs = cgra->getAllPEList();
+	unordered_set<PE *> allPEs = cgra->getAllPEList();
 	for (PE *currPE : allPEs)
 	{
 		for (Module *submod : currPE->subModules)
@@ -752,16 +796,19 @@ std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::SAMapper::getRandomDPCand
 						if (DataPath *dp = dynamic_cast<DataPath *>(submodFU))
 						{
 
-							if(cgra->is_spm_modelled){
-								if(!node->base_pointer_name.empty()){
-									//base pointer name is not empty
-									if(dp->accesible_memvars.find(node->base_pointer_name) == dp->accesible_memvars.end()){
-										//this dp does not support the variable
+							if (cgra->is_spm_modelled)
+							{
+								if (!node->base_pointer_name.empty())
+								{
+									// base pointer name is not empty
+									if (dp->accesible_memvars.find(node->base_pointer_name) == dp->accesible_memvars.end())
+									{
+										// this dp does not support the variable
 										continue;
 									}
 								}
 							}
-							
+
 							if (checkDPFree(dp, node, penalty))
 							{
 								//									if(dp->getMappedNode()==NULL){
@@ -784,12 +831,15 @@ std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::SAMapper::getRandomDPCand
 						{
 
 							bool is_mem_op = node->op.find("LOAD") != string::npos || node->op.find("STORE") != string::npos;
-							if(cgra->is_spm_modelled){
-								if(!node->base_pointer_name.empty() && is_mem_op){
-									//base pointer name is not empty
-									if(dp->accesible_memvars.find(node->base_pointer_name) == dp->accesible_memvars.end()){
-										//this dp does not support the variable
-										LOG(ROUTE) << "memvar=" << node->base_pointer_name <<  " is not supported in " << dp->getFullName() << "\n";
+							if (cgra->is_spm_modelled)
+							{
+								if (!node->base_pointer_name.empty() && is_mem_op)
+								{
+									// base pointer name is not empty
+									if (dp->accesible_memvars.find(node->base_pointer_name) == dp->accesible_memvars.end())
+									{
+										// this dp does not support the variable
+										LOG(ROUTE) << "memvar=" << node->base_pointer_name << " is not supported in " << dp->getFullName() << "\n";
 										continue;
 									}
 								}
@@ -813,23 +863,21 @@ std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::SAMapper::getRandomDPCand
 		}
 	}
 
-  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 
-  shuffle (candidateDests.begin(), candidateDests.end(), std::default_random_engine(seed));
+	shuffle(candidateDests.begin(), candidateDests.end(), std::default_random_engine(seed));
 
-  return candidateDests;
-
-
+	return candidateDests;
 }
 
-//compated to the PathFinderMapper one, add some additional information for SA. 
+// compated to the PathFinderMapper one, add some additional information for SA.
 bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
-											 std::priority_queue<dest_with_cost> &estimatedRoutes,
-											 DFGNode **failedNode)
+									 std::priority_queue<dest_with_cost> &estimatedRoutes,
+									 DFGNode **failedNode)
 {
 
 	LOG(ROUTE) << "Route begin...\n";
-	
+
 	int parentRoutingPortCount = 0;
 	int routedParents = 0;
 
@@ -862,14 +910,14 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 
 		if (currDest.dest->getMappedNode() != NULL)
 		{
-			LOG(ROUTE)<< "currDest is not NULL \n";
-			LOG(ROUTE)<< "currDP:" << currDest.dest->getName() << ",currPE:" << currDest.dest->getPE()->getName() << "\n";
-			LOG(ROUTE)<< "currNode:" << currDest.dest->getMappedNode()->idx << "\n";
+			LOG(ROUTE) << "currDest is not NULL \n";
+			LOG(ROUTE) << "currDP:" << currDest.dest->getName() << ",currPE:" << currDest.dest->getPE()->getName() << "\n";
+			LOG(ROUTE) << "currNode:" << currDest.dest->getMappedNode()->idx << "\n";
 		}
 		assert(currDest.dest->getMappedNode() == NULL);
-		LOG(ROUTE)<< "alreadyMappedChilds = " << currDest.alreadyMappedChilds.size() << "\n";
+		LOG(ROUTE) << "alreadyMappedChilds = " << currDest.alreadyMappedChilds.size() << "\n";
 
-		bool alreadMappedChildRouteSucc = true; //this will change to false if failure in alreadyMappedChilds
+		bool alreadMappedChildRouteSucc = true; // this will change to false if failure in alreadyMappedChilds
 		std::map<DFGNode *, std::vector<LatPort>> mappedChildPaths;
 		std::map<DFGNode *, std::map<Port *, std::set<DFGNode *>>> mappedChildMutexPaths;
 		while (!currDest.alreadyMappedChilds.empty())
@@ -913,27 +961,27 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 				if (alreadMappedChildRouteSucc)
 				{
 					assignPath(node, dest_child_with_cost_ins.child, path);
-					data_routing_path.emplace(std::make_pair(node, dest_child_with_cost_ins.child),path );
+					data_routing_path.emplace(std::make_pair(node, dest_child_with_cost_ins.child), path);
 					mappedChildPaths[dest_child_with_cost_ins.child] = path;
 					mappedChildMutexPaths[dest_child_with_cost_ins.child] = mutexPaths;
-					LOG(SA)<< "Route success :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "|node=" << node->idx << "\n";
+					LOG(SA) << "Route success :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "|node=" << node->idx << "\n";
 					break;
 				}
 				else
 				{
-					LOG(SA)<< "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
+					LOG(SA) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
 					for (LatPort p : path)
 					{
 						if (p.second->getMod()->getPE())
 						{
-							LOG(SA)<< p.second->getMod()->getPE()->getName() << "-->";
+							LOG(SA) << p.second->getMod()->getPE()->getName() << "-->";
 						}
 					}
-					LOG(SA)<< "\n";
+					LOG(SA) << "\n";
 
 					for (LatPort p : path)
 					{
-						LOG(SA)<< p.second->getFullName() << "\n";
+						LOG(SA) << p.second->getFullName() << "\n";
 					}
 				}
 				path.clear();
@@ -951,42 +999,42 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 			{
 				Port *p = pair.first;
 				int destIdx = pair.second;
-				LOG(ROUTE)<< "to:" << destIdx << "," << p->getFullName() << "\n";
+				LOG(ROUTE) << "to:" << destIdx << "," << p->getFullName() << "\n";
 			}
 		}
 
 		if (!alreadMappedChildRouteSucc)
 		{
 			node->clear(this->dfg);
-			continue; //try the next dest
+			continue; // try the next dest
 		}
 		else
 		{
 			std::stringstream ss;
-			ss<< "Already Mapped child Routes....\n";
+			ss << "Already Mapped child Routes....\n";
 			for (std::pair<DFGNode *, std::vector<LatPort>> pair : mappedChildPaths)
 			{
 				DFGNode *child = pair.first;
 				for (LatPort lp : pair.second)
 				{
 					Port *p = lp.second;
-					ss<< "to:" << child->idx << " :: ";
-					ss<< p->getFullName();
+					ss << "to:" << child->idx << " :: ";
+					ss << p->getFullName();
 					if (mappedChildMutexPaths[child].find(p) != mappedChildMutexPaths[child].end())
 					{
-						ss<< "|mutex(";
+						ss << "|mutex(";
 						for (DFGNode *mutexnode : mappedChildMutexPaths[child][p])
 						{
-							ss<< mutexnode->idx << ",";
+							ss << mutexnode->idx << ",";
 						}
-						ss<< ")";
+						ss << ")";
 					}
-					ss<< "\n";
+					ss << "\n";
 				}
-				ss<< "\n";
+				ss << "\n";
 			}
-			ss<< "\n";
-			LOG(ROUTE)<<ss.str();
+			ss << "\n";
+			LOG(ROUTE) << ss.str();
 		}
 
 		bool parentRoutSucc = true;
@@ -1017,7 +1065,7 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 					//						routedParent=false;
 					//					}
 					assignPath(parent, node, path);
-					data_routing_path.emplace(std::make_pair(parent, node),path );
+					data_routing_path.emplace(std::make_pair(parent, node), path);
 
 					mappedParentMutexPaths[parent] = mutexPath;
 					addedRoutingParentPorts += path.size();
@@ -1034,7 +1082,7 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 				{
 					addedRoutingParentPorts = 0;
 					node->clear(this->dfg);
-					LOG(SA)<< "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
+					LOG(SA) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
 				}
 				path.clear();
 			}
@@ -1049,34 +1097,34 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 		}
 
 		if (parentRoutSucc)
-		{ //all parents routed succesfull + all mapped childs are connected
+		{ // all parents routed succesfull + all mapped childs are connected
 			routeSucc = true;
 			std::stringstream ss;
-			ss<< "node=" << node->idx << ",op=" << node->op << " is mapped to " << currDest.dest->getPE()->getName() << ",lat=" << currDest.destLat << "\n";
-			ss<< "routing info ::\n";
+			ss << "node=" << node->idx << ",op=" << node->op << " is mapped to " << currDest.dest->getPE()->getName() << ",lat=" << currDest.destLat << "\n";
+			ss << "routing info ::\n";
 			for (DFGNode *parent : node->parents)
 			{
-				ss<< "parent routing port size = " << parent->routingPorts.size() << "\n";
+				ss << "parent routing port size = " << parent->routingPorts.size() << "\n";
 				int prev_lat = -1;
 				for (std::pair<Port *, int> pair : parent->routingPorts)
 				{
 					Port *p = pair.first;
 					//					if(node.routingPortDestMap[p]==&node){
-					ss<< "fr:" << parent->idx << " :: ";
-					ss<< ",dest=" << pair.second << " :: ";
-					ss<< p->getFullName();
-					ss<< ",lat=" << p->getLat();
+					ss << "fr:" << parent->idx << " :: ";
+					ss << ",dest=" << pair.second << " :: ";
+					ss << p->getFullName();
+					ss << ",lat=" << p->getLat();
 
 					if (mappedParentMutexPaths[parent].find(p) != mappedParentMutexPaths[parent].end())
 					{
-						ss<< "|mutex(";
+						ss << "|mutex(";
 						for (DFGNode *mutexnode : mappedParentMutexPaths[parent][p])
 						{
-							ss<< mutexnode->idx << ",";
+							ss << mutexnode->idx << ",";
 						}
-						ss<< ")";
+						ss << ")";
 					}
-					ss<< std::endl;
+					ss << std::endl;
 					//					}
 					if (prev_lat != -1)
 					{
@@ -1085,15 +1133,15 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 					prev_lat = p->getLat();
 				}
 			}
-			ss<< "routing info done.\n";
+			ss << "routing info done.\n";
 			currDest.dest->assignNode(node, currDest.destLat, this->dfg);
 			node->rootDP = currDest.dest;
 			dfg_node_placement.emplace(node, std::make_pair(currDest.dest, currDest.destLat));
 
-			mappingLog4 << node->idx << "," << currDest.dest->getPE()->X << ","<< currDest.dest->getPE()->Y << "," << currDest.destLat << "\n";
-			ss << "mappingLog4=" << node->idx << "," << currDest.dest->getPE()->X << ","<< currDest.dest->getPE()->Y << "," << currDest.destLat << "\n";
-			LOG(ROUTE)<<ss.str();
-			
+			mappingLog4 << node->idx << "," << currDest.dest->getPE()->X << "," << currDest.dest->getPE()->Y << "," << currDest.destLat << "\n";
+			ss << "mappingLog4=" << node->idx << "," << currDest.dest->getPE()->X << "," << currDest.dest->getPE()->Y << "," << currDest.destLat << "\n";
+			LOG(ROUTE) << ss.str();
+
 			break;
 		}
 		node->clear(this->dfg);
@@ -1101,7 +1149,7 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 
 	if (routeSucc)
 	{
-		LOG(SA)<< "Route success...\n";
+		LOG(SA) << "Route success...\n";
 
 		int parentRoutingPortCountEnd = 0;
 		//		int mappedParentCount=0;
@@ -1116,9 +1164,9 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 		parentRoutingPortCountEnd = std::max(0, parentRoutingPortCountEnd - routedParents);
 		if (parentRoutingPortCountEnd != parentRoutingPortCount + addedRoutingParentPorts)
 		{
-			LOG(ROUTE)<< "parentRoutingPortCountEnd=" << parentRoutingPortCountEnd << "\n";
-			LOG(ROUTE)<< "addedRoutingParentPorts=" << addedRoutingParentPorts << "\n";
-			LOG(ROUTE)<< "parentRoutingPortCount=" << parentRoutingPortCount << "\n";
+			LOG(ROUTE) << "parentRoutingPortCountEnd=" << parentRoutingPortCountEnd << "\n";
+			LOG(ROUTE) << "addedRoutingParentPorts=" << addedRoutingParentPorts << "\n";
+			LOG(ROUTE) << "parentRoutingPortCount=" << parentRoutingPortCount << "\n";
 		}
 
 		//		assert(parentRoutingPortCountEnd==parentRoutingPortCount+addedRoutingParentPorts);
@@ -1130,7 +1178,7 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 		dfg_node_placement.emplace(node, std::make_pair(currDest.dest, currDest.destLat));
 		node->rootDP = currDest.dest;
 		node->clear(this->dfg);
-		LOG(ROUTE)<< "Route failed...\n";
+		LOG(ROUTE) << "Route failed...\n";
 
 		int parentRoutingPortCountEnd = 0;
 		//		int mappedParentCount=0;
@@ -1145,9 +1193,9 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 		parentRoutingPortCountEnd = std::max(0, parentRoutingPortCountEnd - routedParents);
 		if (parentRoutingPortCountEnd != parentRoutingPortCount + addedRoutingParentPorts)
 		{
-			LOG(ROUTE)<< "parentRoutingPortCountEnd=" << parentRoutingPortCountEnd << "\n";
-			LOG(ROUTE)<< "addedRoutingParentPorts=" << addedRoutingParentPorts << "\n";
-			LOG(ROUTE)<< "parentRoutingPortCount=" << parentRoutingPortCount << "\n";
+			LOG(ROUTE) << "parentRoutingPortCountEnd=" << parentRoutingPortCountEnd << "\n";
+			LOG(ROUTE) << "addedRoutingParentPorts=" << addedRoutingParentPorts << "\n";
+			LOG(ROUTE) << "parentRoutingPortCount=" << parentRoutingPortCount << "\n";
 		}
 		//		assert(parentRoutingPortCountEnd==parentRoutingPortCount);
 		assert(*failedNode != NULL);
@@ -1155,39 +1203,49 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 	}
 }
 
-
-std::string CGRAXMLCompile::SAMapper::mapStatus(){
+std::string CGRAXMLCompile::SAMapper::mapStatus()
+{
 	std::stringstream ss;
-	for(auto node: sortedNodeList)
+	for (auto node : sortedNodeList)
 	{
-		if(dfg_node_placement.find(node) == dfg_node_placement.end()){
-			ss<<"node "<<node->idx<<" not placed.\n";
-		}else{
+		if (dfg_node_placement.find(node) == dfg_node_placement.end())
+		{
+			ss << "node " << node->idx << " not placed.\n";
+		}
+		else
+		{
 			auto p = dfg_node_placement[node];
-			ss<<"node "<<node->idx<<" placed on "<< p.first->getFullName()<<" lat:"<<p.second<<"\n";
+			ss << "node " << node->idx << " placed on " << p.first->getFullName() << " lat:" << p.second << "\n";
 		}
 	}
 	return ss.str();
 }
 
-int CGRAXMLCompile::SAMapper::getNumberOfUnmappedNodes(){
+int CGRAXMLCompile::SAMapper::getNumberOfUnmappedNodes()
+{
 	int n = 0;
-	for(auto node: sortedNodeList)
+	for (auto node : sortedNodeList)
 	{
-		if(dfg_node_placement.find(node) == dfg_node_placement.end()){
+		if (dfg_node_placement.find(node) == dfg_node_placement.end())
+		{
 			n++;
 		}
 	}
 	return n;
 }
 
-int CGRAXMLCompile::SAMapper::checkAnyUnroutedEdge(){
+int CGRAXMLCompile::SAMapper::checkAnyUnroutedEdge()
+{
 	int n = 0;
-	for(auto node: sortedNodeList){
-		for(auto child: node->children){
-			if(node->childrenOPType[child] == "PS") continue;
-			if(data_routing_path.find(std::make_pair(node, child)) ==  data_routing_path.end()){
-				std::cout<<"did not route edge: "<<node->idx<<" ->" <<child->idx<<"\n";
+	for (auto node : sortedNodeList)
+	{
+		for (auto child : node->children)
+		{
+			if (node->childrenOPType[child] == "PS")
+				continue;
+			if (data_routing_path.find(std::make_pair(node, child)) == data_routing_path.end())
+			{
+				LOG(SA) << "did not route edge: " << node->idx << " ->" << child->idx << "\n";
 				n++;
 			}
 		}
