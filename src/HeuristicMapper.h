@@ -16,7 +16,7 @@
 #include <iostream>
 #include <fstream>
 #include <math.h>
-
+#include <sstream>
 #define MRC 100000
 #define UOP 1000
 
@@ -252,6 +252,8 @@ public:
 
 	void printMappingLog();
 	void printMappingLog2();
+
+	std::string dumpMapping();
 
 	bool checkRecParentViolation(DFGNode *node, LatPort nextPort);
 

@@ -1956,6 +1956,8 @@ int CGRAXMLCompile::HeuristicMapper::getlatMinStarts(
 	return max;
 }
 
+//Previously, calculate the minial latency of its parent. 
+// Now calculate the minimal latency whose remainder should be equal to II of the candidate PE. 
 std::map<CGRAXMLCompile::DataPath *, int> CGRAXMLCompile::HeuristicMapper::getLatCandDests(
 	const std::vector<DataPath *> &candidateDests, int minLat)
 {
@@ -2032,4 +2034,104 @@ int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
 	std::cout << "Recurrence Minimum II: " << recMinII <<"\n";
 	//exit(true);
 	return recMinII;
+}
+
+
+std::string CGRAXMLCompile::HeuristicMapper::dumpMapping(){
+	std::vector< std::set<DFGNode *>> latency_to_node_vector; // the index represend the latency
+	for(int i = 0; i < 1000; i++){
+		std::set<DFGNode *> temp;
+		latency_to_node_vector.push_back( temp);
+	}
+	std::set<DFGNode *> unmapped_dfg_nodes;
+	std::map<DFGNode *, int> node_latency;
+
+	
+	//get the latency of each operation
+	int max_latency = 0;
+	for(auto node: sortedNodeList){
+		if(node->rootDP == NULL){
+			unmapped_dfg_nodes.insert(node);
+			std::cout<<"unmapped_node:"<<node->idx<<"\n";
+			continue;
+		}
+		int lat = node->rootDP->getLat();
+		std::cout<<"node:"<<node->idx<<" lat "<<lat<<"\n";
+		latency_to_node_vector[lat].insert(node);
+		node_latency.emplace(node, lat);
+		max_latency = max_latency>lat ? max_latency:lat;
+	}
+
+	//verify that the latency satisfies the data dependency
+	for(auto& [node, lat]: node_latency){
+		for(auto parent: node->parents){
+			if(parent->childNextIter[node] == 0){
+				if(node_latency.find(parent)!= node_latency.end()){
+					assert(node_latency[parent] <  lat);
+				}
+			}else if (parent->childNextIter[node] == 1){
+				if(node_latency.find(parent)!= node_latency.end()){
+					assert(node_latency[parent] <  lat + this->cgra->get_t_max());
+				}
+			}else {
+				assert(false && "why this value");
+			}
+			
+		}
+
+		for(auto child: node->children){
+			if(node->childNextIter[child] == 0){
+				if(node_latency.find(child)!= node_latency.end()){
+					assert(node_latency[child] >  lat);
+				}
+			}else if (node->childNextIter[child] == 1){
+				if(node_latency.find(child)!= node_latency.end()){
+					assert(node_latency[child]  + this->cgra->get_t_max()>  lat );
+				}
+			}else {
+				assert(false && "why this value");
+			}
+			
+		}
+
+		for(auto rec_parent: node->recParents){
+			if(node_latency.find(rec_parent)!= node_latency.end()){
+				assert(node_latency[rec_parent] + this->cgra->get_t_max() >  lat);
+			}
+		}
+	}
+
+	//print the mapping
+	std::stringstream ss;
+	for(int lat = 0;  lat <= max_latency ; lat++ ){
+		ss<<"lat: "<<lat <<"\n\t";
+		for(auto node: latency_to_node_vector[lat]){
+			ss<<"("<<node->rootDP->getPE()->getPosition_X()<<", "<<node->rootDP->getPE()->getPosition_Y()<<")->"
+			 << node->idx <<"  ";
+		}
+		ss<<"\n";
+	}
+
+	ss<<"unmapped node: \n";
+	for(auto node: unmapped_dfg_nodes){
+		ss<<"\t"<<node->idx;
+
+		ss<<"\tparent: ";
+		for(auto parent: node->parents){
+			ss<<parent->idx<<", ";
+		}
+
+		ss<<"\tchild: ";
+		for(auto child: node->children){
+			ss<<child->idx<<", ";
+		}
+
+		ss<<"\trec_parent: ";
+		for(auto rec_parent: node->recParents){
+			ss<<rec_parent->idx<<", ";
+		}
+		ss<<"\n";
+	}
+
+	return ss.str();
 }
