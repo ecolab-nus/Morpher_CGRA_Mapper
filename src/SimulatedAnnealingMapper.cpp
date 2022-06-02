@@ -125,7 +125,7 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 	curr_cost = getCost();
 	curr_temp = maximum_temp;
 
-	std::cout<<"###############current map: \n"<<dumpMapping();
+	std::cout<<"###############current mapping: \n"<<dumpMapping();
 
 	while (curr_temp > minimim_temp)
 	{
@@ -140,6 +140,8 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 				std::cout<<"\t"<<node->idx<<"  "<<node->op<<"\n";
 			}
 		}
+		std::cout<<"###############current mapping: \n"<<dumpMapping();
+
 		curr_temp = updateTemperature(curr_temp, accept_rate);
 
 		if (isCurrMappingValid())
@@ -295,11 +297,12 @@ float CGRAXMLCompile::SAMapper::inner_map()
 		DFGNode *child_node = NULL;
 		if (dfg_node_placement.find(selected_dfg_node) == dfg_node_placement.end())
 		{
+			
 			// this node is not placed yet because of routing failure.
 			// The reason for routing failure is that it cannot route to its parent nodes or recurrent dependency constraint;
-			child_node = selected_dfg_node;
-			selected_dfg_node = selectAParentForDFGNode(child_node);
-			LOG(SA) << "----------be careful. Have a child node " << child_node->idx << "\n";
+			// child_node = selected_dfg_node;
+			// selected_dfg_node = selectAParentForDFGNode(child_node);
+			// LOG(SA) << "----------be careful. Have a child node " << child_node->idx << "\n";
 		}
 		// assert(dfg_node_placement.find(selected_dfg_node)!= dfg_node_placement.end());
 		std::map<DFGNode *, std::pair<DataPath *, int>> old_dfg_node_placement;
@@ -607,7 +610,15 @@ bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath *candidateDP)
 
 				int ii = child->rootDP->getCGRA()->get_t_max();
 				assert(child->rootDP->getLat() != -1);
-				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() + ii); // next iteration?
+				//Previsouly, this assumes that mapped children are for next iteration.
+				// For SA, the mapped children might not be so. 
+				if(node->childNextIter[child] == 1){
+					alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() + ii);
+				}else if (node->childNextIter[child] == 0){
+					alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() );
+				}else {
+					assert(false);
+				} 
 			}
 			else if (child->idx == node->idx)
 			{

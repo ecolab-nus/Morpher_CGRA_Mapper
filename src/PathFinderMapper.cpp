@@ -561,13 +561,14 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	bool detailedDebug = true;
 	// if(node->idx==1)detailedDebug=true;
 
-	//	std::cout << "EstimateEouting begin...\n";
+	LOG(ROUTE) << "EstimateEouting begin...\n";
 
 	for (DFGNode *parent : node->parents)
 	{
-		//		std::cout << "parent = " << parent->idx << "\n";
+		LOG(ROUTE) << "parent = " << parent->idx << "\n";
 		if (parent->rootDP != NULL)
 		{ //already mapped
+			LOG(ROUTE) << "add parent to starts = " << parent->idx << "\n";
 			assert(parent->rootDP->getOutputDP()->getOutPort("T"));
 			possibleStarts[parent].push_back(parent->rootDP->getOutputDP()->getOutPort("T"));
 
@@ -597,9 +598,16 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			int ii = child->rootDP->getCGRA()->get_t_max();
 			assert(child->rootDP->getLat() != -1);
 
-			//why add II? Does this assume that mapped children are for next iteration?
-			alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() + ii);
-			assert(node->childNextIter[child] == 1); // add this to verify
+			//Previsouly, this assumes that mapped children are for next iteration.
+			// For SA, the mapped children might not be so. 
+			if(node->childNextIter[child] == 1){
+				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() + ii);
+			}else if (node->childNextIter[child] == 0){
+				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() );
+			}else {
+				assert(false);
+			}
+			
 		}
 		else if(child->idx == node->idx){
 			//adding a placeholder as this will be modified according to the destination in consideration.
@@ -724,10 +732,12 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 		for (DataPath *dest : candidateDests)
 		{
 			int minLatDestVal_prime = minLatDests[dest] + ii * i;
-			//		std::cout << "Candidate Dest =" ;
-			//		std::cout << dest->getPE()->getName() << ".";
-			//		std::cout << dest->getFU()->getName() << ".";
-			//		std::cout << dest->getName() << "\n";
+			std::stringstream output_stream;
+			output_stream << "Candidate Dest =" ;
+			output_stream << dest->getPE()->getName() << ".";
+			output_stream << dest->getFU()->getName() << ".";
+			output_stream<< dest->getName() << "\n";
+			LOG(ROUTE)<<output_stream.str();
 
 			//		std::map<DFGNode*,std::priority_queue<cand_src_with_cost>> parentStartLocs;
 			std::priority_queue<parent_cand_src_with_cost> parentStartLocs;
@@ -735,6 +745,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			pathFromParentExist = true;
 			for (std::pair<DFGNode *, std::vector<Port *>> pair : possibleStarts)
 			{
+				LOG(ROUTE)<<"estimate parent:"<<pair.first->idx<<" port size:"<<pair.second.size();
 				DFGNode *parent = pair.first;
 
 				//Skip parent if the edge is pseudo
@@ -751,8 +762,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					int cost;
 					std::vector<LatPort> path;
 					std::map<Port *, std::set<DFGNode *>> mutexPaths;
-					if (detailedDebug)
-						LOG(ROUTE)<< "par Estimating Path" << startCand->getFullName() << "," << startCand->getLat() << ","
+					LOG(ROUTE)<< "par Estimating Path" << startCand->getFullName() << "," << startCand->getLat() << ","
 								  << "--->" << destPort->getFullName() << "," << minLatDestVal << "," << ",parent_node = " << parent->idx
 								  << "\n";
 
@@ -760,7 +770,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					assert(startCand->getLat() != -1);
 					LatPort destPortLat = std::make_pair(minLatDestVal, destPort);
 
-					//	if(detailedDebug)               std::cout << "lat = " << destPortLat.first << ",PE=" << destPort->getMod()->getPE()->getName() << ",t=" <<  destPort->getMod()->getPE()->T << "\n";
+					LOG(ROUTE) << "lat = " << destPortLat.first << ",PE=" << destPort->getMod()->getPE()->getName() << ",t=" <<  destPort->getMod()->getPE()->T << "\n";
 					assert((minLatDestVal) % destPort->getMod()->getCGRA()->get_t_max() == destPort->getMod()->getPE()->T);
 
 					bool pathExist = false;
@@ -785,8 +795,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					path.clear();
 					if (!pathExist)
 					{
-						if (detailedDebug)
-							LOG(ROUTE)<< "par Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
+						LOG(ROUTE)<< "par Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
 						continue;
 					}
 					cost += dpPenaltyMap[dest];
@@ -826,7 +835,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				if (child->idx == node->idx)
 				{
 					childDestPort = dest->getInPort(node->childrenOPType[child]);
-					if (detailedDebug) cout << "setting latency = " << minLatDestVal + ii << "\n";
+					LOG(ROUTE) << "setting latency = " << minLatDestVal + ii << "\n";
 					childDestPort->setLat(minLatDestVal + ii);
 					childDP = dest;
 				}
@@ -840,12 +849,10 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 				Port *destPort = dest->getOutputPort(latency);
 
 				std::map<Port *, std::set<DFGNode *>> mutexPaths;
-				if (detailedDebug)
-					LOG(ROUTE)<< "already child Estimating Path" << destPort->getFullName() << "," << minLatDestVal + latency << ","
+				LOG(ROUTE)<< "already child Estimating Path" << destPort->getFullName() << "," << minLatDestVal + latency << ","
 							  << "--->" << childDestPort->getFullName() << "," << childDestPort->getLat() << "," << "exist_child = " << child->idx  
 							  << "\n";
-				if (detailedDebug)
-					LOG(ROUTE)<< "lat = " << childDestPort->getLat() << ",PE=" << childDestPort->getMod()->getPE()->getName() << ",t=" << childDestPort->getMod()->getPE()->T << "\n";
+				LOG(ROUTE)<< "lat = " << childDestPort->getLat() << ",PE=" << childDestPort->getMod()->getPE()->getName() << ",t=" << childDestPort->getMod()->getPE()->T << "\n";
 
 				LatPort childDestPortLat = std::make_pair(childDestPort->getLat(), childDestPort);
 				assert(childDestPort->getLat() != -1);

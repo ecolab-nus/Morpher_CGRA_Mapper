@@ -304,11 +304,11 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 	if (node->idx == 17)
 		detailedDebug = true;
 
-	//	std::cout << "EstimateEouting begin...\n";
+	LOG(ROUTE) << "EstimateEouting begin...\n";
 
 	for (DFGNode *parent : node->parents)
 	{
-		//		std::cout << "parent = " << parent->idx << "\n";
+		LOG(ROUTE) << "parent = " << parent->idx << "\n";
 		if (parent->rootDP != NULL)
 		{ //already mapped
 			assert(parent->rootDP->getOutputDP()->getOutPort("T"));
@@ -326,7 +326,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 	{
 		if (child->rootDP != NULL)
 		{ // already mapped
-			//			std::cout << "child="<< child->idx << ",childOpType=" << node.childrenOPType[child] << "\n";
+			LOG(ROUTE) << "child="<< child->idx << ",childOpType=" << node->childrenOPType[child] << "\n";
 			assert(child->rootDP->getInPort(node->childrenOPType[child]));
 			alreadyMappedChildPorts[child] = child->rootDP->getInPort(node->childrenOPType[child]);
 			alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat());
@@ -388,7 +388,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 		}
 	}
 
-	std::cout << "Candidate Dests = " << candidateDests.size() << "\n";
+	LOG(ROUTE) << "Candidate Dests = " << candidateDests.size() << "\n";
 	if (candidateDests.empty())
 		return false;
 	//	assert(candidateDests.size()!=0);
@@ -400,10 +400,12 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 	//Route Estimation
 	for (DataPath *dest : candidateDests)
 	{
-		//		std::cout << "Candidate Dest =" ;
-		//		std::cout << dest->getPE()->getName() << ".";
-		//		std::cout << dest->getFU()->getName() << ".";
-		//		std::cout << dest->getName() << "\n";
+		std::stringstream output_stream;
+		output_stream << "Candidate Dest =" ;
+		output_stream << dest->getPE()->getName() << ".";
+		output_stream << dest->getFU()->getName() << ".";
+		output_stream<< dest->getName() << "\n";
+		LOG(ROUTE)<<output_stream.str();
 
 		//		std::map<DFGNode*,std::priority_queue<cand_src_with_cost>> parentStartLocs;
 		std::priority_queue<parent_cand_src_with_cost> parentStartLocs;
@@ -421,8 +423,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 				int cost;
 				std::vector<LatPort> path;
 				std::map<Port *, std::set<DFGNode *>> mutexPaths;
-				if (detailedDebug)
-					std::cout << "Estimating Path" << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
+				LOG(ROUTE) << "Estimating Path" << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
 
 				LatPort startCandLat = std::make_pair(startCand->getLat(), startCand);
 				assert(startCand->getLat() != -1);
@@ -430,8 +431,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 				bool pathExist = LeastCostPathAstar(startCandLat, destPortLat, path, cost, parent, mutexPaths, node);
 				if (!pathExist)
 				{
-					if (detailedDebug)
-						std::cout << "Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
+					LOG(ROUTE) << "Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
 					continue;
 				}
 				res.push(cand_src_with_cost(startCandLat, destPortLat, cost));
@@ -474,8 +474,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 			Port *destPort = dest->getOutputPort(latency);
 
 			std::map<Port *, std::set<DFGNode *>> mutexPaths;
-			if (detailedDebug)
-				std::cout << "Estimating Path" << destPort->getFullName() << "--->" << childDestPort->getFullName() << "\n";
+			LOG(ROUTE) << "Estimating Path" << destPort->getFullName() << "--->" << childDestPort->getFullName() << "\n";
 
 			LatPort childDestPortLat = std::make_pair(childDestPort->getLat(), childDestPort);
 			assert(childDestPort->getLat() != -1);
@@ -494,8 +493,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 		}
 		if (!pathExistMappedChild)
 		{
-			if (detailedDebug)
-				std::cout << "Estimating Path Failed!\n";
+			LOG(ROUTE)<< "Estimating Path Failed!\n";
 			continue; //if it cannot be mapped to child abort the estimation for this dest
 		}
 
@@ -1916,6 +1914,9 @@ bool CGRAXMLCompile::HeuristicMapper::checkRecParentViolation(DFGNode *node,
 		if (nextPort.first > recParentDP->getLat() + this->cgra->get_t_max())
 		{
 			return true;
+		}else{
+			std::cout<<" satisfy data dependency: "<< node->idx <<","
+			<< nextPort.first<<" -> recparent:"<<recParent->idx<<","<<recParentDP->getLat()<<"\n";
 		}
 	}
 	return false;
@@ -2052,11 +2053,11 @@ std::string CGRAXMLCompile::HeuristicMapper::dumpMapping(){
 	for(auto node: sortedNodeList){
 		if(node->rootDP == NULL){
 			unmapped_dfg_nodes.insert(node);
-			std::cout<<"unmapped_node:"<<node->idx<<"\n";
+			// std::cout<<"unmapped_node:"<<node->idx<<"\n";
 			continue;
 		}
 		int lat = node->rootDP->getLat();
-		std::cout<<"node:"<<node->idx<<" lat "<<lat<<"\n";
+		// std::cout<<"node:"<<node->idx<<" lat "<<lat<<"\n";
 		latency_to_node_vector[lat].insert(node);
 		node_latency.emplace(node, lat);
 		max_latency = max_latency>lat ? max_latency:lat;
@@ -2065,6 +2066,10 @@ std::string CGRAXMLCompile::HeuristicMapper::dumpMapping(){
 	//verify that the latency satisfies the data dependency
 	for(auto& [node, lat]: node_latency){
 		for(auto parent: node->parents){
+			if (parent->childrenOPType[node] == "PS")
+			{
+				continue;
+			}
 			if(parent->childNextIter[node] == 0){
 				if(node_latency.find(parent)!= node_latency.end()){
 					assert(node_latency[parent] <  lat);
@@ -2080,6 +2085,10 @@ std::string CGRAXMLCompile::HeuristicMapper::dumpMapping(){
 		}
 
 		for(auto child: node->children){
+			if (node->childrenOPType[child] == "PS")
+			{
+				continue;
+			}
 			if(node->childNextIter[child] == 0){
 				if(node_latency.find(child)!= node_latency.end()){
 					assert(node_latency[child] >  lat);
@@ -2094,17 +2103,19 @@ std::string CGRAXMLCompile::HeuristicMapper::dumpMapping(){
 			
 		}
 
-		for(auto rec_parent: node->recParents){
-			if(node_latency.find(rec_parent)!= node_latency.end()){
-				assert(node_latency[rec_parent] + this->cgra->get_t_max() >  lat);
-			}
-		}
+		// I checked the code. Rec_parents means PS edge now, and seems not usable anymore.
+		// for(auto rec_parent: node->recParents){
+		// 	if(node_latency.find(rec_parent)!= node_latency.end()){
+		// 		assert(node_latency[rec_parent] + this->cgra->get_t_max() >= lat);
+		// 	}
+		// }
 	}
 
 	//print the mapping
 	std::stringstream ss;
+	
 	for(int lat = 0;  lat <= max_latency ; lat++ ){
-		ss<<"lat: "<<lat <<"\n\t";
+		ss<<"cycle "<<lat <<":\n\t";
 		for(auto node: latency_to_node_vector[lat]){
 			ss<<"("<<node->rootDP->getPE()->getPosition_X()<<", "<<node->rootDP->getPE()->getPosition_Y()<<")->"
 			 << node->idx <<"  ";
