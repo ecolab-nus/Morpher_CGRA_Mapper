@@ -263,6 +263,12 @@ void DFG::printDFG()
 		{
 			std::cout << child->idx << ",";
 		}
+
+		std::cout << "|Rec_Parent=";
+		for (DFGNode *parent : node.recParents)
+		{
+			std::cout << parent->idx << ",";
+		}
 		std::cout << "\n";
 	}
 	std::cout << "Printing DFG Done!\n";

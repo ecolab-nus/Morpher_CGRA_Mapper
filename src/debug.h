@@ -13,7 +13,7 @@ class LOGGER {
 
  public:
   LOGGER(std::string reason, std::string file, int lineno, bool abort) : abort(abort) {
-    std::cerr << reason <<  " : ";
+    std::cerr << reason  ;
   }
 
   ~LOGGER() noexcept(false) {
@@ -34,7 +34,7 @@ class LOGGER {
   if (!(COND)) LOGGER("[CHECK FAIL]", __FILE__, __LINE__, true) << #COND << " "
 
 // #ifdef DEBUG_MODE
-#define LOG(S) if (getenv(#S)) LOGGER("[DEBUG]", __FILE__, __LINE__, false)
+#define LOG(S) if (getenv(#S)) LOGGER("", __FILE__, __LINE__, false)
 // #else
 // #define LOG(S) if (false) LOGGER("[DEBUG]", __FILE__, __LINE__, false)
 // #endif

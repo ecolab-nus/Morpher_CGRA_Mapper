@@ -125,6 +125,8 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 	curr_cost = getCost();
 	curr_temp = maximum_temp;
 
+	std::cout<<"###############current map: \n"<<dumpMapping();
+
 	while (curr_temp > minimim_temp)
 	{
 		std::cout << "*******************************current temperature:" << curr_temp << "\n";
