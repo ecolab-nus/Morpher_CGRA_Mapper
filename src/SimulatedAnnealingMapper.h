@@ -26,7 +26,9 @@ using dfg_data = std::pair<DFGNode*,DFGNode*>; // <src, des>
 class SAMapper : public PathFinderMapper
 {
 public:
-	SAMapper(std::string fName) : PathFinderMapper(fName){};
+	SAMapper(std::string fName) : PathFinderMapper(fName){
+		mapping_method_name  = "SA";
+	};
 
 	bool SAMap(CGRA *cgra, DFG *dfg);
 
@@ -102,7 +104,6 @@ public:
 
 
 protected:
-	std::string mapping_method_name  = "SA";
 
 	int congest_num;
 	int routing_num;

@@ -65,7 +65,7 @@ class PathFinderMapper : public HeuristicMapper
 {
 public:
 	PathFinderMapper(std::string fName) : HeuristicMapper(fName){
-
+		mapping_method_name  = "PathFinder";
 										  };
 
 	bool Map(CGRA *cgra, DFG *dfg);
@@ -131,7 +131,7 @@ protected:
 
 // private:
 	
-	std::string mapping_method_name  = "PathFinder";
+	
 	
 	int maxIter = 30;
 

@@ -390,6 +390,8 @@ float CGRAXMLCompile::SAMapper::inner_map()
 
 			old_dfg_node_placement.clear();
 			old_data_routing_path.clear();
+
+			printHyCUBEBinary(this->cgra);
 			if (isCurrMappingValid())
 			{
 				std::cout << "find a valid mapping, exit inner_map....\n";
@@ -538,12 +540,12 @@ int CGRAXMLCompile::SAMapper::getCongestionNumber()
 					}
 					if (this->dfg->isMutexNodes(node1, node2, p))
 						continue;
-					LOG(CONGEST) << "CONGESTION:" << p->getFullName();
+					LOG(ROUTE) << "CONGESTION:" << p->getFullName();
 					for (DFGNode *node : pair.second)
 					{
-						LOG(CONGEST) << "," << node->idx << "|BB=" << node->BB;
+						LOG(ROUTE) << "," << node->idx << "|BB=" << node->BB;
 					}
-					LOG(CONGEST) << "\n";
+					LOG(ROUTE) << "\n";
 					congestion_number++;
 					//					break;
 				}

@@ -3063,7 +3063,7 @@ std::vector<CGRAXMLCompile::DFGNode *> CGRAXMLCompile::PathFinderMapper::getLong
 	//	assert(false);
 
 	std::reverse(result.begin(), result.end());
-	std::cout<<output_ss.str();
+	LOG(ROUTE)<<output_ss.str();
 	return result;
 }
 
