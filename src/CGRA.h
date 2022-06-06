@@ -8,6 +8,7 @@
 #ifndef CGRA_H_
 #define CGRA_H_
 
+#include "debug.h"
 #include "Module.h"
 #include "PE.h"
 #include "FU.h"
@@ -92,6 +93,22 @@ public:
 			this->is_spm_modelled = true;
 			checkMDPVars(spms);
 		}
+
+		findMaxXY();
+	}
+
+	void findMaxXY(){
+		if(x_max != -1){ return;}
+
+		for(auto pe: getAllPEList()){
+			int x = pe->getPosition_X();
+			int y = pe->getPosition_Y();
+			x_max = x_max > x? x_max : x;
+			y_max = y_max > y? y_max : y;
+		} 
+
+		x_max++;
+		y_max++;
 	}
 
 	void createGenericCGRA(int x, int y, int t, std::string peType = "GENERIC_8REGF", int numberofDPs = 1);

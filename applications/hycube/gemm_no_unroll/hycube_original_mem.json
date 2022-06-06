@@ -267,44 +267,49 @@
         }
     },
 
-    "SPM_B0_WRAPPER" : {
-      "TSOCKETS" : [
-        "MEMPORT_P0", "MEMPORT_P1"
-      ],
-      "SUBMODS" : {
-        "SPM" : [{"name" : "SPM0"}]
-      },
-      "DATA_LAYOUT" :{
-        "B":0,
-        "C":256
-      },
-      "INIT_FILE" : "../json/test_data.json",
-      "CONNECTIONS" : {
-        "SPM0.PORT0" : "THIS.MEMPORT_P0",
-        "SPM0.PORT1" : "THIS.MEMPORT_P1"
-      }
-    },
-
-    "SPM_B1_WRAPPER" : {
-      "TSOCKETS" : [
-        "MEMPORT_P0", "MEMPORT_P1"
-      ],
-      "SUBMODS" : {
-        "SPM" : [{"name" : "SPM0"}]
-      },
-      "DATA_LAYOUT" :{
-        "mul":2304,
-        "arrayidx":2312,
-        "A":2048,
-        "j.039":2308
-      },
-      "INIT_FILE" : "../json/test_data.json",
-      "CONNECTIONS" : {
-        "SPM0.PORT0" : "THIS.MEMPORT_P0",
-        "SPM0.PORT1" : "THIS.MEMPORT_P1"
-      }
-    },
     
+
+
+
+"SPM_B0_WRAPPER" : {
+  "TSOCKETS" : [
+    "MEMPORT_P0", "MEMPORT_P1"
+  ],
+  "SUBMODS" : {
+    "SPM" : [{"name" : "SPM0"}]
+  },
+  "DATA_LAYOUT" :{
+    "B":0,
+    "C":256,
+    "loopend":2047
+  },
+  "INIT_FILE" : "../json/test_data.json",
+  "CONNECTIONS" : {
+    "SPM0.PORT0" : "THIS.MEMPORT_P0",
+    "SPM0.PORT1" : "THIS.MEMPORT_P1"
+  }
+},
+
+"SPM_B1_WRAPPER" : {
+  "TSOCKETS" : [
+    "MEMPORT_P0", "MEMPORT_P1"
+  ],
+  "SUBMODS" : {
+    "SPM" : [{"name" : "SPM0"}]
+  },
+  "DATA_LAYOUT" :{
+    "arrayidx":2304,
+    "mul":2308,
+    "A":2048,
+    "j.039":2312,
+    "loopstart":4094
+  },
+  "INIT_FILE" : "../json/test_data.json",
+  "CONNECTIONS" : {
+    "SPM0.PORT0" : "THIS.MEMPORT_P0",
+    "SPM0.PORT1" : "THIS.MEMPORT_P1"
+  }
+},
     "CGRA" :{
       "SUBMODS" :[
           { "PATTERN" : "GRID",

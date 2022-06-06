@@ -267,49 +267,54 @@
         }
     },
 
-    "SPM_B0_WRAPPER" : {
-      "TSOCKETS" : [
-        "MEMPORT_P0", "MEMPORT_P1"
-      ],
-      "SUBMODS" : {
-        "SPM" : [{"name" : "SPM0"}]
-      },
-      "DATA_LAYOUT" :{
-        "xor4":256,
-        "kp_tab":0,
-        "xor186":264,
-        "xor238":260,
-        "xor82":268
-      },
-      "INIT_FILE" : "../json/test_data.json",
-      "CONNECTIONS" : {
-        "SPM0.PORT0" : "THIS.MEMPORT_P0",
-        "SPM0.PORT1" : "THIS.MEMPORT_P1"
-      }
-    },
-
-    "SPM_B1_WRAPPER" : {
-      "TSOCKETS" : [
-        "MEMPORT_P0", "MEMPORT_P1"
-      ],
-      "SUBMODS" : {
-        "SPM" : [{"name" : "SPM0"}]
-      },
-      "DATA_LAYOUT" :{
-        "xor8":3076,
-        "xor":3088,
-        "ft_tab":2048,
-        "xor12":3072,
-        "xor134":3084,
-        "sub":3080
-      },
-      "INIT_FILE" : "../json/test_data.json",
-      "CONNECTIONS" : {
-        "SPM0.PORT0" : "THIS.MEMPORT_P0",
-        "SPM0.PORT1" : "THIS.MEMPORT_P1"
-      }
-    },
     
+
+
+
+"SPM_B0_WRAPPER" : {
+  "TSOCKETS" : [
+    "MEMPORT_P0", "MEMPORT_P1"
+  ],
+  "SUBMODS" : {
+    "SPM" : [{"name" : "SPM0"}]
+  },
+  "DATA_LAYOUT" :{
+    "xor":4,
+    "xor134":8,
+    "xor186":12,
+    "xor238":16,
+    "xor12":0,
+    "loopend":2047
+  },
+  "INIT_FILE" : "../json/test_data.json",
+  "CONNECTIONS" : {
+    "SPM0.PORT0" : "THIS.MEMPORT_P0",
+    "SPM0.PORT1" : "THIS.MEMPORT_P1"
+  }
+},
+
+"SPM_B1_WRAPPER" : {
+  "TSOCKETS" : [
+    "MEMPORT_P0", "MEMPORT_P1"
+  ],
+  "SUBMODS" : {
+    "SPM" : [{"name" : "SPM0"}]
+  },
+  "DATA_LAYOUT" :{
+    "xor8":3336,
+    "ft_tab":2048,
+    "xor4":3328,
+    "xor82":3332,
+    "kp_tab":3072,
+    "sub":3340,
+    "loopstart":4094
+  },
+  "INIT_FILE" : "../json/test_data.json",
+  "CONNECTIONS" : {
+    "SPM0.PORT0" : "THIS.MEMPORT_P0",
+    "SPM0.PORT1" : "THIS.MEMPORT_P1"
+  }
+},
     "CGRA" :{
       "SUBMODS" :[
           { "PATTERN" : "GRID",

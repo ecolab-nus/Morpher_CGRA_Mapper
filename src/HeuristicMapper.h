@@ -16,7 +16,7 @@
 #include <iostream>
 #include <fstream>
 #include <math.h>
-
+#include <sstream>
 #define MRC 100000
 #define UOP 1000
 
@@ -253,11 +253,17 @@ public:
 	void printMappingLog();
 	void printMappingLog2();
 
+	std::string dumpMapping();
+
 	bool checkRecParentViolation(DFGNode *node, LatPort nextPort);
+
+
+	std::string getMappingMethodName(){return mapping_method_name;}
 
 	int upperboundII = 1000000;
 	int upperboundIter = -1;
 	int upperboundFoundBy = -1;
+	std::string mapping_method_name  = "heuristic";
 
 protected:
 	int regDiscourageFactor = 10;
@@ -278,6 +284,8 @@ protected:
 
 	int getlatMinStarts(const std::map<DFGNode *, std::vector<Port *>> &possibleStarts);
 	std::map<DataPath *, int> getLatCandDests(const std::vector<DataPath *> &candidateDests, int minlat);
+
+	bool check_parent_violation = true;
 };
 
 } /* namespace CGRAXMLCompile */

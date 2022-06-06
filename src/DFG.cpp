@@ -241,6 +241,8 @@ bool DFG::parseXML(std::string fileName)
 		}
 		std::cout << "\n";
 	}
+
+	return true;
 }
 
 void DFG::printDFG()
@@ -260,6 +262,12 @@ void DFG::printDFG()
 		for (DFGNode *child : node.children)
 		{
 			std::cout << child->idx << ",";
+		}
+
+		std::cout << "|Rec_Parent=";
+		for (DFGNode *parent : node.recParents)
+		{
+			std::cout << parent->idx << ",";
 		}
 		std::cout << "\n";
 	}

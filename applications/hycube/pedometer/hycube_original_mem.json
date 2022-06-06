@@ -267,47 +267,52 @@
         }
     },
 
-    "SPM_B0_WRAPPER" : {
-      "TSOCKETS" : [
-        "MEMPORT_P0", "MEMPORT_P1"
-      ],
-      "SUBMODS" : {
-        "SPM" : [{"name" : "SPM0"}]
-      },
-      "DATA_LAYOUT" :{
-        "acceleration_x":192,
-        "acceleration_y":0,
-        "acc_avg_y":64,
-        "acc_vector":256,
-        "acceleration_z":128
-      },
-      "INIT_FILE" : "../json/test_data.json",
-      "CONNECTIONS" : {
-        "SPM0.PORT0" : "THIS.MEMPORT_P0",
-        "SPM0.PORT1" : "THIS.MEMPORT_P1"
-      }
-    },
-
-    "SPM_B1_WRAPPER" : {
-      "TSOCKETS" : [
-        "MEMPORT_P0", "MEMPORT_P1"
-      ],
-      "SUBMODS" : {
-        "SPM" : [{"name" : "SPM0"}]
-      },
-      "DATA_LAYOUT" :{
-        "acc_avg_x":2048,
-        "step":2112,
-        "km":2176,
-        "acc_avg_z":2240
-      },
-      "INIT_FILE" : "../json/test_data.json",
-      "CONNECTIONS" : {
-        "SPM0.PORT0" : "THIS.MEMPORT_P0",
-        "SPM0.PORT1" : "THIS.MEMPORT_P1"
-      }
-    },
     
+
+
+
+"SPM_B0_WRAPPER" : {
+  "TSOCKETS" : [
+    "MEMPORT_P0", "MEMPORT_P1"
+  ],
+  "SUBMODS" : {
+    "SPM" : [{"name" : "SPM0"}]
+  },
+  "DATA_LAYOUT" :{
+    "acc_avg_y":128,
+    "acceleration_z":0,
+    "step":64,
+    "acceleration_x":256,
+    "km":192,
+    "loopend":2047
+  },
+  "INIT_FILE" : "../json/test_data.json",
+  "CONNECTIONS" : {
+    "SPM0.PORT0" : "THIS.MEMPORT_P0",
+    "SPM0.PORT1" : "THIS.MEMPORT_P1"
+  }
+},
+
+"SPM_B1_WRAPPER" : {
+  "TSOCKETS" : [
+    "MEMPORT_P0", "MEMPORT_P1"
+  ],
+  "SUBMODS" : {
+    "SPM" : [{"name" : "SPM0"}]
+  },
+  "DATA_LAYOUT" :{
+    "acc_avg_x":2048,
+    "acceleration_y":2176,
+    "acc_avg_z":2112,
+    "acc_vector":2240,
+    "loopstart":4094
+  },
+  "INIT_FILE" : "../json/test_data.json",
+  "CONNECTIONS" : {
+    "SPM0.PORT0" : "THIS.MEMPORT_P0",
+    "SPM0.PORT1" : "THIS.MEMPORT_P1"
+  }
+},
     "CGRA" :{
       "SUBMODS" :[
           { "PATTERN" : "GRID",

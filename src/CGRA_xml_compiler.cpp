@@ -7,6 +7,8 @@
 //============================================================================
 
 #include <iostream>
+#include <chrono>
+
 #include <assert.h>
 #include <string.h>
 
@@ -14,6 +16,7 @@
 #include "CGRA.h"
 #include "HeuristicMapper.h"
 #include "PathFinderMapper.h"
+#include "SimulatedAnnealingMapper.h"
 #include <math.h>
 
 #include <ctype.h>
@@ -33,11 +36,12 @@ struct arguments
 	string json_file_name;
 	int userII = 0;
 	bool noMutexPaths=false;
-	int backtracklimit = 2; // do not set this for a high number.  
+	int backtracklimit = 2; // for PathFinderMapper, do not set this for a high number.  
 	bool use_json = false;
 	int ndps = 1;
-	int maxiter = 30;
-	int max_hops = 4;
+	int maxiter = 30;  // for PathFinderMapper,
+	int max_hops = 4;  // for HyCUBE
+	int mapping_method = 0; // 0: PathFinderMapper, 1: SAMapper (SimulatedAnnealing),  HeuristicMapper will not be used
 };
 
 arguments parse_arguments(int argn, char *argc[])
@@ -52,7 +56,7 @@ arguments parse_arguments(int argn, char *argc[])
 
 	opterr = 0;
 
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:h:")) != -1)
+	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:r:h:")) != -1)
 		switch (c)
 		{
 		case 'd':
@@ -83,8 +87,10 @@ arguments parse_arguments(int argn, char *argc[])
 		case 'b':
 			ret.backtracklimit = atoi(optarg);
 			break;
-		case 'm':
+		case 'r':
 			ret.maxiter = atoi(optarg);
+		case 'm':
+			ret.mapping_method = atoi(optarg);
 			break;
 		case 'h':
 			ret.max_hops = atoi(optarg);
@@ -166,12 +172,17 @@ int main(int argn, char *argc[])
 	int numberOfDPs = args.ndps;
 	string json_file_name = args.json_file_name;
 	int initUserII = args.userII;
+	int mapping_method = args.mapping_method;
 	
 	DFG currDFG;
 	currDFG.parseXML(inputDFG_filename);
 	currDFG.printDFG();
 
 	bool isGenericPE;
+
+	std::cout<<"mapping method:"<<mapping_method<<"\n";
+
+	std::cout<<"json file:"<<json_file_name<<"\n";
 
 	// CGRA testCGRA(NULL, "testCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
 
@@ -185,14 +196,26 @@ int main(int argn, char *argc[])
 		testCGRA = new CGRA(json_file_name, 1,xdim,ydim);
 	}
 
+	
+
+	//	HeuristicMapper mapper(inputDFG_filename);
 	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
+	PathFinderMapper * mapper;
+	if (mapping_method == 0){
+		mapper = new PathFinderMapper(inputDFG_filename);
+	}else if(mapping_method  == 1){
+		mapper = new SAMapper(inputDFG_filename);
+		
+		// assert(false && "convert to SA");
+	}else{
+		assert(false && "did not set a valid mapping method");
+	}
 
-	//	HeuristicMapper hm(inputDFG_filename);
-	PathFinderMapper hm(inputDFG_filename);
-	hm.setMaxIter(args.maxiter);
+	
+	mapper->setMaxIter(args.maxiter);
 
-	int resII = hm.getMinimumII(testCGRA, &currDFG);
-	int recII  = hm.getRecMinimumII(&currDFG);
+	int resII = mapper->getMinimumII(testCGRA, &currDFG);
+	int recII  = mapper->getRecMinimumII(&currDFG);
 	// int recII = 0; // for SA initial mapping test.
 	std::cout << "Res Minimum II = " << resII << "\n";
 	std::cout << "Rec Minimum II = " << recII << "\n";
@@ -203,16 +226,18 @@ int main(int argn, char *argc[])
 
 	std::cout << "Using II = " << II << "\n";
 
-	hm.enableMutexPaths = true;
+	mapper->enableMutexPaths = true;
 	if (args.noMutexPaths)
 	{
-		hm.enableMutexPaths = false;
+		mapper->enableMutexPaths = false;
 	}
-	hm.enableBackTracking = true;
-	hm.backTrackLimit = args.backtracklimit;
+	mapper->enableBackTracking = true;
+	mapper->backTrackLimit = args.backtracklimit;
 
 	cout << "json_file_name = " << json_file_name << "\n";
 	// exit(EXIT_SUCCESS);
+
+	auto start = chrono::steady_clock::now();
 
 	bool mappingSuccess = false;
 	while (!mappingSuccess)
@@ -224,11 +249,11 @@ int main(int argn, char *argc[])
 		CGRA *tempCGRA;
 		if (json_file_name.empty())
 		{
-			tempCGRA = new CGRA(NULL, "coreCGRA", II, ydim, xdim, &tempDFG, PEType, numberOfDPs, hm.getcongestedPortsPtr());
+			tempCGRA = new CGRA(NULL, "coreCGRA", II, ydim, xdim, &tempDFG, PEType, numberOfDPs, mapper->getcongestedPortsPtr());
 		}
 		else
 		{
-			tempCGRA = new CGRA(json_file_name, II,xdim,ydim, hm.getcongestedPortsPtr());
+			tempCGRA = new CGRA(json_file_name, II,xdim,ydim, mapper->getcongestedPortsPtr());
 		}
 
 		std::set<Port*>  ports; std::set<port_edge>  port_edges;
@@ -239,15 +264,25 @@ int main(int argn, char *argc[])
 		std::cout << "Using II = " << II << "\n";
 		std::cout<<"number of ports: "<<ports.size()<<" number of edge: "<<port_edges.size();
 		// return 0;
-		tempCGRA->analyzeTimeDist(tdi);
+		// tempCGRA->analyzeTimeDist(tdi);
 		tempCGRA->max_hops = args.max_hops;
 
 		// return 0;
 
-		hm.getcongestedPortsPtr()->clear();
-		hm.getconflictedPortsPtr()->clear();
-		mappingSuccess = hm.Map(tempCGRA, &tempDFG);
-		hm.congestionInfoFile.close();
+		mapper->getcongestedPortsPtr()->clear();
+		mapper->getconflictedPortsPtr()->clear();
+		tempCGRA->analyzeTimeDist(tdi);
+		// mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
+		if (mapping_method == 0){
+			mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
+		}else if(mapping_method  == 1){
+			SAMapper * sa_mapper = static_cast<SAMapper*>(mapper);
+			mappingSuccess = sa_mapper->SAMap(tempCGRA, &tempDFG);
+		}else{
+			assert(false && "did not set a valid mapping method");
+		}
+
+		mapper->congestionInfoFile.close();
 		if (!mappingSuccess)
 		{
 
@@ -261,14 +296,23 @@ int main(int argn, char *argc[])
 
 			if (II == 65)
 			{
-				std::cout << "II max of 65 has been reached and exiting...\n";
+				std::cout << "############ cannot map:  II max of 65 has been reached and exiting...\n";
+				auto end = chrono::steady_clock::now();
+				std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec";
+				std::ofstream result_file;
+				result_file.open ("result.txt", std::ios_base::app); 
+				result_file<< mapper->cgra->get_x_max() <<"x"<<mapper->cgra->get_y_max() <<" "<<inputDFG_filename
+					<<" method:"<<mapper->getMappingMethodName()<<" "<<II<<" "
+					<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
+				result_file.close();
+
 				// return 0;
 			}
 
-			if (II > hm.upperboundII)
+			if (II > mapper->upperboundII)
 			{
-				std::cout << "upperbound II reached : " << hm.upperboundII << "\n";
-				std::cout << "Please use the mapping with II = " << hm.upperboundFoundBy << ",with Iter = " << hm.upperboundIter << "\n";
+				std::cout << "upperbound II reached : " << mapper->upperboundII << "\n";
+				std::cout << "Please use the mapping with II = " << mapper->upperboundFoundBy << ",with Iter = " << mapper->upperboundIter << "\n";
 				//return 0;
 			}
 
@@ -276,14 +320,26 @@ int main(int argn, char *argc[])
 		}
 		else
 		{
-			hm.sanityCheck();
-			//hm.assignLiveInOutAddr(&tempDFG);
+			mapper->sanityCheck();
+
+			auto end = chrono::steady_clock::now();
+			std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec";
+			std::ofstream result_file;
+			result_file.open ("result.txt", std::ios_base::app); 
+			result_file<< mapper->cgra->get_x_max() <<"x"<<mapper->cgra->get_y_max() <<" "<<inputDFG_filename
+				<<" method:"<<mapper->getMappingMethodName()<<" "<<II<<" "
+				<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
+			result_file.close();
+
+			//mapper.assignLiveInOutAddr(&tempDFG);
 			if(PEType == "HyCUBE_4REG"){
 				std::cout << "Printing HyCUBE Binary...\n";
-				hm.printHyCUBEBinary(tempCGRA);
+				mapper->printHyCUBEBinary(tempCGRA);
 			}
 			
 		}
 	}
+	 
+
 	return 0;
 }

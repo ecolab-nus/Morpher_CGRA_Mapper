@@ -6,6 +6,7 @@
  */
 
 #include "HeuristicMapper.h"
+#include "debug.h"
 #include <string>
 
 #ifndef PATHFINDERMAPPER_H_
@@ -64,7 +65,7 @@ class PathFinderMapper : public HeuristicMapper
 {
 public:
 	PathFinderMapper(std::string fName) : HeuristicMapper(fName){
-
+		mapping_method_name  = "PathFinder";
 										  };
 
 	bool Map(CGRA *cgra, DFG *dfg);
@@ -113,22 +114,35 @@ public:
 	void UpdateVariableBaseAddr();
 
 	void printHyCUBEBinary(CGRA* cgra);
-	void printBinFile(const std::vector<std::vector<std::vector<InsFormat>>>& insFArr, std::string fName, CGRA* cgra);
+	void printBinFile(const std::vector<InsFormat>& insFArr, std::string fName, CGRA* cgra);
 
+	int getIndexOfBin(int t, int y, int x){
+		return t * cgra->get_y_max() * cgra->get_x_max() + y * cgra->get_x_max() + x;
+	}
+	std::tuple<int, int, int> getIndexOfBin(int index);
 
-private:
+	
+
+protected:
+	int getlatMinStartsPHI(const DFGNode *currNode, const std::map<DFGNode *, std::vector<Port *>> &possibleStarts);
+
 	std::map<Port *, std::set<DFGNode *>> congestedPorts;
 	std::map<Port *, std::set<DFGNode *>> conflictedPorts;
+
+// private:
+	
+	
+	
 	int maxIter = 30;
 
 	std::map<int, int> conflictedTimeStepMap;
 
 	std::set<DFGNode *> RecPHIs;
-	int getlatMinStartsPHI(const DFGNode *currNode, const std::map<DFGNode *, std::vector<Port *>> &possibleStarts);
+	
 	std::set<DFGNode *> getElders(DFGNode *node);
 
-	std::map<BackEdge, std::set<DFGNode *>> RecCycles;
-	std::map<BackEdge, std::set<DFGNode *>> RecCyclesLS;
+	std::map<BackEdge, std::set<DFGNode *>> RecCycles; // real backedge
+	std::map<BackEdge, std::set<DFGNode *>> RecCyclesLS; // the recurrent edge for load store.
 	int getMaxLatencyBE(DFGNode *node, std::map<DataPath *, beParentInfo> &beParentDests, int &downStreamOps);
 	std::vector<DataPath *> modifyMaxLatCandDest(std::map<DataPath *, int> candDestIn, DFGNode *node, bool &changed);
 
