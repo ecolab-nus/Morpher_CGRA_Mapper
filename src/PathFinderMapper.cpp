@@ -603,6 +603,9 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			if(node->childNextIter[child] == 1){
 				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() + ii);
 			}else if (node->childNextIter[child] == 0){
+				if(mapping_method_name!= "SA"){
+					assert(false);
+				}
 				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() );
 			}else {
 				assert(false);
@@ -1676,12 +1679,16 @@ void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode *src, DFGNode *dest,
 		prevLat = p.first;
 		prevPort = p;
 
+		
 		if (p.second->getNode() == src)
 		{
 			srcPortCount++;
-			continue;
+			LOG(ROUTE)<<"src port";
+			// continue;
 		}
+		
 
+		
 		p.second->setNode(src, p.first, this);
 		congestedPorts[p.second].insert(src);
 		p.second->increaseConflictedUse(src, this);
@@ -1691,11 +1698,11 @@ void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode *src, DFGNode *dest,
 			if (std::find(src->routingPorts.begin(), src->routingPorts.end(), std::make_pair(p.second, src->idx)) == src->routingPorts.end())
 			{
 				src->routingPorts.push_back(std::make_pair(p.second, dest->idx));
-				// std::cout<<"push back route" << p.second->getFullName() << "\n";
+				LOG(ROUTE)<<"push back route:" << p.second->getFullName() ;
 			}
 			else
 			{
-				std::cout << p.second->getFullName() << "\n";
+				LOG(ROUTE) << p.second->getFullName() ;
 				assert(p.second->getName().compare("T") == 0);
 			}
 		}

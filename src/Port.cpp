@@ -28,16 +28,17 @@ Port::Port(std::string name, PortType pType, Module *mod)
 
 void Port::increaseUse(HeuristicMapper *hm)
 {
-
+	assert(mapped_nodes.size() > 0);
+	DFGNode * last_mapped_node = mapped_nodes.rbegin()->first;
 	if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
 	{
 		number_signals = 1;
 
 		for (DFGNode *node : (*pfm->getcongestedPortsPtr())[this])
 		{
-			if (this->node == node)
+			if (last_mapped_node == node)
 				continue;
-			if (pfm->dfg->isMutexNodes(this->node, node, this))
+			if (pfm->dfg->isMutexNodes(last_mapped_node, node, this))
 				continue;
 			number_signals++;
 			//			break;
@@ -45,9 +46,9 @@ void Port::increaseUse(HeuristicMapper *hm)
 
 		for (DFGNode *node : (*pfm->getconflictedPortsPtr())[this])
 		{
-			if (this->node == node)
+			if (last_mapped_node == node)
 				continue;
-			if (pfm->dfg->isMutexNodes(this->node, node, this))
+			if (pfm->dfg->isMutexNodes(last_mapped_node, node, this))
 				continue;
 			number_signals++;
 			break;
@@ -62,6 +63,7 @@ void Port::increaseUse(HeuristicMapper *hm)
 	{
 		number_signals++;
 	}
+
 }
 
 void Port::decreaseUse(DFGNode *extnode, HeuristicMapper *hm)
@@ -89,7 +91,7 @@ void Port::decreaseUse(DFGNode *extnode, HeuristicMapper *hm)
 
 void Port::setNode(DFGNode *node, int latency, HeuristicMapper *hm)
 {
-	this->node = node;
+	this->mapped_nodes.push_back(std::make_pair(node, latency));
 	setLat(latency);
 
 	PE *pe = getMod()->getPE();
@@ -192,30 +194,78 @@ int CGRAXMLCompile::Port::getCongCost()
 	return cost;
 }
 
-void CGRAXMLCompile::Port::clear()
-{
+
+void CGRAXMLCompile::Port::erase(DFGNode * eraseNode){
 	assert(this->mod->getCGRA());
-	if (node != NULL)
+	if (eraseNode != NULL)
 	{
-		(*this->mod->getCGRA()->getCongestedPortPtr())[this].erase(node);
+		(*this->mod->getCGRA()->getCongestedPortPtr())[this].erase(eraseNode);
 	}
 
 	for (Port *p : getMod()->getConflictPorts(this))
 	{
-		p->decreaseUse(node);
-		(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(node);
+		p->decreaseUse(eraseNode);
+		(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(eraseNode);
 	}
 
 	if (this->getType() == OUT)
 	{
 		for (Port *p : getMod()->getParent()->getConflictPorts(this))
 		{
-			p->decreaseUse(node);
-			(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(node);
+			p->decreaseUse(eraseNode);
+			(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(eraseNode);
 		}
 	}
 
-	node = NULL;
+	bool find_node = false;
+	for(auto it =  mapped_nodes.begin(); it != mapped_nodes.end(); it++){
+		if(it->first->idx == eraseNode->idx){
+			find_node = true;
+			mapped_nodes.erase(it);
+			break;
+		}
+	}
+	assert(find_node);
+	if(mapped_nodes.size() == 0){
+		number_signals = 0;
+		latency = -1;
+	}else{
+		number_signals = mapped_nodes.size(); // -- or doest not change?
+		latency = mapped_nodes.rbegin()->second; // how about lat?
+	}
+	
+}
+void CGRAXMLCompile::Port::clear()
+{
+	assert(this->mod->getCGRA());
+
+	if(mapped_nodes.size() == 0 ) {
+		return;
+	}
+
+	DFGNode* mappedNode = mapped_nodes.rbegin()->first;
+	if (mappedNode != NULL)
+	{
+		(*this->mod->getCGRA()->getCongestedPortPtr())[this].erase(mappedNode);
+	}
+
+	for (Port *p : getMod()->getConflictPorts(this))
+	{
+		p->decreaseUse(mappedNode);
+		(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(mappedNode);
+	}
+
+	if (this->getType() == OUT)
+	{
+		for (Port *p : getMod()->getParent()->getConflictPorts(this))
+		{
+			p->decreaseUse(mappedNode);
+			(*p->mod->getCGRA()->getCongestedPortPtr())[p].erase(mappedNode);
+		}
+	}
+
+	mapped_nodes.clear();
+	// mappedNode = NULL;
 	number_signals = 0;
 	latency = -1;
 }

@@ -93,16 +93,18 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 	//initial mapping
 	if (!initMap())
 	{
-		// assert(false && "how come?");
+		assert(false && "how come?");
 		std::cout << "cannot find an initial mapping, exit....\n";
 		return false;
 	}
 
 	//get mapping information
 	
+	std::stringstream congestion_detail;
 	int unmapped_node_numer = getNumberOfUnmappedNodes();
-	int overuse_number = getCongestionNumber();
-	std::cout << "Initial mapping done. unmapped node:" << unmapped_node_numer << " overuse:" << overuse_number<<" cost:"<<getCost() << " \n";
+	int overuse_number = getCongestionNumber(congestion_detail);
+	int conflict_number =  getConflictNumber(congestion_detail);
+	std::cout << "Initial mapping done. unmapped node:" << unmapped_node_numer << " overuse:" << overuse_number<< " conflict:" << conflict_number<<" cost:"<<getCost() << " \n";
 	std::cout<<"unmapped node: \n";
 	for (auto node : sortedNodeList)
 	{
@@ -111,6 +113,9 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 			std::cout<<"\t"<<node->idx<<"  "<<node->op<<"\n";
 		}
 	}
+
+	LOG(ROUTE)<<congestion_detail.str();
+
 
 	
 	if (unmapped_node_numer == 0 && overuse_number == 0)
@@ -131,7 +136,10 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 	{
 		std::cout << "*******************************current temperature:" << curr_temp << "\n";
 		float accept_rate = inner_map();
-		std::cout << "accept_rate:" << accept_rate << " # of overuse:" << getCongestionNumber() << " unmapped nodes:" << getNumberOfUnmappedNodes()<<" cost:"<<curr_cost << "\n";
+
+		congestion_detail.clear();
+		std::cout << "accept_rate:" << accept_rate << " # of overuse:" << getCongestionNumber(congestion_detail)<< " # of conflict:" << getConflictNumber(congestion_detail)
+			<< " unmapped nodes:" << getNumberOfUnmappedNodes()<<" cost:"<<curr_cost << "\n";
 		std::cout<<"unmapped node: \n";
 		for (auto node : sortedNodeList)
 		{
@@ -140,6 +148,7 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 				std::cout<<"\t"<<node->idx<<"  "<<node->op<<"\n";
 			}
 		}
+		LOG(ROUTE)<<congestion_detail.str();
 		std::cout<<"###############current mapping: \n"<<dumpMapping();
 
 		curr_temp = updateTemperature(curr_temp, accept_rate);
@@ -207,6 +216,7 @@ bool CGRAXMLCompile::SAMapper::initMap()
 
 		std::cout << MapHeader.str();
 
+
 		bool isEstRouteSucc = false;
 
 		// fill the routing information
@@ -247,37 +257,8 @@ bool CGRAXMLCompile::SAMapper::initMap()
 		if (!isRouteSucc)
 		{
 			std::cout << "----------node" << node->idx << " not mapped in initial mapping\n";
-
-			// return false;
-
-			if (enableBackTracking) // always false
-			{
-				if (backTrackCredits == 0)
-				{
-					std::cout << "Map Failed!.\n";
-					return false;
-				}
-				//					assert(failedNode!=NULL);
-				backTrackCredits--;
-
-				DFGNode *prevNode = mappedNodes.top();
-				mappedNodes.pop();
-				unmappedNodes.push(node);
-				unmappedNodes.push(prevNode);
-
-				prevNode->clear(this->dfg);
-				estimatedRouteInfo.erase(node);
-				continue;
-			}
-			else
-			{
-
-				node->clear(this->dfg);
-				std::cout << "----------node" << node->idx << " not mapped in initial mapping\n";
-			}
+			node->SAClear(this->dfg);
 		}
-		backTrackCredits = std::min(this->backTrackLimit, backTrackCredits + 1);
-		mappedNodes.push(node);
 	}
 
 	return true;
@@ -289,7 +270,10 @@ float CGRAXMLCompile::SAMapper::inner_map()
 
 	for (int i = 0; i < movement_in_each_temp; i++)
 	{
-		LOG(SA) << "************ NO." << i << " movement, unmapped nodes:" << getNumberOfUnmappedNodes() << ", congestion:" << getCongestionNumber();
+		std::stringstream congestion_detail;
+		LOG(SA) << "************ NO." << i << " movement, unmapped nodes:" << getNumberOfUnmappedNodes() << ", congestion:" << getCongestionNumber(congestion_detail) 
+			<< ", congestion:" << getConflictNumber(congestion_detail);
+		LOG(ROUTE)<<congestion_detail.str();
 
 		// select DFG node to unmap. If this node is not mapped yet, will select a parent to unmap as well.
 		std::vector<DFGNode *> moved_nodes;
@@ -310,10 +294,17 @@ float CGRAXMLCompile::SAMapper::inner_map()
 		std::map<dfg_data, std::vector<LatPort>> old_data_routing_path;
 		old_data_routing_path.insert(data_routing_path.begin(), data_routing_path.end());
 
+		LOG(SA)<<"select DFG node "<< selected_dfg_node->idx <<" to unmap";
 		// start map
-		clearNodeMapping(selected_dfg_node);
+		if (dfg_node_placement.find(selected_dfg_node) != dfg_node_placement.end()){
+			LOG(SA)<<"current placement:" << selected_dfg_node->rootDP->getFullName();
+			clearNodeMapping(selected_dfg_node);
+		}else{
+			LOG(SA)<<"this DFG node is not placed yet" ;
+		}
+		
 		auto dp_candidate = getRandomDPCandidate(selected_dfg_node).front();
-		LOG(SA) << "map selected DFG node:" << selected_dfg_node->idx << " op:" << selected_dfg_node->op << " current_pe:" << dp_candidate->getPE()->getName() << "\n";
+		LOG(SA) << "map this DFG node:" << selected_dfg_node->idx << " op:" << selected_dfg_node->op << "to pe:" << dp_candidate->getPE()->getName() ;
 		bool route_succ = SARoute(selected_dfg_node, dp_candidate);
 		moved_nodes.push_back(selected_dfg_node);
 
@@ -379,7 +370,7 @@ float CGRAXMLCompile::SAMapper::inner_map()
 			accept = whetherAcceptNewMapping(attempted_cost, curr_cost, curr_temp);
 		}
 
-		LOG(SA) << "accept " << accept << " route_succ:" << route_succ << " curr_cost:" << curr_cost << " attepmted cost:" << attempted_cost << "\n";
+		LOG(SA) << "accept " << (accept? "ture" : "false") << " route_succ:" << route_succ << " curr_cost:" << curr_cost << " attepmted cost:" << attempted_cost << "\n";
 
 		if (accept)
 		{
@@ -391,7 +382,7 @@ float CGRAXMLCompile::SAMapper::inner_map()
 			old_dfg_node_placement.clear();
 			old_data_routing_path.clear();
 
-			printHyCUBEBinary(this->cgra);
+			// printHyCUBEBinary(this->cgra);
 			if (isCurrMappingValid())
 			{
 				std::cout << "find a valid mapping, exit inner_map....\n";
@@ -494,7 +485,7 @@ bool CGRAXMLCompile::SAMapper::clearNodeMapping(DFGNode *node)
 	}
 	// assert(mapped ==  routed);
 
-	node->clear(this->dfg);
+	node->SAClear(this->dfg);
 	return true;
 }
 
@@ -521,9 +512,11 @@ bool CGRAXMLCompile::SAMapper::restoreMapping(DFGNode *node, std::map<DFGNode *,
 	return true;
 }
 
-int CGRAXMLCompile::SAMapper::getCongestionNumber()
+int CGRAXMLCompile::SAMapper::getCongestionNumber(std::stringstream & congestion_detail)
 {
 	int congestion_number = 0;
+
+	std::stringstream congestion_ss;
 
 	for (std::pair<Port *, std::set<DFGNode *>> pair : congestedPorts)
 	{
@@ -540,12 +533,12 @@ int CGRAXMLCompile::SAMapper::getCongestionNumber()
 					}
 					if (this->dfg->isMutexNodes(node1, node2, p))
 						continue;
-					LOG(ROUTE) << "CONGESTION:" << p->getFullName();
+					congestion_detail << "CONGESTION:" << p->getFullName();
 					for (DFGNode *node : pair.second)
 					{
-						LOG(ROUTE) << "," << node->idx << "|BB=" << node->BB;
+						congestion_detail << "\t ," << node->idx << "|BB=" << node->BB;
 					}
-					LOG(ROUTE) << "\n";
+					congestion_detail << "\n";
 					congestion_number++;
 					//					break;
 				}
@@ -553,6 +546,29 @@ int CGRAXMLCompile::SAMapper::getCongestionNumber()
 		}
 	}
 	return congestion_number;
+}
+
+int CGRAXMLCompile::SAMapper::getConflictNumber(std::stringstream & congestion_detail)
+{
+	int conflict_number = 0;
+
+	for (std::pair<Port *, std::set<DFGNode *>> pair : conflictedPorts)
+	{
+		Port *p = pair.first;
+		if (p->getNode() != NULL)
+		{
+			conflict_number += pair.second.size();
+
+			congestion_detail<< "CONFLICT :" << p->getFullName();
+			for (DFGNode *node : pair.second)
+			{
+				congestion_detail << "\t ," << node->idx << "|BB=" << node->BB;
+			}
+			congestion_detail << ", with MAPPED = " << p->getNode()->idx << "|BB=" << p->getNode()->BB;
+		}
+	}
+
+	return conflict_number;
 }
 
 int CGRAXMLCompile::SAMapper::getPortUsage()
@@ -571,7 +587,8 @@ int CGRAXMLCompile::SAMapper::getCost()
 	int unmapped_node_number = getNumberOfUnmappedNodes();
 	int port_usage = getPortUsage();
 	int congestion_number = getCongestionNumber();
-	int total_cost = unmapped_node_number * 100 + congestion_number * 10 + port_usage;
+	int conflict_number = getConflictNumber();
+	int total_cost = unmapped_node_number * 100 + congestion_number * 10 + conflict_number * 10 + port_usage;
 	LOG(COST) << "unmapped node:" << unmapped_node_number << " port usage:" << port_usage << " congestion:" << congestion_number << " total cost:" << total_cost << "\n";
 	return total_cost;
 }
@@ -692,8 +709,8 @@ bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath *candidateDP)
 			if (route_success)
 			{
 
-				LOG(SA) << "routing success from " << parent->idx << "," << startCand->getFullName() << "," << startCandLat.first << " to "
-						<< node->idx << "," << destPort->getFullName() << "," << destPortLat.first << "\n";
+				LOG(SA) << "routing success from node" << parent->idx << "," << startCand->getFullName() << "," << startCandLat.first << " to "
+						<< node->idx << ", node" << destPort->getFullName() << "," << destPortLat.first << "\n";
 				assignPath(parent, node, path);
 				data_routing_path.emplace(std::make_pair(parent, node), path);
 			}
@@ -708,7 +725,7 @@ bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath *candidateDP)
 
 		if (!route_success)
 		{
-			node->clear(this->dfg);
+			node->SAClear(this->dfg);
 			continue;
 		}
 
@@ -773,7 +790,7 @@ bool CGRAXMLCompile::SAMapper::SARoute(DFGNode *node, DataPath *candidateDP)
 		}
 		if (!route_success)
 		{
-			node->clear(this->dfg);
+			node->SAClear(this->dfg);
 			continue;
 		}
 
@@ -1020,7 +1037,7 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 
 		if (!alreadMappedChildRouteSucc)
 		{
-			node->clear(this->dfg);
+			node->SAClear(this->dfg);
 			continue; // try the next dest
 		}
 		else
@@ -1096,7 +1113,7 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 				else
 				{
 					addedRoutingParentPorts = 0;
-					node->clear(this->dfg);
+					node->SAClear(this->dfg);
 					LOG(SA) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
 				}
 				path.clear();
@@ -1104,7 +1121,7 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 			if (!succ)
 			{
 				*failedNode = parent;
-				node->clear(this->dfg);
+				node->SAClear(this->dfg);
 				addedRoutingParentPorts = 0;
 				parentRoutSucc = false; // at least one parent failed to route, try a new dest
 				break;
@@ -1159,7 +1176,7 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 
 			break;
 		}
-		node->clear(this->dfg);
+		node->SAClear(this->dfg);
 	}
 
 	if (routeSucc)
@@ -1192,7 +1209,7 @@ bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 		currDest.dest->assignNode(node, currDest.destLat, this->dfg);
 		dfg_node_placement.emplace(node, std::make_pair(currDest.dest, currDest.destLat));
 		node->rootDP = currDest.dest;
-		node->clear(this->dfg);
+		node->SAClear(this->dfg);
 		LOG(ROUTE) << "Route failed...\n";
 
 		int parentRoutingPortCountEnd = 0;

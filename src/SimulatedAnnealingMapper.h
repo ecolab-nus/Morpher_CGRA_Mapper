@@ -45,18 +45,30 @@ public:
 	bool restoreMapping(DFGNode *node, 	std::map<DFGNode*, std::pair<DataPath*, int>> & dfg_node_placement, 
 										std::map<dfg_data, std::vector<LatPort>> & data_routing_path);
 	
-	int getCongestionNumber();
+	
+	int getCongestionNumber(std::stringstream & congestion_detail);
+	int getCongestionNumber(){
+		std::stringstream ss;
+		return getCongestionNumber(ss);
+	};
+
+	int getConflictNumber(std::stringstream & congestion_detail);
+	int getConflictNumber(){
+		std::stringstream ss;
+		return getConflictNumber(ss);
+	};
 	int getPortUsage();
 	int getNumberOfUnmappedNodes();
 	int checkAnyUnroutedEdge();
 	std::string mapStatus();
 	bool isCurrMappingValid(){
 		int overuse_number = getCongestionNumber();
+		int conflict_number = getConflictNumber();
 		int unmapped_node_number = getNumberOfUnmappedNodes();
 		int unrouted_edge = checkAnyUnroutedEdge();
-		if(unmapped_node_number == 0 && unrouted_edge > 0) assert(false && "some edges are not routed!");
+		if(unmapped_node_number == 0 && conflict_number == 0 && unrouted_edge > 0) assert(false && "some edges are not routed!");
 		
-		if(unmapped_node_number == 0 && overuse_number == 0){
+		if(unmapped_node_number == 0 && conflict_number == 0  && overuse_number == 0){
 			return true;
 		}else{
 			return false;

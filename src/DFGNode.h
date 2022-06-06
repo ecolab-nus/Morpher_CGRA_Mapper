@@ -52,6 +52,8 @@ public:
 
 	int align;
 	void clear(DFG *dfg);
+	void SAClear(DFG *dfg);
+	// the difference is, for overuse, SA stores multiple values in one port, but pathfinder only stores the last value
 	std::string getOPtype(DFGNode *child);
 	bool isMemOp();
 
