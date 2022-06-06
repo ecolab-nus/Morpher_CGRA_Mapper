@@ -2035,6 +2035,7 @@ int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
 	std::cout << "Recurrence Minimum II: " << recMinII <<"\n";
 	//exit(true);
 	return recMinII;
+
 }
 
 
@@ -2145,4 +2146,5 @@ std::string CGRAXMLCompile::HeuristicMapper::dumpMapping(){
 	}
 
 	return ss.str();
+
 }
