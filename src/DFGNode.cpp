@@ -234,7 +234,7 @@ void CGRAXMLCompile::DFGNode::SAClear(DFG *dfg)
 				//has been cleared
 				continue;
 		}
-		p->erase(this);
+		p->erase(this, pair.second);
                 
 	}
 
@@ -257,7 +257,7 @@ void CGRAXMLCompile::DFGNode::SAClear(DFG *dfg)
 			if (destIdx == this->idx)
 			{
 				if(erased_ports.find(p->getFullName()) == erased_ports.end()){
-						p->erase(parent);
+						p->erase(parent, destIdx);
 						erased_ports.insert(p->getFullName()+std::to_string(destIdx));
 				}
 				

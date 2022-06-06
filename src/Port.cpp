@@ -89,9 +89,16 @@ void Port::decreaseUse(DFGNode *extnode, HeuristicMapper *hm)
 	}
 }
 
-void Port::setNode(DFGNode *node, int latency, HeuristicMapper *hm)
+void Port::setNode(DFGNode *node, int latency,  int dest ,  HeuristicMapper *hm)
 {
-	this->mapped_nodes.push_back(std::make_pair(node, latency));
+
+	if(std::find(mapped_nodes.begin(), mapped_nodes.end(), std::make_pair(node, latency)) == mapped_nodes.end()){
+		this->mapped_nodes.push_back(std::make_pair(node, latency));
+		node_to_dest_map.emplace(node, std::set<int>());
+	}
+	assert(node_to_dest_map.find(node) != node_to_dest_map.end());
+	node_to_dest_map[node].insert(dest);
+	
 	setLat(latency);
 
 	PE *pe = getMod()->getPE();
@@ -195,7 +202,7 @@ int CGRAXMLCompile::Port::getCongCost()
 }
 
 
-void CGRAXMLCompile::Port::erase(DFGNode * eraseNode){
+void CGRAXMLCompile::Port::erase(DFGNode * eraseNode, int  node_value_dest){
 	assert(this->mod->getCGRA());
 	if (eraseNode != NULL)
 	{
@@ -221,7 +228,17 @@ void CGRAXMLCompile::Port::erase(DFGNode * eraseNode){
 	for(auto it =  mapped_nodes.begin(); it != mapped_nodes.end(); it++){
 		if(it->first->idx == eraseNode->idx){
 			find_node = true;
-			mapped_nodes.erase(it);
+
+			auto & value_dests = node_to_dest_map.at(eraseNode);
+			assert(value_dests.find(node_value_dest) != value_dests.end());
+			value_dests.erase(value_dests.find(node_value_dest));
+
+			// if dests are empty, remove the node then.
+			if(value_dests.size() == 0){
+				mapped_nodes.erase(it);
+				node_to_dest_map.erase(node_to_dest_map.find(eraseNode));
+			}
+			
 			break;
 		}
 	}
@@ -230,8 +247,8 @@ void CGRAXMLCompile::Port::erase(DFGNode * eraseNode){
 		number_signals = 0;
 		latency = -1;
 	}else{
-		number_signals = mapped_nodes.size(); // -- or doest not change?
-		latency = mapped_nodes.rbegin()->second; // how about lat?
+		number_signals = mapped_nodes.size(); 
+		latency = mapped_nodes.rbegin()->second; 
 	}
 	
 }
@@ -265,6 +282,7 @@ void CGRAXMLCompile::Port::clear()
 	}
 
 	mapped_nodes.clear();
+	node_to_dest_map.clear();
 	// mappedNode = NULL;
 	number_signals = 0;
 	latency = -1;

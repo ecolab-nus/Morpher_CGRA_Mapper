@@ -966,7 +966,7 @@ void CGRAXMLCompile::HeuristicMapper::assignPath(DFGNode *src, DFGNode *dest,
 			continue;
 		}
 
-		p.second->setNode(src, p.first);
+		p.second->setNode(src, p.first, dest->idx);
 
 		if (std::find(src->routingPorts.begin(), src->routingPorts.end(), std::make_pair(p.second, dest->idx)) == src->routingPorts.end())
 		{

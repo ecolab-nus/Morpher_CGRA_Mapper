@@ -1689,7 +1689,7 @@ void CGRAXMLCompile::PathFinderMapper::assignPath(DFGNode *src, DFGNode *dest,
 		
 
 		
-		p.second->setNode(src, p.first, this);
+		p.second->setNode(src, p.first, dest->idx, this);
 		congestedPorts[p.second].insert(src);
 		p.second->increaseConflictedUse(src, this);
 
