@@ -1,3 +1,4 @@
+#include "argparse.h"
 #include "DFG.h"
 #include "CGRA.h"
 #include "Module.h"
@@ -16,6 +17,9 @@
 #ifndef MAPPER_UTIL_H_
 #define MAPPER_UTIL_H_
 
+
+
+
 struct arguments
 {
 	string dfg_filename;
@@ -33,7 +37,7 @@ struct arguments
 	int mapping_method = 0; // 0: PathFinderMapper, 1: SAMapper (SimulatedAnnealing),  HeuristicMapper will not be used
 };
 
-arguments parse_arguments(int argn, char *argc[])
+arguments old_parse_arguments(int argn, char *argc[])
 {
 	arguments ret;
 
@@ -99,6 +103,49 @@ arguments parse_arguments(int argn, char *argc[])
 		return ret;
 };
 
+arguments parse_arguments(int argn, char *argc[]){
+
+	
+
+	arguments ret;
+	d:x:y:t:j:i:eb:m:r:h:
+	auto args = util::argparser("CGRA mapper argument parser.");
+	args.set_program_name("mapper")
+        .add_help_option()
+        .add_option<int>("-x", "--xdim", "the x dimension of CGRA", -1)
+		.add_option<int>("-y", "--ydim", "the x dimension of CGRA", -1)
+		.add_option<std::string>("-j", "--json_arch", "architcture file in json", "")
+		.add_option<std::string>("-d", "--dfg", "dfg file", "")
+		.add_option<std::string>("-t", "--petype", "PE type", "")
+		.add_option<int>("-i", "--ii", "initial II", 0)
+		.add_option<int>("-m", "--mapping", "mapping method", 0)
+		.add_option<int>("-n", "--datapath_number", "datapath_number", 1)
+		.add_option<int>("-r", "--max_iter", "max iteration", 30)
+		.add_option<int>("-h", "--hops", "hops for hycube", 4)
+		.add_option<bool>("-e", "--noMutexPaths", "noMutexPaths", false)
+		.add_option<int>("-b", "--backtrack_limit", "back track limit", 2)
+        .parse(argn, argc);
+
+	ret.dfg_filename = args.get_option<std::string>("--dfg");
+	ret.xdim = args.get_option<int>("--xdim");
+	ret.ydim = args.get_option<int>("--ydim");
+	ret.PEType = args.get_option<std::string>("--petype");
+	ret.json_file_name = args.get_option<std::string>("--json_arch");
+	ret.userII = args.get_option<int>("--ii");
+	ret.noMutexPaths = args.get_option<bool>("--noMutexPaths");
+	ret.backtracklimit = args.get_option<int>("--backtrack_limit");
+	ret.ndps =  args.get_option<int>("--datapath_number");
+	ret.maxiter = args.get_option<int>("--max_iter");
+	ret.max_hops =  args.get_option<int>("--hops");
+	ret.mapping_method = args.get_option<int>("--mapping");
+	ret.use_json = true;
+	assert(ret.dfg_filename!= "");
+	assert(ret.json_file_name!= "");
+	args.print_as_ini(std::cout);
+
+	return ret;
+
+}
 
 
 
