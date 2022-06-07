@@ -3901,7 +3901,7 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 			int x = currPE->X;
 			int y = currPE->Y;	
 			
-			InsFormat & tempIns  = InsFArr[t][y][x];
+			InsFormat & tempIns  = InsFArr[getIndexOfBin(t,y,x)];
 			if(tempIns.opcode != "00000"){
 				continue;
 			}
@@ -3909,7 +3909,7 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 			int nop_count  = 1;
 			int temp_t = t + 1;
 			while( temp_t <=  cgra->get_t_max()){
-				if(InsFArr[temp_t][y][x].opcode == "00000"){
+				if(InsFArr[getIndexOfBin(temp_t, y ,x)].opcode == "00000"){
 					nop_count++;
 					temp_t++;
 				}else{
