@@ -17,6 +17,7 @@
 #include "HeuristicMapper.h"
 #include "PathFinderMapper.h"
 #include "SimulatedAnnealingMapper.h"
+#include "lisa/LISAMapper.h"
 #include <math.h>
 
 #include <ctype.h>
@@ -207,6 +208,8 @@ int main(int argn, char *argc[])
 		mapper = new SAMapper(inputDFG_filename);
 		
 		// assert(false && "convert to SA");
+	}else if(mapping_method  == 2){
+		mapper = new LISAMapper(inputDFG_filename);
 	}else{
 		assert(false && "did not set a valid mapping method");
 	}
@@ -278,6 +281,9 @@ int main(int argn, char *argc[])
 		}else if(mapping_method  == 1){
 			SAMapper * sa_mapper = static_cast<SAMapper*>(mapper);
 			mappingSuccess = sa_mapper->SAMap(tempCGRA, &tempDFG);
+		}else if(mapping_method  == 2){
+			LISAMapper * lisa_mapper = static_cast<LISAMapper*>(mapper);
+			mappingSuccess = lisa_mapper->LISAMap(tempCGRA, &tempDFG);
 		}else{
 			assert(false && "did not set a valid mapping method");
 		}
