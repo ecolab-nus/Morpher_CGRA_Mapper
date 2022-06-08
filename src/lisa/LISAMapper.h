@@ -8,12 +8,14 @@
 #include "../PathFinderMapper.h"
 #include "../DataPath.h"
 #include "../debug.h"
+#include "../util.h"
 #include "LISAController.h"
 
 #include <string>
 #include <random>
 #include <algorithm> 
 #include <chrono>
+#include <assert.h>
 #include <sys/time.h>
 #ifndef LISAMAPPER_H_
 #define LISAMAPPER_H_
@@ -31,21 +33,26 @@ public:
 
 	bool LISAMap(CGRA *cgra, DFG *dfg);
 
+	bool LISAMapCore(CGRA *cgra, DFG *dfg);
+
 	void initLisa(std::map<DFGNode*, int>  node_to_id,  std::map<int, DFGNode*>  id_to_node, std::shared_ptr<std::map<int, node_label>> dfg_label){
         dfg_label_ = dfg_label;
         node_to_id_ = node_to_id;
         id_to_node_ = id_to_node;
     }
 
-	std::map<int, pos3d> dumpMappingForGNN();
+	std::map<int, pos3d> dumpMapping();
 	bool optimizeMapping();
-	DataPath *  getLISADPCandidate(DFGNode *op, int accepted = 1 , int total_tried =1, int num_swap = 1);
-	std::vector<DataPath*> getDesiredFu( int start_II, int end_II, DFGNode * node);
+	DataPath *  getLISADPCandidate(DFGNode *dfg_node, int accepted = 1 , int total_tried =1, int num_swap = 1);
+	std::vector<DataPath*> getCandidateByIIConstraint( int start_II, int end_II, DFGNode * node);
 
 	std::pair<int,int> getIntervalByScheduleOrder( std::map<int, pos3d> & dumped_mapping, DFGNode * node, int scheduler_order );
     std::map<DataPath *, int> getCostByComm( std::map<int, pos3d> & dumped_mapping, std::vector<DataPath *> candidates, DFGNode *node );
     std::map<DataPath *, int> getCostByAssociation( std::map<int, pos3d> & dumped_mapping, std::vector<DataPath *> candidates, DFGNode *node, int start_II );
     std::map<DataPath *, int> getCostForSameLevelNode( std::map<int, pos3d> & dumped_mapping, std::vector<DataPath *> candidates, DFGNode *node );
+
+	DataPath *   getRoutingNode(int  x, int  y, int t);
+
 
 	DataPath *  getCloseRandomFU(DFGNode* node, DataPath * old_dp){
         return  getCloseRandomFU( node,  old_dp,  this->cgra->get_x_max(),  this->cgra->get_y_max() );
@@ -56,6 +63,7 @@ public:
     }
 	void enableTraining(){ is_training = true;}
     void disableTraining(){ is_training = false;}
+	bool pass_lisa_arg(lisa_arg la);
 
 	
 

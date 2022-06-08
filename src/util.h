@@ -18,7 +18,10 @@
 #define MAPPER_UTIL_H_
 
 
-
+struct lisa_arg{
+	bool lisa_eval_routing_priority = false;
+	bool training = false;
+};
 
 struct arguments
 {
