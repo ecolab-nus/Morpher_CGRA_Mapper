@@ -18,9 +18,10 @@
 #define MAPPER_UTIL_H_
 
 
-struct lisa_arg{
+struct lisa_arguments{
 	bool lisa_eval_routing_priority = false;
 	bool training = false;
+	int max_training_iteration  = 5;
 };
 
 struct arguments
@@ -38,6 +39,8 @@ struct arguments
 	int maxiter = 30;  // for PathFinderMapper,
 	int max_hops = 4;  // for HyCUBE
 	int mapping_method = 0; // 0: PathFinderMapper, 1: SAMapper (SimulatedAnnealing),  HeuristicMapper will not be used
+	int max_II = 32;
+	lisa_arguments lisa_arg;
 };
 
 arguments old_parse_arguments(int argn, char *argc[])
@@ -127,6 +130,7 @@ arguments parse_arguments(int argn, char *argc[]){
 		.add_option<int>("-h", "--hops", "hops for hycube", 4)
 		.add_option<bool>("-e", "--noMutexPaths", "noMutexPaths", false)
 		.add_option<int>("-b", "--backtrack_limit", "back track limit", 2)
+		.add_option<int>("", "--max_II", "max II", 32)
         .parse(argn, argc);
 
 	ret.dfg_filename = args.get_option<std::string>("--dfg");
@@ -141,6 +145,7 @@ arguments parse_arguments(int argn, char *argc[]){
 	ret.maxiter = args.get_option<int>("--max_iter");
 	ret.max_hops =  args.get_option<int>("--hops");
 	ret.mapping_method = args.get_option<int>("--mapping");
+	ret.max_II = args.get_option<int>("--max_II");
 	ret.use_json = true;
 	assert(ret.dfg_filename!= "");
 	assert(ret.json_file_name!= "");

@@ -49,6 +49,7 @@ int main(int argn, char *argc[])
 	string json_file_name = args.json_file_name;
 	int initUserII = args.userII;
 	int mapping_method = args.mapping_method;
+	int max_II = args.max_II;
 	
 	DFG currDFG;
 	currDFG.parseXML(inputDFG_filename);
@@ -153,7 +154,7 @@ int main(int argn, char *argc[])
 			mappingSuccess = sa_mapper->Map(tempCGRA, &tempDFG);
 		}else if(mapping_method  == 2){
 			LISAMapper * lisa_mapper = static_cast<LISAMapper*>(mapper);
-			mappingSuccess = lisa_mapper->LISAMap(tempCGRA, &tempDFG);
+			mappingSuccess = lisa_mapper->LISAMap( &tempDFG, args);
 		}else{
 			assert(false && "did not set a valid mapping method");
 		}
@@ -170,7 +171,7 @@ int main(int argn, char *argc[])
 			delete tempCGRA;
 			II++;
 
-			if (II == 65)
+			if (II == max_II)
 			{
 				std::cout << "############ cannot map:  II max of 65 has been reached and exiting...\n";
 				break;

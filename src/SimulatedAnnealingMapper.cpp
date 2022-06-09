@@ -130,7 +130,7 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 	curr_cost = getCost();
 	curr_temp = maximum_temp;
 
-	std::cout<<"###############current mapping: \n"<<dumpMapping();
+	std::cout<<"###############current mapping: \n"<<dumpMappingToStr();
 
 	while (curr_temp > minimim_temp)
 	{
@@ -902,7 +902,7 @@ std::vector<CGRAXMLCompile::DataPath *> CGRAXMLCompile::SAMapper::getRandomDPCan
 	return candidateDests;
 }
 
-// compated to the PathFinderMapper one, add some additional information for SA.
+// compared to the PathFinderMapper one, add some additional information for SA.
 bool CGRAXMLCompile::SAMapper::Route(DFGNode *node,
 									 std::priority_queue<dest_with_cost> &estimatedRoutes,
 									 DFGNode **failedNode)

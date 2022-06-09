@@ -31,7 +31,10 @@ public:
 		mapping_method_name  = "LISA";
 	};
 
-	bool LISAMap(CGRA *cgra, DFG *dfg);
+	bool LISAMap(DFG *dfg, arguments arg, TimeDistInfo &tdi, int & start_II);
+	
+	bool initMap();
+	float inner_map();
 
 	bool LISAMapCore(CGRA *cgra, DFG *dfg);
 
@@ -42,7 +45,7 @@ public:
     }
 
 	std::map<int, pos3d> dumpMapping();
-	bool optimizeMapping();
+	bool optimizeMappingToMinimizeCost();
 	DataPath *  getLISADPCandidate(DFGNode *dfg_node, int accepted = 1 , int total_tried =1, int num_swap = 1);
 	std::vector<DataPath*> getCandidateByIIConstraint( int start_II, int end_II, DFGNode * node);
 
@@ -54,16 +57,14 @@ public:
 	DataPath *   getRoutingNode(int  x, int  y, int t);
 
 
-	DataPath *  getCloseRandomFU(DFGNode* node, DataPath * old_dp){
-        return  getCloseRandomFU( node,  old_dp,  this->cgra->get_x_max(),  this->cgra->get_y_max() );
+	DataPath *  getCloseRandomDP(DFGNode* node, DataPath * old_dp){
+        return  getCloseRandomDP( node,  old_dp,  this->cgra->get_x_max(),  this->cgra->get_y_max() );
     }
-    DataPath *  getCloseRandomFU(DFGNode* node, DataPath * old_dp, int max_physical_dis,  int max_temp_dis );
-	void setLISAController( std::shared_ptr<LISAController> ctrl){ 
-        lisa_ctrl = ctrl;
-    }
+    DataPath *  getCloseRandomDP(DFGNode* node, DataPath * old_dp, int max_physical_dis,  int max_temp_dis );
+	
 	void enableTraining(){ is_training = true;}
     void disableTraining(){ is_training = false;}
-	bool pass_lisa_arg(lisa_arg la);
+	bool pass_lisa_arg(lisa_arguments la);
 
 	
 
@@ -72,9 +73,12 @@ protected:
 
 	std::shared_ptr<LISAController> lisa_ctrl;
 	bool is_training = false;
+	int max_training_iteration = 5;
 
     bool finish_init = false;
     bool lisa_eval_routing_priority = false;
+	int after_mapping_optimize_cost_steps  =  1000;
+	std::string dfg_id = "";
 
 
 	std::map<DFGNode*, int>  node_to_id_;
