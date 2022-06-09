@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#pragma once
 
 #ifndef MAPPER_UTIL_H_
 #define MAPPER_UTIL_H_
@@ -43,7 +44,7 @@ struct arguments
 	lisa_arguments lisa_arg;
 };
 
-arguments old_parse_arguments(int argn, char *argc[])
+inline arguments old_parse_arguments(int argn, char *argc[])
 {
 	arguments ret;
 
@@ -109,7 +110,7 @@ arguments old_parse_arguments(int argn, char *argc[])
 		return ret;
 };
 
-arguments parse_arguments(int argn, char *argc[]){
+inline arguments parse_arguments(int argn, char *argc[]){
 
 	
 

@@ -149,7 +149,7 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 			}
 		}
 		LOG(ROUTE)<<congestion_detail.str();
-		std::cout<<"###############current mapping: \n"<<dumpMapping();
+		std::cout<<"###############current mapping: \n"<<dumpMappingToStr();
 
 		curr_temp = updateTemperature(curr_temp, accept_rate);
 

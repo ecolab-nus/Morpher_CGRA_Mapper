@@ -2039,7 +2039,7 @@ int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
 }
 
 
-std::string CGRAXMLCompile::HeuristicMapper::dumpMapping(){
+std::string CGRAXMLCompile::HeuristicMapper::dumpMappingToStr(){
 	std::vector< std::set<DFGNode *>> latency_to_node_vector; // the index represend the latency
 	for(int i = 0; i < 1000; i++){
 		std::set<DFGNode *> temp;

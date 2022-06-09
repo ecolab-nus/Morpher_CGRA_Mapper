@@ -417,7 +417,7 @@ float CGRAXMLCompile::LISAMapper::inner_map()
 }
 
 
-CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNode *dfg_node, int accepted = 1 , int total_tried =1, int num_swap = 1){
+CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNode *dfg_node, int accepted  , int total_tried , int num_swap ){
 	assert(dfg_label_->find(node_to_id_[dfg_node]) != dfg_label_->end() );
 	auto & dfg_node_label = dfg_label_->at(node_to_id_[dfg_node]);
 
@@ -565,6 +565,11 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNo
 	return selected_fu;
 }
 
+//TODO: add this function
+std::vector<CGRAXMLCompile::DataPath*> CGRAXMLCompile::LISAMapper::getCandidateByIIConstraint( int start_II, int end_II, DFGNode * node){
+	std::vector<DataPath*> temp;
+	return temp;
+}
 
 CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getCloseRandomDP(DFGNode* dfg_node, DataPath * old_dp, int max_physical_dis,  int max_temp_dis ){
 	

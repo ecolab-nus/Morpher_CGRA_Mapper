@@ -11,8 +11,8 @@
 
 #include <assert.h>
 #include <string.h>
-
-#include "util.h"
+// 
+// #include "util.h"
 #include "DFG.h"
 #include "CGRA.h"
 #include "HeuristicMapper.h"
@@ -154,7 +154,7 @@ int main(int argn, char *argc[])
 			mappingSuccess = sa_mapper->Map(tempCGRA, &tempDFG);
 		}else if(mapping_method  == 2){
 			LISAMapper * lisa_mapper = static_cast<LISAMapper*>(mapper);
-			mappingSuccess = lisa_mapper->LISAMap( &tempDFG, args);
+			mappingSuccess = lisa_mapper->LISAMap( &tempDFG, args, tdi, II);
 		}else{
 			assert(false && "did not set a valid mapping method");
 		}
