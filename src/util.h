@@ -23,6 +23,7 @@ struct lisa_arguments{
 	bool lisa_eval_routing_priority = false;
 	bool training = false;
 	int max_training_iteration  = 5;
+	std::string arch_name = "";
 };
 
 struct arguments
@@ -115,6 +116,8 @@ inline arguments parse_arguments(int argn, char *argc[]){
 	
 
 	arguments ret;
+	lisa_arguments lisa_arg ;
+
 	d:x:y:t:j:i:eb:m:r:h:
 	auto args = util::argparser("CGRA mapper argument parser.");
 	args.set_program_name("mapper")
@@ -132,6 +135,8 @@ inline arguments parse_arguments(int argn, char *argc[]){
 		.add_option<bool>("-e", "--noMutexPaths", "noMutexPaths", false)
 		.add_option<int>("-b", "--backtrack_limit", "back track limit", 2)
 		.add_option<int>("", "--max_II", "max II", 32)
+		.add_option<std::string>("", "--arch_name", "architecture name", "")
+		.add_option<bool>("", "--lisa_training", "lisa training", false)
         .parse(argn, argc);
 
 	ret.dfg_filename = args.get_option<std::string>("--dfg");
@@ -148,6 +153,9 @@ inline arguments parse_arguments(int argn, char *argc[]){
 	ret.mapping_method = args.get_option<int>("--mapping");
 	ret.max_II = args.get_option<int>("--max_II");
 	ret.use_json = true;
+	lisa_arg.arch_name = args.get_option<std::string>("--arch_name");
+	lisa_arg.training = args.get_option<bool>("--lisa_training");
+	ret.lisa_arg = lisa_arg;
 	assert(ret.dfg_filename!= "");
 	assert(ret.json_file_name!= "");
 	args.print_as_ini(std::cout);

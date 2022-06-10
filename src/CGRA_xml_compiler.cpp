@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <string.h>
 // 
-// #include "util.h"
+#include "util.h"
 #include "DFG.h"
 #include "CGRA.h"
 #include "HeuristicMapper.h"

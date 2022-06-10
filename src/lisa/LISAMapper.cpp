@@ -26,83 +26,20 @@ namespace CGRAXMLCompile
 
 
 
-bool CGRAXMLCompile::LISAMapper::LISAMap( DFG *dfg, arguments arg, TimeDistInfo &tdi, int & start_II )
+bool CGRAXMLCompile::LISAMapper::LISAMap( DFG *dfg, arguments arg, TimeDistInfo &tdi, int  start_II )
 {
 	pass_lisa_arg(arg.lisa_arg);
+	lisa_ctrl->setArchandDFGFileName(arg.json_file_name, arg.dfg_filename, arg.lisa_arg.arch_name);
 
 	// set lisa contoller
-	{
-		sortBackEdgePriorityASAP();
-		CGRA *testCGRA  = new CGRA(arg.json_file_name, 1, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
-		std::set<int> node_list;
-		std::map<int, std::string> node_op;
-		std::vector<std::pair<int,int>> lisa_edges;
-		for(auto node: sortedNodeList){
-			node_list.insert(node->idx);
-			node_op.emplace(node->idx, node->op);
-			for(auto p: node->parents){
-				if (p->childrenOPType[node] == "PS")
-				{
-					continue;
-				}
-				lisa_edges.push_back(std::make_pair(p->idx, node->idx));
-			}
-		}
-		lisa_ctrl = std::make_shared<LISAController>( LISAController(testCGRA->get_x_max(), testCGRA->get_y_max() ,
-							dfg_id, node_list, node_op, lisa_edges));
-	}
+	set_lisa_controller( arg );
 	
 	//here are two different ways to get labｅl: 1) training 2) GNN　inference
 	if(is_training){
-		std::vector<perf_metric> perf_hist;
-		perf_metric  best_perf = {100 , 0 , 0};
-		//iterative method
-		for(int traning_iteration  = 0; traning_iteration < max_training_iteration;  traning_iteration++){
-			std::shared_ptr<std::map<int, node_label>> curr_label = lisa_ctrl->getCurrLabel();
-
-			auto start = std::chrono::steady_clock::now();
-			int curr_II  =  start_II;
-			bool mapped = false;
-
-			// mapping
-			{
-				for(; curr_II < 32; curr_II++){
-					CGRA *tempCGRA  = new CGRA(arg.json_file_name, curr_II, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
-					tempCGRA->max_hops = arg.max_hops;
-					this->getcongestedPortsPtr()->clear();
-					this->getconflictedPortsPtr()->clear();
-					tempCGRA->analyzeTimeDist(tdi);
-					mapped = LISAMapCore(tempCGRA, dfg);
-					if(mapped){
-						break;
-					}
-				}
-				
-			}
-
-
-			if(mapped){
-				auto end = std::chrono::steady_clock::now();
-				std::chrono::duration<double> elapsed_seconds = end-start;
-				LOG(LISA)<<"training iteration :"<< traning_iteration<<" running time"<< elapsed_seconds.count()<<" mapping:"<<dumpMappingToStr();
-				perf_metric this_iter_perf { curr_II, getCost() , elapsed_seconds.count() };
-				bool is_best = false;
-                        
-				if(traning_iteration == 0 || this_iter_perf < best_perf) {
-						best_perf = this_iter_perf;
-						is_best = true;
-				}
-			}
-
-			lisa_ctrl->generateCombinedBestLabelHistorically(best_perf);
-            LOG(LISA)<<"best label"<<lisa_ctrl->labelToStrForGNNDataSet(*(lisa_ctrl->getBestLabel()));
-			
-            mapping_method_name = "t-LISA";
-		}
-
-
+		do_training(dfg,  arg, tdi, start_II );
 	}else{
 		// do GNN_inference
+		assert(arg.lisa_arg.arch_name != "");
 		lisa_ctrl->callGNNInference();
 	}
 
@@ -141,6 +78,74 @@ bool CGRAXMLCompile::LISAMapper::pass_lisa_arg(lisa_arguments la){
 	this->lisa_eval_routing_priority = la.lisa_eval_routing_priority;
 	this->is_training =  la.training; 
 	this->max_training_iteration = la.max_training_iteration;
+}
+
+void CGRAXMLCompile::LISAMapper::set_lisa_controller( arguments arg){
+	sortBackEdgePriorityASAP();
+	CGRA *testCGRA  = new CGRA(arg.json_file_name, 1, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
+	std::set<int> node_list;
+	std::map<int, std::string> node_op;
+	std::vector<std::pair<int,int>> lisa_edges;
+	for(auto node: sortedNodeList){
+		node_list.insert(node->idx);
+		node_op.emplace(node->idx, node->op);
+		for(auto p: node->parents){
+			if (p->childrenOPType[node] == "PS")
+			{
+				continue;
+			}
+			lisa_edges.push_back(std::make_pair(p->idx, node->idx));
+		}
+	}
+	lisa_ctrl = std::make_shared<LISAController>( LISAController(testCGRA->get_x_max(), testCGRA->get_y_max() ,
+						dfg_id, node_list, node_op, lisa_edges));
+}
+
+void CGRAXMLCompile::LISAMapper::do_training( DFG *dfg, arguments arg, TimeDistInfo &tdi, int start_II ){
+	std::vector<perf_metric> perf_hist;
+	perf_metric  best_perf = {100 , 0 , 0};
+	//iterative method
+	for(int traning_iteration  = 0; traning_iteration < max_training_iteration;  traning_iteration++){
+		std::shared_ptr<std::map<int, node_label>> curr_label = lisa_ctrl->getCurrLabel();
+
+		auto start = std::chrono::steady_clock::now();
+		int curr_II  =  start_II;
+		bool mapped = false;
+
+		// mapping
+		{
+			for(; curr_II < 32; curr_II++){
+				CGRA *tempCGRA  = new CGRA(arg.json_file_name, curr_II, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
+				tempCGRA->max_hops = arg.max_hops;
+				this->getcongestedPortsPtr()->clear();
+				this->getconflictedPortsPtr()->clear();
+				tempCGRA->analyzeTimeDist(tdi);
+				mapped = LISAMapCore(tempCGRA, dfg);
+				if(mapped){
+					break;
+				}
+			}
+		}
+
+
+		if(mapped){
+			auto end = std::chrono::steady_clock::now();
+			std::chrono::duration<double> elapsed_seconds = end-start;
+			LOG(LISA)<<"training iteration :"<< traning_iteration<<" running time"<< elapsed_seconds.count()<<" mapping:"<<dumpMappingToStr();
+			perf_metric this_iter_perf { curr_II, getCost() , elapsed_seconds.count() };
+			bool is_best = false;
+					
+			if(traning_iteration == 0 || this_iter_perf < best_perf) {
+					best_perf = this_iter_perf;
+					is_best = true;
+			}
+		}
+
+		lisa_ctrl->generateCombinedBestLabelHistorically(best_perf);
+		LOG(LISA)<<"best label"<<lisa_ctrl->labelToStrForGNNDataSet(*(lisa_ctrl->getBestLabel()));
+		
+		mapping_method_name = "t-LISA";
+	}
 }
 
 bool CGRAXMLCompile::LISAMapper::LISAMapCore(CGRA *cgra, DFG *dfg){

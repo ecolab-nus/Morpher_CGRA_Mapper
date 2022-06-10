@@ -31,8 +31,10 @@ public:
 		mapping_method_name  = "LISA";
 	};
 
-	bool LISAMap(DFG *dfg, arguments arg, TimeDistInfo &tdi, int & start_II);
+	bool LISAMap(DFG *dfg, arguments arg, TimeDistInfo &tdi, int  start_II);
 	
+	void do_training( DFG *dfg, arguments arg, TimeDistInfo &tdi, int start_II );
+	void set_lisa_controller(arguments arg);
 	bool initMap();
 	float inner_map();
 
