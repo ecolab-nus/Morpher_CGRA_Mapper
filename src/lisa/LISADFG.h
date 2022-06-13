@@ -54,7 +54,12 @@ class LISADFG{
   public:
 
     friend class LISAController;
-    LISADFG(std::string dfg_id, std::set<int> nodes,  std::map<int, std::string> node_op, std::vector<std::pair<int,int>> edges);
+    LISADFG(std::string dfg_id, std::set<int> nodes,  std::map<int, std::string> node_op, 
+          std::vector<std::pair<int,int>> edges){
+
+          }
+    LISADFG(std::string dfg_id, std::set<int> nodes,  std::map<int, std::string> node_op, 
+          std::vector<std::pair<int,int>> edges, std::vector<std::pair<int,int>> back_edges);
     void calASAP();
     void calDegree();
     int cal_dist(int src, int des);
@@ -66,6 +71,7 @@ class LISADFG{
     std::map<int, std::set<int>> node_parents_;
     std::map<int, std::set<int>> node_children_;
     std::set<edge> edges_;
+    std::set<edge> backedges_;
     std::map<int, feature> node_feature_;
     std::map<int, std::set<int>> asap_to_node_;
     int max_length_; // means max asap value

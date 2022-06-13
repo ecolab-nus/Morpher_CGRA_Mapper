@@ -1,6 +1,6 @@
 #include "LISADFG.h"
 
-LISADFG::LISADFG(std::string dfg_id, std::set<int> nodes,  std::map<int, std::string> node_op,std::vector<std::pair<int, int>> edges)
+LISADFG::LISADFG(std::string dfg_id, std::set<int> nodes,  std::map<int, std::string> node_op,std::vector<std::pair<int, int>> edges, std::vector<std::pair<int,int>> back_edges)
 {
   dfg_id_ = dfg_id;
   nodes_ = nodes;
@@ -16,6 +16,12 @@ LISADFG::LISADFG(std::string dfg_id, std::set<int> nodes,  std::map<int, std::st
     node_children_[e.first].insert(e.second);
     node_parents_[e.second].insert(e.first);;
   }
+
+  for (auto e : back_edges)
+  {
+    backedges_.insert(edge{e.first, e.second});
+  }
+
 
 
   // set node feature

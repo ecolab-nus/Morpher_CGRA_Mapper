@@ -191,7 +191,7 @@ struct dest_with_cost
 
 			cost = cost + memcost;
 
-			std::cout << dest->getPE()->getName() << ",cost=" << cost << "\n";
+			LOG(ROUTE) << dest->getPE()->getName() << ",cost=" << cost ;
 		}
 		cost += getDestTportCost();
 		return cost;

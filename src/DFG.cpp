@@ -6,8 +6,10 @@
  */
 
 #include "DFG.h"
+#include "debug.h"
 #include <assert.h>
 #include <iostream>
+#include <sstream>
 #include <queue>
 #include "Port.h"
 #include <algorithm>
@@ -27,6 +29,7 @@ bool DFG::parseXML(std::string fileName)
 {
 	XMLDocument doc;
 	doc.LoadFile(fileName.c_str());
+	std::stringstream output_ss;
 
 	XMLElement *MutexBB = doc.FirstChildElement("MutexBB");
 	XMLElement *BB1 = MutexBB->FirstChildElement("BB1");
@@ -55,11 +58,11 @@ bool DFG::parseXML(std::string fileName)
 
 	//parse all nodes
 	XMLElement *node = NULL;
-	std::cout << "xmlParse :: node iteration...\n";
+	output_ss << "xmlParse :: node iteration...\n";
 	for (int i = 0; i < node_count; ++i)
 	{
 
-		std::cout << "i=" << i << ",";
+		output_ss << "i=" << i << ",";
 		if (node == NULL)
 		{
 			node = DFG->FirstChildElement("Node");
@@ -94,23 +97,23 @@ bool DFG::parseXML(std::string fileName)
 			currDFGNode.hasConst = true;
 		}
 
-		std::cout << ",idx=" << idx << ",";
+		output_ss << ",idx=" << idx << ",";
 		currDFGNode.idx = idx;
 
 		XMLElement *op = node->FirstChildElement("OP");
 		const char *opName = op->GetText();
-		std::cout << ",op=" << opName << "\n";
+		output_ss << ",op=" << opName << "\n";
 		currDFGNode.op = std::string(opName);
 
 		XMLElement *base_pointer_name = node->FirstChildElement("BasePointerName");
 		if(base_pointer_name){
 			const char *base_pointer_name_str = base_pointer_name->GetText();
-			std::cout << ",base_pointer_name=" << base_pointer_name_str << "\n";
+			output_ss<< ",base_pointer_name=" << base_pointer_name_str << "\n";
 			currDFGNode.base_pointer_name = std::string(base_pointer_name_str);
 
 			int base_pointer_size = -1;
 			base_pointer_name->QueryIntAttribute("size", &base_pointer_size); 
-			std::cout << ",base_pointer_size=" << base_pointer_size << "\n";
+			output_ss << ",base_pointer_size=" << base_pointer_size << "\n";
 			assert(base_pointer_size != -1);
 
 			if(pointer_sizes.find(currDFGNode.base_pointer_name) == pointer_sizes.end()){
@@ -136,11 +139,11 @@ bool DFG::parseXML(std::string fileName)
 		this->nodeList.push_back(currDFGNode);
 	}
 
-	std::cout << "NODELIST SIZE = " << this->nodeList.size() << "\n";
+	output_ss << "NODELIST SIZE = " << this->nodeList.size() << "\n";
 
 	//parse all connections
 
-	std::cout << "Parsing Connections...\n";
+	output_ss << "Parsing Connections...\n";
 	node = NULL;
 	for (int i = 0; i < node_count; ++i)
 	{
@@ -156,18 +159,18 @@ bool DFG::parseXML(std::string fileName)
 
 		int idx;
 		node->QueryIntAttribute("idx", &idx);
-		std::cout << "idx=" << idx;
+		output_ss<< "idx=" << idx;
 
 		XMLElement *Inputs = node->FirstChildElement("Inputs");
 		assert(Inputs);
-		std::cout << "|Inputs=";
+		output_ss << "|Inputs=";
 
 		XMLElement *input = Inputs->FirstChildElement("Input");
 		while (input)
 		{
 			int input_idx;
 			input->QueryIntAttribute("idx", &input_idx);
-			std::cout << input_idx << ",";
+			output_ss << input_idx << ",";
 
 			findNode(idx)->parents.push_back(findNode(input_idx));
 
@@ -176,20 +179,20 @@ bool DFG::parseXML(std::string fileName)
 
 		XMLElement *Outputs = node->FirstChildElement("Outputs");
 		assert(Outputs);
-		std::cout << "|Outputs=";
+		output_ss << "|Outputs=";
 
 		XMLElement *output = Outputs->FirstChildElement("Output");
 		while (output)
 		{
 			int output_idx;
 			output->QueryIntAttribute("idx", &output_idx);
-			std::cout << output_idx << ",";
+			output_ss<< output_idx << ",";
 
 			findNode(idx)->children.push_back(findNode(output_idx));
 
 			int output_nextiter;
 			output->QueryIntAttribute("nextiter", &output_nextiter);
-			std::cout << "nextiter = " << output_nextiter;
+			output_ss << "nextiter = " << output_nextiter;
 			assert(output_nextiter == 0 || output_nextiter == 1);
 			findNode(idx)->childNextIter[findNode(output_idx)] = output_nextiter;
 
@@ -210,7 +213,7 @@ bool DFG::parseXML(std::string fileName)
 				if(std::string(type)=="P"){
 					int npb;
 					output->QueryIntAttribute("NPB", &npb);
-					std::cout << "npb = " << npb;
+					output_ss<< "npb = " << npb;
 					assert(npb == 0 || npb == 1);
 					if(npb == 1){
 						findNode(output_idx)->npb = true;
@@ -227,20 +230,21 @@ bool DFG::parseXML(std::string fileName)
 
 		XMLElement *RecParents = node->FirstChildElement("RecParents");
 		assert(RecParents);
-		std::cout << "|RecParents=";
+		output_ss << "|RecParents=";
 
 		XMLElement *RecParent = RecParents->FirstChildElement("RecParent");
 		while (RecParent)
 		{
 			int RecParent_idx;
 			RecParent->QueryIntAttribute("idx", &RecParent_idx);
-			std::cout << RecParent_idx << ",";
+			output_ss << RecParent_idx << ",";
 
 			findNode(idx)->recParents.push_back(findNode(RecParent_idx));
 			RecParent = RecParent->NextSiblingElement("RecParent");
 		}
-		std::cout << "\n";
+		output_ss << "\n";
 	}
+	LOG(DFG)<<output_ss.str();
 
 	return true;
 }

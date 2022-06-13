@@ -915,7 +915,7 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist(TimeDistInfo tdi)
 		}
 	}
 
-	cout << "Timing analysis between PEs done.!\n";
+	LOG(ROUTE) << "Timing analysis between PEs done.!\n";
 	for (auto it1 = TimeDistBetweenPEMap.begin(); it1 != TimeDistBetweenPEMap.end(); it1++)
 	{
 		string pe1 = it1->first;
@@ -923,16 +923,16 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist(TimeDistInfo tdi)
 		{
 			string pe2 = it2->first;
 			int time_dist = it2->second;
-			cout << "PE1=" << pe1 << "\tPE2=" << pe2 << "\ttime_dist=" << time_dist << "\n";
+			LOG(ROUTE) << "PE1=" << pe1 << "\tPE2=" << pe2 << "\ttime_dist=" << time_dist ;
 		}
 	}
 
-	cout << "Timing analysis between PE and closest memPE :: \n";
+	LOG(ROUTE) << "Timing analysis between PE and closest memPE :: \n";
 	for (auto it = TimeDistBetweenClosestMEMPEMap.begin(); it != TimeDistBetweenClosestMEMPEMap.end(); it++)
 	{
 		string pe = it->first;
 		int time_dist = it->second;
-		cout << "PE=" << pe << "\ttime_dist=" << time_dist << "\n";
+		LOG(ROUTE) << "PE=" << pe << "\ttime_dist=" << time_dist ;
 	}
 
 	IntraPETimeDistAnalysisDone = true;
@@ -940,30 +940,30 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist(TimeDistInfo tdi)
 
 TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 {
-
+	std::stringstream output_ss;
 	for (Module *m1 : subModArr[0])
 	{
-		cout << "m1 name = " << m1->getName() << ",";
+		output_ss << "m1 name = " << m1->getName() << ",";
 		if (!dynamic_cast<PE *>(m1))
 		{
-			cout << "\t not a PE skipping...\n";
+			output_ss << "\t not a PE skipping...\n";
 			continue;
 		}
 		PE *pe1 = static_cast<PE *>(m1);
 		TimeDistBetweenClosestMEMPEMap[pe1->getName()] = INT32_MAX;
 		for (Module *m2 : subModArr[0])
 		{
-			cout << "m2 name = " << m2->getName() ;
+			output_ss << "m2 name = " << m2->getName() ;
 			if (!dynamic_cast<PE *>(m2))
 			{
-				cout << "\t not a PE skipping...\n";
+				output_ss << "\t not a PE skipping...\n";
 				continue;
 			}
 			PE *pe2 = static_cast<PE *>(m2);
 			// if (pe1 == pe2)
 			// continue;
 			int dist = getTimeDistBetweenPEs(pe1, pe2);
-			cout<<"  dist:"<<dist <<"\n";
+			output_ss<<"  dist:"<<dist <<"\n";
 			TimeDistBetweenPEMap[pe1->getName()][pe2->getName()] =dist;
 		}
 	}
@@ -990,8 +990,9 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 			}
 		}
 	}
+	LOG(ARCH)<<output_ss.str();
 
-	cout << "Timing analysis between PEs done.!\n";
+	LOG(ROUTE) << "Timing analysis between PEs done.!\n";
 	for (auto it1 = TimeDistBetweenPEMap.begin(); it1 != TimeDistBetweenPEMap.end(); it1++)
 	{
 		string pe1 = it1->first;
@@ -999,16 +1000,16 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 		{
 			string pe2 = it2->first;
 			int time_dist = it2->second;
-			cout << "PE1=" << pe1 << "\tPE2=" << pe2 << "\ttime_dist=" << time_dist << "\n";
+			LOG(ROUTE)<< "PE1=" << pe1 << "\tPE2=" << pe2 << "\ttime_dist=" << time_dist << "";
 		}
 	}
 
-	cout << "Timing analysis between PE and closest memPE :: \n";
+	LOG(ROUTE) << "Timing analysis between PE and closest memPE :: \n";
 	for (auto it = TimeDistBetweenClosestMEMPEMap.begin(); it != TimeDistBetweenClosestMEMPEMap.end(); it++)
 	{
 		string pe = it->first;
 		int time_dist = it->second;
-		cout << "PE=" << pe << "\ttime_dist=" << time_dist << "\n";
+		LOG(ROUTE) << "PE=" << pe << "\ttime_dist=" << time_dist << "";
 	}
 
 	IntraPETimeDistAnalysisDone = true;

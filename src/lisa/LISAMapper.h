@@ -31,22 +31,21 @@ public:
 		mapping_method_name  = "LISA";
 	};
 
-	bool LISAMap(DFG *dfg, arguments arg, TimeDistInfo &tdi, int  start_II);
+	bool LISAMap( arguments arg, TimeDistInfo &tdi, int  & start_II);
 	
-	void do_training( DFG *dfg, arguments arg, TimeDistInfo &tdi, int start_II );
+	void do_training(  arguments arg, TimeDistInfo &tdi, int start_II );
 	void set_lisa_controller(arguments arg);
 	bool initMap();
 	float inner_map();
 
 	bool LISAMapCore(CGRA *cgra, DFG *dfg);
 
-	void initLisa(std::map<DFGNode*, int>  node_to_id,  std::map<int, DFGNode*>  id_to_node, std::shared_ptr<std::map<int, node_label>> dfg_label){
-        dfg_label_ = dfg_label;
-        node_to_id_ = node_to_id;
-        id_to_node_ = id_to_node;
-    }
+	
 
-	std::map<int, pos3d> dumpMapping();
+	std::map<int, pos3d> dumpMapping(){
+		int max_lat; return dumpMapping(max_lat);
+	};
+	std::map<int, pos3d> dumpMapping(int & max_latency);
 	bool optimizeMappingToMinimizeCost();
 	DataPath *  getLISADPCandidate(DFGNode *dfg_node, int accepted = 1 , int total_tried =1, int num_swap = 1);
 	std::vector<DataPath*> getCandidateByIIConstraint( int start_II, int end_II, DFGNode * node);
@@ -83,8 +82,8 @@ protected:
 	std::string dfg_id = "";
 
 
-	std::map<DFGNode*, int>  node_to_id_;
-    std::map<int, DFGNode*>  id_to_node_;
+	// std::map<DFGNode*, int>  node_to_id_;
+    // std::map<int, DFGNode*>  id_to_node_;
 	std::shared_ptr<std::map<int, node_label>> dfg_label_;
 
 	

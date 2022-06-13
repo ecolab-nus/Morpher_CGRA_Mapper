@@ -26,17 +26,23 @@ namespace CGRAXMLCompile
 
 
 
-bool CGRAXMLCompile::LISAMapper::LISAMap( DFG *dfg, arguments arg, TimeDistInfo &tdi, int  start_II )
+bool CGRAXMLCompile::LISAMapper::LISAMap( arguments arg, TimeDistInfo &tdi, int & start_II )
 {
-	pass_lisa_arg(arg.lisa_arg);
-	lisa_ctrl->setArchandDFGFileName(arg.json_file_name, arg.dfg_filename, arg.lisa_arg.arch_name);
+	DFG tempDFG;
+	tempDFG.parseXML(arg.dfg_filename);
+	// tempDFG.printDFG();
+	this->dfg = & tempDFG;
 
+
+	pass_lisa_arg(arg.lisa_arg);
 	// set lisa contoller
 	set_lisa_controller( arg );
 	
+
+	
 	//here are two different ways to get labｅl: 1) training 2) GNN　inference
 	if(is_training){
-		do_training(dfg,  arg, tdi, start_II );
+		do_training( arg, tdi, start_II );
 	}else{
 		// do GNN_inference
 		assert(arg.lisa_arg.arch_name != "");
@@ -48,29 +54,40 @@ bool CGRAXMLCompile::LISAMapper::LISAMap( DFG *dfg, arguments arg, TimeDistInfo 
 	int curr_II  =  start_II;
 	bool mapped = false;
 	auto start = std::chrono::steady_clock::now();
-	for(; curr_II < 32; curr_II++){
+	for(; curr_II < arg.max_II ; curr_II++){
+		DFG dfg;
+		dfg.parseXML(arg.dfg_filename);
 		CGRA *tempCGRA  = new CGRA(arg.json_file_name, curr_II, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
 		tempCGRA->max_hops = arg.max_hops;
 		this->getcongestedPortsPtr()->clear();
 		this->getconflictedPortsPtr()->clear();
 		tempCGRA->analyzeTimeDist(tdi);
-		mapped = LISAMapCore(tempCGRA, dfg);
+		mapped = LISAMapCore(tempCGRA, &dfg);
+		
 		if(mapped){
+			auto end = std::chrono::steady_clock::now();
+			std::chrono::duration<double> elapsed_seconds = end-start;
+			std::cout<<"mapping method"<<mapping_method_name<<"mapping II"<<curr_II<<" running time"<< elapsed_seconds.count()<<std::endl;
+			LOG(LISA)<<"mapping:"<<dumpMappingToStr();
+			this->sanityCheck();
+			//mapper.assignLiveInOutAddr(&tempDFG);
+			if(arg.PEType == "HyCUBE_4REG"){
+				std::cout << "Printing HyCUBE Binary...\n";
+				this->printHyCUBEBinary(tempCGRA);
+			}
+			delete tempCGRA;
 			break;
 		}
+		delete tempCGRA;
 		std::cout<<"mapping failed. Increasing II to "<<(curr_II + 1)<<std::endl;
 	}
-	if(mapped){
-		auto end = std::chrono::steady_clock::now();
-		std::chrono::duration<double> elapsed_seconds = end-start;
-		std::cout<<"mapping method"<<mapping_method_name<<"mapping II"<<curr_II<<" running time"<< elapsed_seconds.count()<<std::endl;
-		LOG(LISA)<<"mapping:"<<dumpMappingToStr();
-	}else{
-		std::cout<<"mapping failed..........."<<std::endl;
+	if(!mapped){
+		
+		std::cout<<"trying all the II. mapping failed..........."<<std::endl;
 	}
+	start_II = curr_II;
+	return mapped;
 
-	
-	
 	
 }
 
@@ -86,6 +103,7 @@ void CGRAXMLCompile::LISAMapper::set_lisa_controller( arguments arg){
 	std::set<int> node_list;
 	std::map<int, std::string> node_op;
 	std::vector<std::pair<int,int>> lisa_edges;
+	std::vector<std::pair<int,int>> back_edges;
 	for(auto node: sortedNodeList){
 		node_list.insert(node->idx);
 		node_op.emplace(node->idx, node->op);
@@ -94,19 +112,27 @@ void CGRAXMLCompile::LISAMapper::set_lisa_controller( arguments arg){
 			{
 				continue;
 			}
-			lisa_edges.push_back(std::make_pair(p->idx, node->idx));
+			else if (p->childNextIter[node] == 1)
+			{
+				back_edges.push_back(std::make_pair(p->idx, node->idx));
+			}else{
+				lisa_edges.push_back(std::make_pair(p->idx, node->idx));
+			}
 		}
 	}
 	lisa_ctrl = std::make_shared<LISAController>( LISAController(testCGRA->get_x_max(), testCGRA->get_y_max() ,
-						dfg_id, node_list, node_op, lisa_edges));
+						dfg_id, node_list, node_op, lisa_edges, back_edges));
+	lisa_ctrl->setArchandDFGFileName(arg.json_file_name, arg.dfg_filename, arg.lisa_arg.arch_name);
 }
 
-void CGRAXMLCompile::LISAMapper::do_training( DFG *dfg, arguments arg, TimeDistInfo &tdi, int start_II ){
+void CGRAXMLCompile::LISAMapper::do_training(  arguments arg, TimeDistInfo &tdi, int start_II ){
 	std::vector<perf_metric> perf_hist;
 	perf_metric  best_perf = {100 , 0 , 0};
 	//iterative method
 	for(int traning_iteration  = 0; traning_iteration < max_training_iteration;  traning_iteration++){
-		std::shared_ptr<std::map<int, node_label>> curr_label = lisa_ctrl->getCurrLabel();
+		std::cout << "******************************************************* training iteration: " <<traning_iteration<<" ***************************\n";
+
+		dfg_label_ = lisa_ctrl->getCurrLabel();
 
 		auto start = std::chrono::steady_clock::now();
 		int curr_II  =  start_II;
@@ -114,32 +140,40 @@ void CGRAXMLCompile::LISAMapper::do_training( DFG *dfg, arguments arg, TimeDistI
 
 		// mapping
 		{
-			for(; curr_II < 32; curr_II++){
+			for(; curr_II < arg.max_II; curr_II++){
+				DFG dfg;
+				dfg.parseXML(arg.dfg_filename);
 				CGRA *tempCGRA  = new CGRA(arg.json_file_name, curr_II, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
 				tempCGRA->max_hops = arg.max_hops;
 				this->getcongestedPortsPtr()->clear();
 				this->getconflictedPortsPtr()->clear();
 				tempCGRA->analyzeTimeDist(tdi);
-				mapped = LISAMapCore(tempCGRA, dfg);
+				mapped = LISAMapCore(tempCGRA, &dfg);
+				delete tempCGRA;
 				if(mapped){
+					auto end = std::chrono::steady_clock::now();
+					std::chrono::duration<double> elapsed_seconds = end-start;
+					std::cout<<"training iteration:"<< traning_iteration<<"\t II:"<<curr_II<<"\t running time:"<< elapsed_seconds.count()<<"\n";
+					std::cout<<" mapping:"<<dumpMappingToStr();
+					
+					perf_metric this_iter_perf { curr_II, getCost() , elapsed_seconds.count() };
+					bool is_best = false;
+							
+					if(traning_iteration == 0 || this_iter_perf < best_perf) {
+							best_perf = this_iter_perf;
+							is_best = true;
+					}
+					int max_latency;
+					auto dumped_mapping = dumpMapping(max_latency);
+					lisa_ctrl->passMapping(is_best,dumped_mapping, max_latency, this_iter_perf);
+					std::cout<<"current label: "<<lisa_ctrl->DFGLabelToStr(*(lisa_ctrl->getCurrLabel()))<<"\n";
 					break;
 				}
 			}
 		}
 
 
-		if(mapped){
-			auto end = std::chrono::steady_clock::now();
-			std::chrono::duration<double> elapsed_seconds = end-start;
-			LOG(LISA)<<"training iteration :"<< traning_iteration<<" running time"<< elapsed_seconds.count()<<" mapping:"<<dumpMappingToStr();
-			perf_metric this_iter_perf { curr_II, getCost() , elapsed_seconds.count() };
-			bool is_best = false;
-					
-			if(traning_iteration == 0 || this_iter_perf < best_perf) {
-					best_perf = this_iter_perf;
-					is_best = true;
-			}
-		}
+		
 
 		lisa_ctrl->generateCombinedBestLabelHistorically(best_perf);
 		LOG(LISA)<<"best label"<<lisa_ctrl->labelToStrForGNNDataSet(*(lisa_ctrl->getBestLabel()));
@@ -169,7 +203,7 @@ bool CGRAXMLCompile::LISAMapper::LISAMapCore(CGRA *cgra, DFG *dfg){
 
 	
 
-	std::cout << "*******************************************************LISA MAP begin***************************\n";
+	std::cout << "***************************LISA MAP begin***************************\n";
 
 	data_routing_path.clear();
 	dfg_node_placement.clear();
@@ -288,7 +322,7 @@ bool CGRAXMLCompile::LISAMapper::initMap()
 					<< ",mutexPathEn = " << this->enableMutexPaths
 					<< "\n";
 
-		std::cout << MapHeader.str();
+		LOG(ROUTE) << MapHeader.str();
 
 
 		bool isEstRouteSucc = false;
@@ -310,7 +344,7 @@ bool CGRAXMLCompile::LISAMapper::initMap()
 		bool isRouteSucc = false;
 		DFGNode *failedNode = NULL;
 
-		std::cout << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
+		LOG(ROUTE) << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
 		mappingLog << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
 		if (!estimatedRouteInfo[node].empty())
 		{
@@ -423,8 +457,8 @@ float CGRAXMLCompile::LISAMapper::inner_map()
 
 
 CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNode *dfg_node, int accepted  , int total_tried , int num_swap ){
-	assert(dfg_label_->find(node_to_id_[dfg_node]) != dfg_label_->end() );
-	auto & dfg_node_label = dfg_label_->at(node_to_id_[dfg_node]);
+	assert(dfg_label_->find(dfg_node->idx) != dfg_label_->end() );
+	auto & dfg_node_label = dfg_label_->at(dfg_node->idx);
 
 	std::set<DFGNode *> mapped_node;
 	// we should calculate based on mapped node
@@ -468,7 +502,7 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNo
 
 	std::stringstream output;
 	std::map<DataPath*, int> timing_cost ;
-	auto & ass = dfg_label_->at(node_to_id_[dfg_node]).association;
+	auto & ass = dfg_label_->at(dfg_node->idx).association;
 	for(auto node: candidateDests){
 		int ii_value = node->get_t();
 		int t_cost = 0;
@@ -635,15 +669,15 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getCloseRandomDP(DFGNode
 
 
 //TODO: change interval from II to cycle
-std::pair<int,int> CGRAXMLCompile::LISAMapper::getIntervalByScheduleOrder( std::map<int, pos3d> & dumped_mapping, DFGNode * node, int scheduler_order ){
+std::pair<int,int> CGRAXMLCompile::LISAMapper::getIntervalByScheduleOrder( std::map<int, pos3d> & dumped_mapping, DFGNode * dfg_node, int scheduler_order ){
 	int start_time = -1, end_time = -1;
 
 	auto  early_ops_comp =   [ &](DFGNode * a, DFGNode * b) {
-		return dumped_mapping[node_to_id_ [a]].t  > dumped_mapping [node_to_id_ [b]].t;
+		return dumped_mapping[a->idx].t  > dumped_mapping [b->idx].t;
 	};
 
 	auto  late_ops_comp =    [ &](DFGNode * a, DFGNode * b) {
-		return dumped_mapping[node_to_id_ [a]].t < dumped_mapping [node_to_id_ [b]].t;
+		return dumped_mapping[a->idx].t < dumped_mapping [b->idx].t;
 	};
 
 	std::set<DFGNode *, decltype(early_ops_comp)> early_ops(early_ops_comp);
@@ -651,8 +685,8 @@ std::pair<int,int> CGRAXMLCompile::LISAMapper::getIntervalByScheduleOrder( std::
         // std::cout<<"this node"<<scheduler_order<<"\n";
 	for(auto node: sortedNodeList){
 		// std::cout<< node<<" order: "<<dfg_label_->at(node_to_id_[node]).schedule_order<<"\n"; 
-		if(dfg_label_->at(node_to_id_[node]).schedule_order < scheduler_order  && dfg_node_placement.find(node)!= dfg_node_placement.end()) early_ops.insert(node);
-		if(dfg_label_->at(node_to_id_[node]).schedule_order > scheduler_order  && dfg_node_placement.find(node)!= dfg_node_placement.end()) late_ops.insert(node);
+		if(dfg_label_->at(node->idx).schedule_order < scheduler_order  && dfg_node_placement.find(node)!= dfg_node_placement.end()) early_ops.insert(node);
+		if(dfg_label_->at(node->idx).schedule_order > scheduler_order  && dfg_node_placement.find(node)!= dfg_node_placement.end()) late_ops.insert(node);
 	}
        
         if(early_ops.size() != 0){
@@ -755,9 +789,9 @@ CGRAXMLCompile::DataPath *   CGRAXMLCompile::LISAMapper::getRoutingNode(int  x, 
 
 std::map<CGRAXMLCompile::DataPath *, int> CGRAXMLCompile::LISAMapper::getCostByAssociation
 			( std::map<int, pos3d> & dumped_mapping, std::vector<DataPath *> candidates, DFGNode *dfg_node, int start_II ){
-	auto & ass = dfg_label_->at(node_to_id_[dfg_node]).association;
+	auto & ass = dfg_label_->at(dfg_node->idx).association;
 	int earliest_execution_time = 0;
-	int op_id = node_to_id_[dfg_node];
+	int op_id = dfg_node->idx;
 
 	for(auto parent: dfg_node->parents){
 		if (parent->childrenOPType[dfg_node] == "PS"){
@@ -806,7 +840,7 @@ std::map<CGRAXMLCompile::DataPath *, int> CGRAXMLCompile::LISAMapper::getCostByA
 std::map<CGRAXMLCompile::DataPath *, int> CGRAXMLCompile::LISAMapper::getCostForSameLevelNode
 		( std::map<int, pos3d> & dumped_mapping, std::vector<DataPath *> candidates, DFGNode *dfg_node ){
 	
-	int node_id = node_to_id_[dfg_node];
+	int node_id = dfg_node->idx;
 	std::map<DataPath *, int> node_cost;
 	for(auto node: candidates){
 		node_cost[node] = 0;
@@ -921,7 +955,7 @@ bool CGRAXMLCompile::LISAMapper::optimizeMappingToMinimizeCost(){
 }
 
 
-std::map<int, pos3d> CGRAXMLCompile::LISAMapper::dumpMapping()
+std::map<int, pos3d> CGRAXMLCompile::LISAMapper::dumpMapping(int & max_latency)
 {
 	std::map<int, pos3d> dumped_mapping;
 
@@ -935,7 +969,7 @@ std::map<int, pos3d> CGRAXMLCompile::LISAMapper::dumpMapping()
 
 	
 	//get the latency of each operation
-	int max_latency = 0;
+	max_latency = 0;
 	for(auto node: sortedNodeList){
 		if(node->rootDP == NULL){
 			unmapped_dfg_nodes.insert(node);

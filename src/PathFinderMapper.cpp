@@ -604,7 +604,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			if(node->childNextIter[child] == 1){
 				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() + ii);
 			}else if (node->childNextIter[child] == 0){
-				if(mapping_method_name!= "SA"){
+				if(mapping_method_name.find("SA") != std::string::npos){
 					assert(false);
 				}
 				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() );
@@ -2157,6 +2157,8 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 {
 	sortedNodeList.clear();
 
+	std::stringstream output_ss;
+
 	struct BEDist
 	{
 		DFGNode *parent;
@@ -2183,26 +2185,26 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 
 		if (node.idx == 97)
 		{
-			std::cout << "node_idx:97,node_ASAP:" << node.ASAP << "\n";
+			output_ss << "node_idx:97,node_ASAP:" << node.ASAP << "\n";
 		}
 		for (DFGNode *child : node.children)
 		{
 
 			if (node.idx == 97)
 			{
-				std::cout << "child_idx:" << child->idx << "child_ASAP:" << child->ASAP << "\n";
+				output_ss << "child_idx:" << child->idx << "child_ASAP:" << child->ASAP << "\n";
 			}
 
 			if (child->ASAP <= node.ASAP)
 			{
-				std::cout << "inserting for : node=" << node.idx << ",child:" << child->idx << "\n";
+				output_ss << "inserting for : node=" << node.idx << ",child:" << child->idx << "\n";
 				backedges.insert(BEDist(&node, child, node.ASAP - child->ASAP));
 			}
 		}
 	}
 
 	//populate reccycles
-	std::cout << "Populate Rec Cycles!\n";
+	output_ss << "Populate Rec Cycles!\n";
 	RecCycles.clear();
 	//exit(0);
 	for (BEDist be : backedges)
@@ -2210,18 +2212,18 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 		//		std::set<DFGNode*> backedgePath;
 		std::vector<DFGNode *> backedgePathVec = dfg->getAncestoryASAP(be.parent);
 
-		std::cout << "REC_CYCLE :: BE_Parent = " << be.parent->idx << "\n";
-		std::cout << "REC_CYCLE :: BE_Child = " << be.child->idx << "\n";
-		std::cout << "REC_CYCLE :: BE_Parent's ancesotry : \n";
+		output_ss << "REC_CYCLE :: BE_Parent = " << be.parent->idx << "\n";
+		output_ss << "REC_CYCLE :: BE_Child = " << be.child->idx << "\n";
+		output_ss<< "REC_CYCLE :: BE_Parent's ancesotry : \n";
 		for (DFGNode *n : backedgePathVec)
 		{
 			if (RecCycles[BackEdge(be.parent, be.child)].find(n) == RecCycles[BackEdge(be.parent, be.child)].end())
 			{
-				std::cout << n->idx << ",";
+				output_ss << n->idx << ",";
 			}
 			RecCycles[BackEdge(be.parent, be.child)].insert(n);
 		}
-		std::cout << "REC_CYCLE :: Done!\n";
+		output_ss << "REC_CYCLE :: Done!\n";
 		//= dfg->getAncestoryASAP(be.parent);
 		//		if(dfg->getAncestoryASAPUntil(be.parent,be.child,backedgePath)){
 		//			backedgePath.insert(be.parent);
@@ -2238,20 +2240,20 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 
 			std::vector<DFGNode *> backedgePathVec = dfg->getAncestoryASAP(be_temp.parent);
 
-			std::cout << "REC_CYCLELS :: BE_Parent = " << be_temp.parent->idx << "\n";
-			std::cout << "REC_CYCLELS :: BE_Child = " << be_temp.child->idx << "\n";
-			std::cout << "REC_CYCLELS :: BE_Parent's ancesotry : \n";
+			output_ss << "REC_CYCLELS :: BE_Parent = " << be_temp.parent->idx << "\n";
+			output_ss << "REC_CYCLELS :: BE_Child = " << be_temp.child->idx << "\n";
+			output_ss << "REC_CYCLELS :: BE_Parent's ancesotry : \n";
 			for (DFGNode *n : backedgePathVec)
 			{
 				if (n == be_temp.parent)
 					continue;
 				if (RecCyclesLS[BackEdge(be_temp.parent, be_temp.child)].find(n) == RecCyclesLS[BackEdge(be_temp.parent, be_temp.child)].end())
 				{
-					std::cout << n->idx << ",";
+					output_ss << n->idx << ",";
 				}
 				RecCyclesLS[BackEdge(be_temp.parent, be_temp.child)].insert(n);
 			}
-			std::cout << "REC_CYCLELS :: Done!\n";
+			output_ss << "REC_CYCLELS :: Done!\n";
 
 			backedges.insert(be_temp);
 		}
@@ -2264,20 +2266,20 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 
 	for (BEDist be : backedges)
 	{
-		std::cout << "BE PARENT = " << be.parent->idx << ",dist=" << be.dist << "\n";
-		std::cout << "BE CHILD = " << be.child->idx << "\n";
+		output_ss << "BE PARENT = " << be.parent->idx << ",dist=" << be.dist << "\n";
+		output_ss << "BE CHILD = " << be.child->idx << "\n";
 
-		std::cout << "Ancestory : "
+		output_ss << "Ancestory : "
 				  << "\n";
 		beparentAncestors[be.parent] = dfg->getAncestoryASAP(be.parent);
 		bechildAncestors[be.child] = dfg->getAncestoryASAP(be.child);
-		std::cout << "\n";
+		output_ss << "\n";
 
 		if (std::find(beparentAncestors[be.parent].begin(),
 					  beparentAncestors[be.parent].end(),
 					  be.child) == beparentAncestors[be.parent].end())
 		{
-			std::cout << "BE CHILD does not belong BE Parent's Ancestory\n";
+			output_ss << "BE CHILD does not belong BE Parent's Ancestory\n";
 
 			//Hack to force all backedges to be true backedges
 			trueBackedges[std::make_pair(be.parent, be.child)] = false;
@@ -2285,7 +2287,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 		else
 		{
 			//change this be.parent if PHI nodes are not removed
-			std::cout << "RecPHI inserted : " << be.child->idx << "\n";
+			output_ss << "RecPHI inserted : " << be.child->idx << "\n";
 			trueBackedges[std::make_pair(be.parent, be.child)] = false;
 			//			RecPHIs.insert(be.child);
 		}
@@ -2345,10 +2347,10 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 					superiorChildren[key].insert(be.child);
 				}
 
-				std::cout << "Merging :: " << key->idx << ", " << be.parent->idx << "\n";
+				output_ss << "Merging :: " << key->idx << ", " << be.parent->idx << "\n";
 				mergedAncestories[key] = dfg->mergeAncestoryASAP(mergedAncestories[key], beparentAncestors[be.parent], RecCycles);
 				merged = true;
-				std::cout << "Merging Done :: " << key->idx << ", " << be.parent->idx << "\n";
+				output_ss << "Merging Done :: " << key->idx << ", " << be.parent->idx << "\n";
 				mergedKeys[be.parent] = key;
 				//				break;
 			}
@@ -2404,7 +2406,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 				sortedNodeList.push_back(ancestorNode);
 			}
 		}
-		std::cout << "BE PARENT = " << be.parent->idx << ",dist=" << be.dist << "\n";
+		output_ss << "BE PARENT = " << be.parent->idx << ",dist=" << be.dist << "\n";
 		if (std::find(sortedNodeList.begin(), sortedNodeList.end(), be.parent) == sortedNodeList.end())
 		{
 			sortedNodeList.push_back(be.parent);
@@ -2418,7 +2420,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 				sortedNodeList.push_back(ancestorNode);
 			}
 		}
-		std::cout << "BE CHILD = " << be.child->idx << "\n";
+		output_ss << "BE CHILD = " << be.child->idx << "\n";
 		if (std::find(sortedNodeList.begin(), sortedNodeList.end(), be.child) == sortedNodeList.end())
 		{
 			sortedNodeList.push_back(be.child);
@@ -2450,11 +2452,11 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 			}
 		}
 	}
-
-	std::cout << "***********SORTED LIST*******************\n";
+	
+	output_ss<< "***********SORTED LIST*******************\n";
 	for (DFGNode *node : sortedNodeList)
 	{
-		std::cout << "Node=" << node->idx << ",ASAP=" << node->ASAP << "\n";
+		output_ss << "Node=" << node->idx << ",ASAP=" << node->ASAP <<"\n";
 	}
 	//	assert(false);
 
@@ -2473,6 +2475,7 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityASAP()
 		}
 	}
 	dfg->unmappedMemOps = unmappedMemNodeCount;
+	LOG(DFG)<<output_ss.str();
 }
 
 void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityALAP()
@@ -2644,10 +2647,10 @@ void CGRAXMLCompile::PathFinderMapper::sortBackEdgePriorityALAP()
 		}
 	}
 
-	std::cout << "***********SORTED LIST*******************\n";
+	LOG(ROUTE) << "***********SORTED LIST*******************\n";
 	for (DFGNode *node : sortedNodeList)
 	{
-		std::cout << "Node=" << node->idx << ",ALAP=" << node->ALAP << "\n";
+		LOG(ROUTE) << "Node=" << node->idx << ",ALAP=" << node->ALAP ;
 	}
 	//	assert(false);
 
@@ -3275,20 +3278,21 @@ bool CGRAXMLCompile::PathFinderMapper::Check_DFG_CGRA_Compatibility(){
 	GetAllSupportedOPs(cgra,all_supp_ops,all_supp_pointers);
 	unordered_set<string> base_pointers;
 
-	cout << "all supported pointers : \n";
+	std::stringstream output_ss;
+	output_ss << "all supported pointers : \n";
 	for(string ptr : all_supp_pointers){
-		cout << "\t" << ptr << "\n";
+		output_ss << "\t" << ptr << "\n";
 	}
 
-	cout << "all required pointers : \n";
+	output_ss << "all required pointers : \n";
 	for(auto it = dfg->pointer_sizes.begin(); it != dfg->pointer_sizes.end(); it++){
-		cout << "\t" << it->first << ",size = " << it->second << "\n";
+		output_ss << "\t" << it->first << ",size = " << it->second << "\n";
 	}
 
 	for(DFGNode& node : dfg->nodeList){
 		string op = node.op;
 		if(all_supp_ops.find(op) == all_supp_ops.end()){
-			cout << "op=" << op << " is not supported in this CGRA, exiting....\n";
+			output_ss << "op=" << op << " is not supported in this CGRA, exiting....\n";
 			exit(EXIT_FAILURE);
 			return false;
 		}
@@ -3298,15 +3302,16 @@ bool CGRAXMLCompile::PathFinderMapper::Check_DFG_CGRA_Compatibility(){
 		for(auto it = dfg->ldst_pointer_sizes.begin(); it != dfg->ldst_pointer_sizes.end(); it++){
 			string pointer = it->first;
 			if(all_supp_pointers.find(pointer) == all_supp_pointers.end()){
-				cout << "pointer=" << pointer << " is not present in the CGRA, exiting....\n";
+				output_ss << "pointer=" << pointer << " is not present in the CGRA, exiting....\n";
 				exit(EXIT_FAILURE);
 				return false;
 			}
 		}
 	}
 	else{
-		cout << "SPMs are not modelled, therefore ignoring supported pointers check.\n";
+		output_ss << "SPMs are not modelled, therefore ignoring supported pointers check.\n";
 	}
+	LOG(ARCH)<<output_ss.str();
 
 	return true;
 }

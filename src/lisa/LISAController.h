@@ -86,7 +86,8 @@ using DFG_label = std::map<int, node_label>;
 
 class LISAController{
   public:
-    LISAController(int fabric_x, int fabric_y, std::string dfg_id, std::set<int> nodes, std::map<int, std::string> node_op, std::vector<std::pair<int,int>> edges);
+    LISAController(int fabric_x, int fabric_y, std::string dfg_id, std::set<int> nodes, std::map<int, std::string> node_op, 
+                  std::vector<std::pair<int,int>> edges, std::vector<std::pair<int,int>> backedges);
 
     void initLabels();
     

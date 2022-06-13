@@ -1,9 +1,10 @@
 #include "LISAController.h"
 
-LISAController::LISAController(int fabric_x, int fabric_y, std::string dfg_id, std::set<int> nodes, std::map<int, std::string> node_op, std::vector<std::pair<int,int>> edges){
+LISAController::LISAController(int fabric_x, int fabric_y, std::string dfg_id, std::set<int> nodes, std::map<int, std::string> node_op, 
+                  std::vector<std::pair<int,int>> edges, std::vector<std::pair<int,int>> backedges){
   fabric_x_ = fabric_x;
   fabric_y_ = fabric_y;
-  dfg_ = new LISADFG(dfg_id, nodes, node_op, edges);
+  dfg_ = new LISADFG(dfg_id, nodes, node_op, edges, backedges);
   init_label_ = std::make_shared<DFG_label> (); 
   // std::cout<<"fabric x"<<fabric_x_<<"fabric_y_"<<fabric_y_<<std::endl;
   initLabels();
