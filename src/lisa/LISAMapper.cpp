@@ -402,7 +402,7 @@ float CGRAXMLCompile::LISAMapper::inner_map()
 			LOG(LISA)<<"this DFG node is not placed yet" ;
 		}
 		
-		auto dp_candidate = getLISADPCandidate(selected_dfg_node);
+		auto dp_candidate = getLISADPCandidate(selected_dfg_node, accepted_number, i);
 		LOG(LISA) << "map this DFG node:" << selected_dfg_node->idx << " op:" << selected_dfg_node->op << "to pe:" << dp_candidate->getPE()->getName() ;
 		bool route_succ = SARoute(selected_dfg_node, dp_candidate);
 		moved_nodes.push_back(selected_dfg_node);
@@ -456,7 +456,7 @@ float CGRAXMLCompile::LISAMapper::inner_map()
 }
 
 
-CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNode *dfg_node, int accepted  , int total_tried , int num_swap ){
+CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNode *dfg_node, int accepted  , int total_tried  ){
 	assert(dfg_label_->find(dfg_node->idx) != dfg_label_->end() );
 	auto & dfg_node_label = dfg_label_->at(dfg_node->idx);
 
@@ -484,13 +484,8 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNo
 
 	auto interval = getIntervalByScheduleOrder( dumped_mapping, dfg_node, schedule_order);
 		// if we only use label in initial mapping, then the second value is not useful
-	int early_II =  interval.first;
-	int start_II = 0;
-	if(early_II +1 == this->cgra->get_t_max()) {
-		start_II = 0;
-	}else{
-			start_II = early_II +1;
-	}
+	int early_lat =  interval.first;
+	
 
 	assert(candidateDests.size() > 0);
 	std::map<DataPath *, int> comm_cost;
@@ -498,7 +493,7 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNo
             comm_cost.emplace(candi,0);
     }
 	auto samelevel_node_cost=  getCostForSameLevelNode(dumped_mapping, candidateDests, dfg_node );
-	auto ass_cost = getCostByAssociation( dumped_mapping, candidateDests, dfg_node, start_II);
+	auto ass_cost = getCostByAssociation( dumped_mapping, candidateDests, dfg_node, early_lat);
 
 	std::stringstream output;
 	std::map<DataPath*, int> timing_cost ;
@@ -520,8 +515,8 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNo
 		timing_cost.emplace(node, t_cost);
 	}
 
-	output<<"early II: "<<early_II<<"\n";
-	output<<"start II: "<<start_II<<"\n";
+	output<<"early lat: "<<early_lat<<"\n";
+
 	output<<"\n\ttiming cost:";
 	for(auto node: timing_cost){
 		output<<"("<<node.first->getFullName()<<","<<node.second<<") ";
@@ -566,7 +561,7 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNo
 	double deviation = 1;
 	// std::cout<<"1,2,3:"<<accpepted<<","<<total_tried<<","<<num_swap<<"\n";
 	if(total_tried > 0){
-		deviation = 0.1 * total_tried - accepted;
+		deviation = 0.1 * (total_tried - accepted);
 		deviation = std::max(deviation, 1.0);
 			
 	}
@@ -592,14 +587,15 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNo
 	int mean = uniform_dist(e1);
 	auto selected_fu = suitable_candidates[mean];
 
-	if(!is_training){
-		LOG(LISA)<<"curr mapping: "<<dumpMappingToStr();
-		LOG(LISA)<<"label of "<<dfg_node->idx<<"  " <<dfg_node_label.toStr();
-		LOG(LISA)<<output.str();
-		LOG(LISA)<<"best mapping: "<<lisa_ctrl->bestMappingToStr();
-		LOG(LISA)<<" min cost:"<< min_cost<<"   selected cost: "<<selected_cost +1 <<"\n";
-		LOG(LISA)<<"lisa op:"<<dfg_node->idx<<" selectFU: "<<selected_fu->getFullName()<<"\n";
-	}
+	
+	LOG(LISA)<<"curr mapping: "<<dumpMappingToStr();
+	LOG(LISA)<<"label of "<<dfg_node->idx<<"  " <<dfg_node_label.toStr();
+	LOG(LISA)<<output.str();
+	LOG(LISA)<<"best mapping: "<<lisa_ctrl->bestMappingToStr();
+	LOG(LISA)<<"derivation:"<<deviation<<"\t total_triedL"<<total_tried<<"\t accepted:"<<accepted;
+	LOG(LISA)<<" min cost:"<< min_cost<<"   selected cost: "<<selected_cost +1 <<"\n";
+	LOG(LISA)<<"lisa op:"<<dfg_node->idx<<" selectFU: "<<selected_fu->getFullName()<<"\n";
+	
         
 	return selected_fu;
 }
@@ -667,8 +663,7 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getCloseRandomDP(DFGNode
 
 
 
-
-//TODO: change interval from II to cycle
+// return value by latency
 std::pair<int,int> CGRAXMLCompile::LISAMapper::getIntervalByScheduleOrder( std::map<int, pos3d> & dumped_mapping, DFGNode * dfg_node, int scheduler_order ){
 	int start_time = -1, end_time = -1;
 
@@ -788,7 +783,7 @@ CGRAXMLCompile::DataPath *   CGRAXMLCompile::LISAMapper::getRoutingNode(int  x, 
 
 
 std::map<CGRAXMLCompile::DataPath *, int> CGRAXMLCompile::LISAMapper::getCostByAssociation
-			( std::map<int, pos3d> & dumped_mapping, std::vector<DataPath *> candidates, DFGNode *dfg_node, int start_II ){
+			( std::map<int, pos3d> & dumped_mapping, std::vector<DataPath *> candidates, DFGNode *dfg_node, int eraly_lat ){
 	auto & ass = dfg_label_->at(dfg_node->idx).association;
 	int earliest_execution_time = 0;
 	int op_id = dfg_node->idx;
@@ -801,18 +796,17 @@ std::map<CGRAXMLCompile::DataPath *, int> CGRAXMLCompile::LISAMapper::getCostByA
 		earliest_execution_time = std::max(earliest_execution_time, temp_time);
 	}
 	
-	int earliest_execution_time_II = (earliest_execution_time_II + 2*cgra->get_t_max() )%cgra->get_t_max();
+	
 
-	//TODO use latency to fix this.
+
+	// assume all the stuff are done at first iteration
 	auto get_cost = [&, this ](DataPath * a) {
-		int mrrgnode_II =  a->get_t();
+		int curr_t =  a->get_t();
 		int total_spatial_cost = 0, total_temp_cost = 0;
-		int guess_time = 0;
+		int guess_time = curr_t;
 
-		if(mrrgnode_II < earliest_execution_time_II){ 
-			guess_time = earliest_execution_time + ( mrrgnode_II + this->cgra->get_t_max()) - earliest_execution_time_II;
-		}else{
-			guess_time = earliest_execution_time + mrrgnode_II + - earliest_execution_time_II;
+		while(guess_time < eraly_lat){
+			guess_time +=  this->cgra->get_t_max();
 		}
 		int mapped_ass_node = 0;
 		for(auto node_ass: ass){

@@ -151,7 +151,7 @@ int main(int argn, char *argc[])
 			mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
 		}else if(mapping_method  == 1){
 			SAMapper * sa_mapper = static_cast<SAMapper*>(mapper);
-			mappingSuccess = sa_mapper->Map(tempCGRA, &tempDFG);
+			mappingSuccess = sa_mapper->SAMap(tempCGRA, &tempDFG);
 		}else if(mapping_method  == 2){
 			LISAMapper * lisa_mapper = static_cast<LISAMapper*>(mapper);
 			mappingSuccess = lisa_mapper->LISAMap(  args, tdi, II);

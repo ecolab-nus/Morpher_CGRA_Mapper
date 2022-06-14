@@ -47,12 +47,12 @@ public:
 	};
 	std::map<int, pos3d> dumpMapping(int & max_latency);
 	bool optimizeMappingToMinimizeCost();
-	DataPath *  getLISADPCandidate(DFGNode *dfg_node, int accepted = 1 , int total_tried =1, int num_swap = 1);
+	DataPath *  getLISADPCandidate(DFGNode *dfg_node, int accepted = 1 , int total_tried =1);
 	std::vector<DataPath*> getCandidateByIIConstraint( int start_II, int end_II, DFGNode * node);
 
 	std::pair<int,int> getIntervalByScheduleOrder( std::map<int, pos3d> & dumped_mapping, DFGNode * node, int scheduler_order );
     std::map<DataPath *, int> getCostByComm( std::map<int, pos3d> & dumped_mapping, std::vector<DataPath *> candidates, DFGNode *node );
-    std::map<DataPath *, int> getCostByAssociation( std::map<int, pos3d> & dumped_mapping, std::vector<DataPath *> candidates, DFGNode *node, int start_II );
+    std::map<DataPath *, int> getCostByAssociation( std::map<int, pos3d> & dumped_mapping, std::vector<DataPath *> candidates, DFGNode *node, int eraly_lat );
     std::map<DataPath *, int> getCostForSameLevelNode( std::map<int, pos3d> & dumped_mapping, std::vector<DataPath *> candidates, DFGNode *node );
 
 	DataPath *   getRoutingNode(int  x, int  y, int t);
