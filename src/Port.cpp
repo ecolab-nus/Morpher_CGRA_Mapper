@@ -29,7 +29,7 @@ Port::Port(std::string name, PortType pType, Module *mod)
 void Port::increaseUse(HeuristicMapper *hm)
 {
 	assert(mapped_nodes.size() > 0);
-	DFGNode * last_mapped_node = mapped_nodes.rbegin()->first;
+	DFGNode * last_mapped_node = std::get<0>(*(this->mapped_nodes.rbegin()));
 	if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
 	{
 		number_signals = 1;
@@ -91,14 +91,33 @@ void Port::decreaseUse(DFGNode *extnode, HeuristicMapper *hm)
 
 void Port::setNode(DFGNode *node, int latency,  int dest ,  HeuristicMapper *hm)
 {
+	// std::cout<<this->getFullName()<<"\n";
 
-	if(std::find(mapped_nodes.begin(), mapped_nodes.end(), std::make_pair(node, latency)) == mapped_nodes.end()){
-		this->mapped_nodes.push_back(std::make_pair(node, latency));
-		node_to_dest_map.emplace(node, std::set<int>());
-	}
-	assert(node_to_dest_map.find(node) != node_to_dest_map.end());
-	node_to_dest_map[node].insert(dest);
+	// std::cout<<" before put \n";
+	// for(auto it =  mapped_nodes.begin(); it != mapped_nodes.end(); it++){
+		
+	// 	std::cout<<std::get<0>(*it)->idx<<","<<std::get<1>(*it)<<","<<std::get<2>(*it)<<" \t";
+	// }
+	// std::cout<<"\n";
 	
+	if(std::find(mapped_nodes.begin(), mapped_nodes.end(), std::make_tuple(node, dest, latency)) == mapped_nodes.end()){
+		this->mapped_nodes.push_back(std::make_tuple(node, dest, latency));
+		// node_value_dests.emplace(node, std::set<int>());
+	}
+	// std::cout<<"\n after put \n";
+	// for(auto it =  mapped_nodes.begin(); it != mapped_nodes.end(); it++){
+	// 	std::cout<<std::get<0>(*it)->idx<<","<<std::get<1>(*it)<<","<<std::get<2>(*it)<<" \t";
+
+	// }
+	// std::cout<<"\n";
+
+	bool find_node = false;
+	for(auto it =  mapped_nodes.begin(); it != mapped_nodes.end(); it++){
+		if(std::get<0>(*it)->idx == node->idx){
+			find_node = true;
+		}
+	}
+	assert(find_node);
 	setLat(latency);
 
 	PE *pe = getMod()->getPE();
@@ -203,6 +222,13 @@ int CGRAXMLCompile::Port::getCongCost()
 
 
 void CGRAXMLCompile::Port::erase(DFGNode * eraseNode, int  node_value_dest){
+	// std::cout<<this->getFullName()<<"\n";
+	// std::cout<<" before erase \n";
+	// for(auto it =  mapped_nodes.begin(); it != mapped_nodes.end(); it++){
+	// 	std::cout<<std::get<0>(*it)->idx<<","<<std::get<1>(*it)<<","<<std::get<2>(*it)<<" \t";
+	// }
+	// std::cout<<"\n";
+
 	assert(this->mod->getCGRA());
 	if (eraseNode != NULL)
 	{
@@ -225,42 +251,47 @@ void CGRAXMLCompile::Port::erase(DFGNode * eraseNode, int  node_value_dest){
 	}
 
 	bool find_node = false;
-	for(auto it =  mapped_nodes.begin(); it != mapped_nodes.end(); it++){
-		if(it->first->idx == eraseNode->idx){
+	int found_node_num = 0;
+
+	for(auto it =  mapped_nodes.begin(); it != mapped_nodes.end(); ){
+		if(std::get<0>(*it)->idx == eraseNode->idx && std::get<1>(*it) == node_value_dest){
 			find_node = true;
-
-			auto & value_dests = node_to_dest_map.at(eraseNode);
-			assert(value_dests.find(node_value_dest) != value_dests.end());
-			value_dests.erase(value_dests.find(node_value_dest));
-
-			// if dests are empty, remove the node then.
-			if(value_dests.size() == 0){
-				mapped_nodes.erase(it);
-				node_to_dest_map.erase(node_to_dest_map.find(eraseNode));
-			}
-			
-			break;
+			it = mapped_nodes.erase(it);
+			found_node_num ++;
+			// break;
+		}else{
+			it++;
 		}
 	}
+			
+	assert(found_node_num < 2);
+
+	// std::cout<<" after erase \n";
+	// for(auto it =  mapped_nodes.begin(); it != mapped_nodes.end(); it++){
+	// 	std::cout<<std::get<0>(*it)->idx<<","<<std::get<1>(*it)<<","<<std::get<2>(*it)<<" \t";
+	// }
+	// std::cout<<"\n";	
+
 	assert(find_node);
 	if(mapped_nodes.size() == 0){
 		number_signals = 0;
 		latency = -1;
 	}else{
 		number_signals = mapped_nodes.size(); 
-		latency = mapped_nodes.rbegin()->second; 
+		latency = std::get<2>(*(mapped_nodes.rbegin())); 
 	}
 	
 }
 void CGRAXMLCompile::Port::clear()
 {
+	// std::cout<<"call clear\n";
 	assert(this->mod->getCGRA());
 
 	if(mapped_nodes.size() == 0 ) {
 		return;
 	}
 
-	DFGNode* mappedNode = mapped_nodes.rbegin()->first;
+	DFGNode* mappedNode = std::get<0>(*(mapped_nodes.rbegin())); 
 	if (mappedNode != NULL)
 	{
 		(*this->mod->getCGRA()->getCongestedPortPtr())[this].erase(mappedNode);
@@ -282,7 +313,6 @@ void CGRAXMLCompile::Port::clear()
 	}
 
 	mapped_nodes.clear();
-	node_to_dest_map.clear();
 	// mappedNode = NULL;
 	number_signals = 0;
 	latency = -1;

@@ -11,6 +11,7 @@
 #include "DFGEdge.h"
 #include "DFGNode.h"
 #include <string>
+#include <tuple>
 #include <vector>
 #include <map>
 #include <assert.h>
@@ -55,7 +56,7 @@ public:
 		if(mapped_nodes.size() == 0){
 			return NULL;
 		}else{
-			return this->mapped_nodes.rbegin()->first; 
+			return std::get<0>(*(this->mapped_nodes.rbegin())); 
 		}
 	}
 
@@ -76,8 +77,8 @@ private:
 	PE* pe;
 	PortType pType;
 	// DFGNode *mappedNode = NULL; // this is the latest node that this port stores
-	std::vector<std::pair<DFGNode *, int >> mapped_nodes; // <node, lat> means latency
-	std::map<DFGNode *, std::set<int>> node_to_dest_map;  // this stores the destinations of node value.
+	std::vector<std::tuple<DFGNode*, int, int>> mapped_nodes; // <node, dest, lat> 
+	// std::map<DFGNode *, std::set<std::pair<int,int>>> node_value_dests;  // this stores the destinations of node value.
 	int latency = -1;
 
 	int base_cost = INIT_CONG_COST;
