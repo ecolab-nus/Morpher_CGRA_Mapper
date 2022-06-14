@@ -127,6 +127,9 @@ void CGRAXMLCompile::LISAMapper::set_lisa_controller( arguments arg){
 
 void CGRAXMLCompile::LISAMapper::do_training(  arguments arg, TimeDistInfo &tdi, int start_II ){
 	std::vector<perf_metric> perf_hist;
+	std::ofstream training_log;
+	training_log.open ("lisa_training_log_.txt", ios::trunc); 
+	training_log << arg.json_file_name<<" "<<arg.dfg_filename<<"\n";
 	perf_metric  best_perf = {100 , 0 , 0};
 	//iterative method
 	for(int traning_iteration  = 0; traning_iteration < max_training_iteration;  traning_iteration++){
@@ -154,6 +157,8 @@ void CGRAXMLCompile::LISAMapper::do_training(  arguments arg, TimeDistInfo &tdi,
 					auto end = std::chrono::steady_clock::now();
 					std::chrono::duration<double> elapsed_seconds = end-start;
 					std::cout<<"training iteration:"<< traning_iteration<<"\t II:"<<curr_II<<"\t running time:"<< elapsed_seconds.count()<<"\n";
+					training_log<<"training iteration:"<< traning_iteration<<"\t II:"<<curr_II<<"\t running time:"<< elapsed_seconds.count()<<"\n";
+
 					std::cout<<" mapping:"<<dumpMappingToStr();
 					
 					perf_metric this_iter_perf { curr_II, getCost() , elapsed_seconds.count() };
@@ -168,13 +173,15 @@ void CGRAXMLCompile::LISAMapper::do_training(  arguments arg, TimeDistInfo &tdi,
 					lisa_ctrl->passMapping(is_best,dumped_mapping, max_latency, this_iter_perf);
 					std::cout<<"current label: "<<lisa_ctrl->DFGLabelToStr(*(lisa_ctrl->getCurrLabel()))<<"\n";
 					break;
+				}else{
+					std::cout<<"increasing II to "<<(curr_II + 1)<<"\n";
 				}
 			}
 		}
 
 
 		
-
+		training_log.close();
 		lisa_ctrl->generateCombinedBestLabelHistorically(best_perf);
 		LOG(LISA)<<"best label"<<lisa_ctrl->labelToStrForGNNDataSet(*(lisa_ctrl->getBestLabel()));
 		
@@ -214,6 +221,8 @@ bool CGRAXMLCompile::LISAMapper::LISAMapCore(CGRA *cgra, DFG *dfg){
 		std::cout << "cannot find an initial mapping, exit....\n";
 		return false;
 	}
+
+	finish_init =  true;
 
 	//get mapping information
 	
@@ -561,13 +570,14 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNo
 	double deviation = 1;
 	// std::cout<<"1,2,3:"<<accpepted<<","<<total_tried<<","<<num_swap<<"\n";
 	if(total_tried > 0){
-		deviation = 0.1 * (total_tried - accepted);
+		deviation = 0.1 * (total_tried) - accepted;
 		deviation = std::max(deviation, 1.0);
 			
 	}
 	
 	std::normal_distribution<> d{0,deviation};
 	int selected_cost = std::abs(std::round(d(gen)));
+	LOG(LISA)<<"initial cost:"<<selected_cost;
 	if(selected_cost > max_diff)  selected_cost = max_diff;
 	selected_cost  = min_cost + selected_cost;
 
@@ -588,13 +598,16 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getLISADPCandidate(DFGNo
 	auto selected_fu = suitable_candidates[mean];
 
 	
-	LOG(LISA)<<"curr mapping: "<<dumpMappingToStr();
-	LOG(LISA)<<"label of "<<dfg_node->idx<<"  " <<dfg_node_label.toStr();
+	
+	
 	LOG(LISA)<<output.str();
-	LOG(LISA)<<"best mapping: "<<lisa_ctrl->bestMappingToStr();
-	LOG(LISA)<<"derivation:"<<deviation<<"\t total_triedL"<<total_tried<<"\t accepted:"<<accepted;
+	LOG(LISA)<<"label of "<<dfg_node->idx<<"  " <<dfg_node_label.toStr();
+	LOG(LISA)<<"derivation:"<<deviation<<"\t total_tried:"<<total_tried<<"\t accepted:"<<accepted;
+	LOG(LISA)<<"max_diff: "<<max_diff<<"\t max cost:"<<max_cost<< "\t min_cost:"<<min_cost;
 	LOG(LISA)<<" min cost:"<< min_cost<<"   selected cost: "<<selected_cost +1 <<"\n";
 	LOG(LISA)<<"lisa op:"<<dfg_node->idx<<" selectFU: "<<selected_fu->getFullName()<<"\n";
+	LOG(LISA)<<"curr mapping: "<<dumpMappingToStr();
+	LOG(LISA)<<"best mapping: "<<lisa_ctrl->bestMappingToStr();
 	
         
 	return selected_fu;
