@@ -31,6 +31,7 @@ bool DFG::parseXML(std::string fileName)
 	doc.LoadFile(fileName.c_str());
 	std::stringstream output_ss;
 
+	// std::cout<<dfg_parse_lisa_training<<"#######\n";
 	XMLElement *MutexBB = doc.FirstChildElement("MutexBB");
 	XMLElement *BB1 = MutexBB->FirstChildElement("BB1");
 	while (BB1)
@@ -165,7 +166,12 @@ bool DFG::parseXML(std::string fileName)
 		assert(Inputs);
 		output_ss << "|Inputs=";
 
-		XMLElement *input = Inputs->FirstChildElement("Input");
+		XMLElement *input;
+		if(dfg_parse_lisa_training){
+			input = Inputs->FirstChildElement("MyInput");
+		}else{
+			input = Inputs->FirstChildElement("Input");
+		} 
 		while (input)
 		{
 			int input_idx;
@@ -174,14 +180,24 @@ bool DFG::parseXML(std::string fileName)
 
 			findNode(idx)->parents.push_back(findNode(input_idx));
 
+		if(dfg_parse_lisa_training){
+			input = input->NextSiblingElement("MyInput");
+		}else{
 			input = input->NextSiblingElement("Input");
+		} 
+			// input = input->NextSiblingElement("Input");
 		}
 
 		XMLElement *Outputs = node->FirstChildElement("Outputs");
 		assert(Outputs);
 		output_ss << "|Outputs=";
 
-		XMLElement *output = Outputs->FirstChildElement("Output");
+		XMLElement *output;
+		if(dfg_parse_lisa_training){
+			output = Outputs->FirstChildElement("MyOutput");
+		}else{
+			output = Outputs->FirstChildElement("Output");
+		}
 		while (output)
 		{
 			int output_idx;
@@ -225,7 +241,12 @@ bool DFG::parseXML(std::string fileName)
 
 			}
 
-			output = output->NextSiblingElement("Output");
+			if(dfg_parse_lisa_training){
+				output = output->NextSiblingElement("MyOutput");
+			}else{
+				output = output->NextSiblingElement("Output");
+			}
+			// output = output->NextSiblingElement("Output");
 		}
 
 		XMLElement *RecParents = node->FirstChildElement("RecParents");

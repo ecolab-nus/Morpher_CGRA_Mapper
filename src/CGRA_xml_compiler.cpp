@@ -50,8 +50,12 @@ int main(int argn, char *argc[])
 	int initUserII = args.userII;
 	int mapping_method = args.mapping_method;
 	int max_II = args.max_II;
+
 	
 	DFG currDFG;
+	if(args.lisa_arg.training){
+		currDFG.dfg_parse_lisa_training = true;
+	}
 	currDFG.parseXML(inputDFG_filename);
 	currDFG.printDFG();
 
@@ -122,6 +126,9 @@ int main(int argn, char *argc[])
 	while (!mappingSuccess)
 	{
 		DFG tempDFG;
+		if(args.lisa_arg.training){
+			tempDFG.dfg_parse_lisa_training = true;
+		}
 		tempDFG.parseXML(inputDFG_filename);
 		tempDFG.printDFG();
 

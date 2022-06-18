@@ -48,6 +48,10 @@ public:
 	std::unordered_map<std::string,int> pointer_sizes;
 	std::unordered_map<std::string,int> ldst_pointer_sizes;
 
+	bool dfg_parse_lisa_training = false;  
+	// this is to fix a weird bug in tinyxml parser.
+	// bug happens if the name of child element is a substr of the current element.
+
 private:
 	void strongconnect(DFGNode *v,
 					   std::map<DFGNode *, int> &v_idx,
