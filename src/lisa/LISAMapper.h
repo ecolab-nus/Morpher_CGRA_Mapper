@@ -79,7 +79,7 @@ protected:
     bool finish_init = false;
     bool lisa_eval_routing_priority = false;
 	int after_mapping_optimize_cost_steps  =  1000;
-	std::string dfg_id = "";
+	std::string dfg_id =  "none";
 
 
 	// std::map<DFGNode*, int>  node_to_id_;

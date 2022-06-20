@@ -24,6 +24,7 @@ struct lisa_arguments{
 	bool training = false;
 	int max_training_iteration  = 5;
 	std::string arch_name = "";
+	std::string dfg_id = "none";
 };
 
 struct arguments
@@ -137,6 +138,7 @@ inline arguments parse_arguments(int argn, char *argc[]){
 		.add_option<int>("", "--max_II", "max II", 32)
 		.add_option<std::string>("", "--arch_name", "architecture name", "")
 		.add_option<bool>("", "--lisa_training", "lisa training", false)
+		.add_option<std::string>("", "--dfg_id", "the dfg id used to generate training data", "none")
         .parse(argn, argc);
 
 	ret.dfg_filename = args.get_option<std::string>("--dfg");
@@ -155,6 +157,7 @@ inline arguments parse_arguments(int argn, char *argc[]){
 	ret.use_json = true;
 	lisa_arg.arch_name = args.get_option<std::string>("--arch_name");
 	lisa_arg.training = args.get_option<bool>("--lisa_training");
+	lisa_arg.dfg_id = args.get_option<std::string>("--dfg_id");
 	ret.lisa_arg = lisa_arg;
 	assert(ret.dfg_filename!= "");
 	assert(ret.json_file_name!= "");

@@ -162,6 +162,10 @@ int main(int argn, char *argc[])
 		}else if(mapping_method  == 2){
 			LISAMapper * lisa_mapper = static_cast<LISAMapper*>(mapper);
 			mappingSuccess = lisa_mapper->LISAMap(  args, tdi, II);
+			if(args.lisa_arg.dfg_id != "none"){
+				// this is genreatring traning data. No need to dump results;
+				return 0;
+			}
 		}else{
 			assert(false && "did not set a valid mapping method");
 		}

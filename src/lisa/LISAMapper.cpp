@@ -29,6 +29,9 @@ namespace CGRAXMLCompile
 bool CGRAXMLCompile::LISAMapper::LISAMap( arguments arg, TimeDistInfo &tdi, int & start_II )
 {
 	DFG tempDFG;
+	if(arg.lisa_arg.training){
+		tempDFG.dfg_parse_lisa_training = true;
+	}
 	tempDFG.parseXML(arg.dfg_filename);
 	// tempDFG.printDFG();
 	this->dfg = & tempDFG;
@@ -40,9 +43,14 @@ bool CGRAXMLCompile::LISAMapper::LISAMap( arguments arg, TimeDistInfo &tdi, int 
 	
 
 	
-	//here are two different ways to get labｅl: 1) training 2) GNN　inference
+	//here are two different ways to get label: 1) training 2) GNN　inference
 	if(is_training){
 		do_training( arg, tdi, start_II );
+		if(arg.lisa_arg.dfg_id != "none"){
+			// this is genreatring traning data. No need to inference again;
+			lisa_ctrl->dumpBestLabelForGNNDataSet();
+			return true;
+		}
 	}else{
 		// do GNN_inference
 		assert(arg.lisa_arg.arch_name != "");
@@ -56,6 +64,9 @@ bool CGRAXMLCompile::LISAMapper::LISAMap( arguments arg, TimeDistInfo &tdi, int 
 	auto start = std::chrono::steady_clock::now();
 	for(; curr_II < arg.max_II ; curr_II++){
 		DFG dfg;
+		if(arg.lisa_arg.training){
+			dfg.dfg_parse_lisa_training = true;
+		}
 		dfg.parseXML(arg.dfg_filename);
 		CGRA *tempCGRA  = new CGRA(arg.json_file_name, curr_II, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
 		tempCGRA->max_hops = arg.max_hops;
@@ -95,6 +106,7 @@ bool CGRAXMLCompile::LISAMapper::pass_lisa_arg(lisa_arguments la){
 	this->lisa_eval_routing_priority = la.lisa_eval_routing_priority;
 	this->is_training =  la.training; 
 	this->max_training_iteration = la.max_training_iteration;
+	this->dfg_id = la.dfg_id;
 }
 
 void CGRAXMLCompile::LISAMapper::set_lisa_controller( arguments arg){
@@ -128,7 +140,7 @@ void CGRAXMLCompile::LISAMapper::set_lisa_controller( arguments arg){
 void CGRAXMLCompile::LISAMapper::do_training(  arguments arg, TimeDistInfo &tdi, int start_II ){
 	std::vector<perf_metric> perf_hist;
 	std::ofstream training_log;
-	training_log.open ("lisa_training_log_.txt", ios::trunc); 
+	training_log.open ("lisa_training_log/"+ dfg_id+ ".txt", ios::trunc); 
 	training_log << arg.json_file_name<<" "<<arg.dfg_filename<<"\n";
 	perf_metric  best_perf = {100 , 0 , 0};
 	//iterative method
@@ -143,16 +155,18 @@ void CGRAXMLCompile::LISAMapper::do_training(  arguments arg, TimeDistInfo &tdi,
 
 		// mapping
 		{
+			
 			for(; curr_II < arg.max_II; curr_II++){
 				DFG dfg;
+				dfg.dfg_parse_lisa_training = true;
 				dfg.parseXML(arg.dfg_filename);
-				CGRA *tempCGRA  = new CGRA(arg.json_file_name, curr_II, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
+				CGRA *tempCGRA = new CGRA(arg.json_file_name, curr_II, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
 				tempCGRA->max_hops = arg.max_hops;
 				this->getcongestedPortsPtr()->clear();
 				this->getconflictedPortsPtr()->clear();
 				tempCGRA->analyzeTimeDist(tdi);
 				mapped = LISAMapCore(tempCGRA, &dfg);
-				delete tempCGRA;
+				
 				if(mapped){
 					auto end = std::chrono::steady_clock::now();
 					std::chrono::duration<double> elapsed_seconds = end-start;
@@ -172,21 +186,33 @@ void CGRAXMLCompile::LISAMapper::do_training(  arguments arg, TimeDistInfo &tdi,
 					auto dumped_mapping = dumpMapping(max_latency);
 					lisa_ctrl->passMapping(is_best,dumped_mapping, max_latency, this_iter_perf);
 					std::cout<<"current label: "<<lisa_ctrl->DFGLabelToStr(*(lisa_ctrl->getCurrLabel()))<<"\n";
+					delete tempCGRA;
 					break;
 				}else{
+					delete tempCGRA;
 					std::cout<<"increasing II to "<<(curr_II + 1)<<"\n";
 				}
 			}
+			if(mapped){
+				// has done previously
+			}else{
+				auto end = std::chrono::steady_clock::now();
+				std::chrono::duration<double> elapsed_seconds = end-start;
+				std::cout<<"training iteration:"<< traning_iteration<<"\t not mapped "<<"\t running time:"<< elapsed_seconds.count()<<"\n";
+				training_log<<"training iteration:"<< traning_iteration<<"\t not mapped "<<"\t running time:"<< elapsed_seconds.count()<<"\n";
+			}
+
+			training_log.flush();
 		}
 
-
-		
-		training_log.close();
-		lisa_ctrl->generateCombinedBestLabelHistorically(best_perf);
-		LOG(LISA)<<"best label"<<lisa_ctrl->labelToStrForGNNDataSet(*(lisa_ctrl->getBestLabel()));
-		
-		mapping_method_name = "t-LISA";
 	}
+		
+	training_log.close();
+	lisa_ctrl->generateCombinedBestLabelHistorically(best_perf);
+	LOG(LISA)<<"best label"<<lisa_ctrl->labelToStrForGNNDataSet(*(lisa_ctrl->getBestLabel()));
+	
+	mapping_method_name = "t-LISA";
+	
 }
 
 bool CGRAXMLCompile::LISAMapper::LISAMapCore(CGRA *cgra, DFG *dfg){
@@ -403,15 +429,26 @@ float CGRAXMLCompile::LISAMapper::inner_map()
 		old_data_routing_path.insert(data_routing_path.begin(), data_routing_path.end());
 
 		LOG(LISA)<<"select DFG node "<< selected_dfg_node->idx <<" to unmap";
+		DataPath* previous_dp = NULL;
 		// start map
 		if (dfg_node_placement.find(selected_dfg_node) != dfg_node_placement.end()){
 			LOG(LISA)<<"current placement:" << selected_dfg_node->rootDP->getFullName();
+			previous_dp = dfg_node_placement[selected_dfg_node].first;
 			clearNodeMapping(selected_dfg_node);
 		}else{
 			LOG(LISA)<<"this DFG node is not placed yet" ;
 		}
 		
-		auto dp_candidate = getLISADPCandidate(selected_dfg_node, accepted_number, i);
+		DataPath* dp_candidate;
+		if(is_training){
+			if(previous_dp){
+				dp_candidate = getCloseRandomDP(selected_dfg_node, previous_dp, 2,2 );
+			}else{
+				dp_candidate = getLISADPCandidate(selected_dfg_node, accepted_number, i);
+			}
+		}else{
+			dp_candidate = getLISADPCandidate(selected_dfg_node, accepted_number, i);
+		} 
 		LOG(LISA) << "map this DFG node:" << selected_dfg_node->idx << " op:" << selected_dfg_node->op << "to pe:" << dp_candidate->getPE()->getName() ;
 		bool route_succ = SARoute(selected_dfg_node, dp_candidate);
 		moved_nodes.push_back(selected_dfg_node);
@@ -633,9 +670,9 @@ CGRAXMLCompile::DataPath *  CGRAXMLCompile::LISAMapper::getCloseRandomDP(DFGNode
 	LOG(RANDOMFU)<<"select CloseRandomFU for dfg node:"<<dfg_node->idx<<" previous datapath"<<old_dp->getFullName();
 	// assert(false);
 
-	std::vector<DataPath *> candidateDests = getRandomDPCandidate(dfg_node);
+	all_candidates = getRandomDPCandidate(dfg_node);
 
-	for (auto &dp : candidateDests)
+	for (auto &dp : all_candidates)
 	{
 		if(  std::abs(old_dp->getPE()->getPosition_X() - dp->getPE()->getPosition_X()) + std::abs(old_dp->getPE()->getPosition_Y() - dp->getPE()->getPosition_Y()) <= max_physical_dis  
 			&& allowed_cycle.find(dp->get_t())!= allowed_cycle.end()){
