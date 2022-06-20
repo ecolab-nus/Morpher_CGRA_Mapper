@@ -215,16 +215,18 @@ elif len(sys.argv) >1 and "baseline" in str(sys.argv[1]):
             arg = [ "-m",  "1",  "-j",arch_file,  "-d", bench_file]
             ts = BasicTask(name="mapper", cmd="./build/src/cgra_xml_mapper_baseline", args=arg)
             tm.addTask(ts)
+
 elif len(sys.argv) >1 and "lisa" in str(sys.argv[1]):
     os.system('cp ./build/src/cgra_xml_mapper ./build/src/cgra_xml_mapper_lisa')
     for arch, size in target_arch.items():
         arch_file = arch_folder + arch
+        arch_model_name = "morpher_"+str(size[0]) + "_" + str(size[1])
         #iterate benchmark 
         for bench in target_bench:
             bench_file =  benchmark_folder + bench  + ".xml"
             print(arch_file, bench_file)
             # arg = [ "-m",  "0",  "-j",arch_file,  "-d", bench_file,">", "log/"+arch+"_"+bench+".txt"]
-            arg = [ "-m",  "0",  "-j",arch_file,  "-d", bench_file]
+            arg = [ "-m",  "2",  "-j",arch_file,  "-d", bench_file, "--arch_name", arch_model_name]
             ts = BasicTask(name="mapper", cmd="./build/src/cgra_xml_mapper_lisa", args=arg)
             tm.addTask(ts)
 

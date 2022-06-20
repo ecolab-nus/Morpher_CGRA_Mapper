@@ -174,6 +174,11 @@ class LISAController{
 
     double label_difference_threashold = 1;
 
+
+    std::map<int, int> morpher_node_id_to_gnn_node_id;
+    std::map<int, int> gnn_node_id_to_morpher_node_id;
+
+
 };
 
 

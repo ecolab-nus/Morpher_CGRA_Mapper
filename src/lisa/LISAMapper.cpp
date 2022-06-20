@@ -132,6 +132,7 @@ void CGRAXMLCompile::LISAMapper::set_lisa_controller( arguments arg){
 			}
 		}
 	}
+	assert(lisa_edges.size()!=0);
 	lisa_ctrl = std::make_shared<LISAController>( LISAController(testCGRA->get_x_max(), testCGRA->get_y_max() ,
 						dfg_id, node_list, node_op, lisa_edges, back_edges));
 	lisa_ctrl->setArchandDFGFileName(arg.json_file_name, arg.dfg_filename, arg.lisa_arg.arch_name);

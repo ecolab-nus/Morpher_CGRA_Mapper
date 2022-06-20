@@ -569,7 +569,7 @@ void LISAController::callGNNInference(){
   std::string lisa_dir_name ="" ;
   lisa_dir_name.assign(pPath);
   
-  std::string command  =  "bash  "+lisa_dir_name+"/cgra_me/call_gnn.sh " + graph_name + " " + arch_name_;
+  std::string command  =  "bash  "+lisa_dir_name+"/morpher_mapper/call_gnn.sh " + graph_name + " " + arch_name_;
   // std::cout<<"command line"<<command<<"\n";
   system(command.c_str());
   std::shared_ptr<DFG_label> gnn_dfg_label = std::make_shared<DFG_label> (); 
@@ -579,11 +579,19 @@ void LISAController::callGNNInference(){
 }
 
 void LISAController::dumpGraphForInference(std::string graph_name){
+  int index = 0;
+  for(auto node: dfg_->nodes_){  
+    morpher_node_id_to_gnn_node_id.emplace(node, index);
+    gnn_node_id_to_morpher_node_id.emplace(index, node);
+    index++;
+  }
   std::stringstream edge_output;
   for (auto e: dfg_->edges_)
   {
-    edge_output<<e.src<<" "<<e.des<<"\n";
+    assert(morpher_node_id_to_gnn_node_id.find(e.src) != morpher_node_id_to_gnn_node_id.end());
+    edge_output<<morpher_node_id_to_gnn_node_id[e.src]<<" "<<morpher_node_id_to_gnn_node_id[e.des]<<"\n";
   }
+  // std::cout<<"edge_output:"<<edge_output.str();
   std::ofstream result_file;
   result_file.open ("../lisa_gnn/data/infer/"+ graph_name+".txt", std::ios_base::trunc); 
   result_file<<edge_output.str();
@@ -592,14 +600,12 @@ void LISAController::dumpGraphForInference(std::string graph_name){
 
   std::stringstream node_op_output;
 
-  int max_id = 0;
-  for (auto node_id: dfg_->nodes_ ){
-    max_id = std::max(max_id, node_id);
-  }
+  int max_id = index - 1;
 
   for (int i = 0; i <= max_id; i++ ){
-    assert(dfg_->node_op_.find(i) != dfg_->node_op_.end());
-    node_op_output<<dfg_->node_op_[i]<<"\n";
+    int id =  gnn_node_id_to_morpher_node_id[i];
+    assert(dfg_->node_op_.find(id) != dfg_->node_op_.end());
+    node_op_output<<dfg_->node_op_[id]<<"\n";
   }
   result_file.open ("../lisa_gnn/data/infer/"+ graph_name+"_op.txt", std::ios_base::trunc); 
   result_file<<node_op_output.str();
@@ -629,20 +635,24 @@ void LISAController::getLabelFromFile(DFG_label & dfg_label, std::string graph_n
       }
       if(label_id == 0){
         assert(tokens.size() == 2);
-        schedule_order.emplace(tokens[0], tokens[1]);
+        schedule_order.emplace(gnn_node_id_to_morpher_node_id[tokens[0]], tokens[1]);
       // }else if(label_id == 1){
       //  communication_distance.emplace(tokens[0], tokens[1]);
       // } assert(tokens.size() == 2);
       } else if(label_id == 1){
         assert(tokens.size() == 3);
-        sameLevel_node_distance.emplace(std::make_pair(tokens[0], tokens[1]), tokens[2]);
+        
+        sameLevel_node_distance.emplace(std::make_pair(gnn_node_id_to_morpher_node_id[tokens[0]], 
+                                        gnn_node_id_to_morpher_node_id[tokens[1]]), tokens[2]);
       }else if(label_id == 2){
         assert(tokens.size() == 3);
-        neighbor_assocation_spatial.emplace(std::make_pair(tokens[0], tokens[1]), tokens[2]);
+        neighbor_assocation_spatial.emplace(std::make_pair(gnn_node_id_to_morpher_node_id[tokens[0]], 
+                                          gnn_node_id_to_morpher_node_id[tokens[1]]), tokens[2]);
       }
       else if(label_id == 3){
         assert(tokens.size() == 3);
-        neighbor_assocation_temporal.emplace(std::make_pair(tokens[0], tokens[1]), tokens[2]);
+        neighbor_assocation_temporal.emplace(std::make_pair(gnn_node_id_to_morpher_node_id[tokens[0]], 
+                                            gnn_node_id_to_morpher_node_id[tokens[1]]), tokens[2]);
       }else{
         assert(false);
       }
