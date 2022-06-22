@@ -1,9 +1,12 @@
+set(CMAKE_C_COMPILER "gcc-7")
+set(CMAKE_CXX_COMPILER "/usr/bin/g++-7")
+
 FILE(GLOB_RECURSE MyCPPSources *.cpp)
 FILE(GLOB_RECURSE MyHSources *.h)
 
 set(PROJ "cgra_xml_mapper")
 
-set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "Release")
 find_package(nlohmann_json CONFIG REQUIRED)
 
 add_executable(${PROJ} ${MyCPPSources} ${MyHSources})
