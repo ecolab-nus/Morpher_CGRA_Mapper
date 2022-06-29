@@ -19,7 +19,8 @@ ori_bench = ["2mm", "atax", "bicg", "cholesky", "doitgen", "gemm", "gemver", "ge
 unroll_bench = ["2mm_unroll", "atax_unroll", "bicg_unroll", "cholesky_unroll", "doitgen_unroll", "gemm_unroll", "gemver_unroll", "gesummv_unroll", "mvt_unroll", "symm_unroll", "syr2k_unroll", "syrk_unroll", "trmm_unroll" ]
 unroll_5_bench = ["2mm_unroll_5", "atax_unroll_5", "bicg_unroll_5", "cholesky_unroll_5", "doitgen_unroll_5", "gemm_unroll_5", "gemver_unroll_5", "gesummv_unroll_5", "mvt_unroll_5", "symm_unroll_5", "syr2k_unroll_5", "syrk_unroll_5", "trmm_unroll_5" ]
 
-target_bench = ["2mm", "atax", "bicg", "cholesky", "doitgen"]
+# target_bench = ["2mm", "atax", "bicg", "cholesky", "doitgen"]
+target_bench = ["2mm_unroll4", "atax_unroll4", "bicg_unroll3", "cholesky_unroll4", "doitgen_unroll4"]
 process_num =80 # number of cpu cores to be used
 
 max_II = 36
@@ -30,7 +31,7 @@ gnn_training_data_floder = "../lisa_gnn/data/morpher/morpher/"
 gnn_training_data_target_arch = {  'hycube_original.json': (4, 4)}
 
 gnn_training_start_index  = 0
-training_num  = 10
+training_num  = 1000
 
 
 class BasicTask(object):
@@ -160,13 +161,13 @@ tm = TaskManager(process_num)
 #         os.makedirs('lisa_training_log')
 
 
-
+os.system('cd release &&  cmake ..  -D CMAKE_BUILD_TYPE=Release && make -j')
 
 #iterate arch file
-# os.system('cp ./build/bin/cgrame ./build/bin/sa_more_time_cgrame')
+# os.system('cp ./release/bin/cgrame ./release/bin/sa_more_time_cgrame')
 
 if len(sys.argv) >1 and "t_lisa" in str(sys.argv[1]):
-    os.system('cp ./build/src/cgra_xml_mapper ./build/src/cgra_xml_mapper_tlisa')
+    os.system('cp ./release/src/cgra_xml_mapper ./release/src/cgra_xml_mapper_tlisa')
     for arch in target_arch.keys():
         arch_file = arch_folder + arch
         #iterate benchmark 
@@ -175,12 +176,12 @@ if len(sys.argv) >1 and "t_lisa" in str(sys.argv[1]):
             print(arch_file, bench_file)
             # arg = [ "-m",  "0",  "-j",arch_file,  "-d", bench_file,">", "log/"+arch+"_"+bench+".txt"]
             arg = [ "-m",  "2",  "-j",arch_file,  "-d", bench_file, "--lisa_training"]
-            ts = BasicTask(name="mapper", cmd="./build/src/cgra_xml_mapper_tlisa", args=arg)
+            ts = BasicTask(name="mapper", cmd="./release/src/cgra_xml_mapper_tlisa", args=arg)
             tm.addTask(ts)
 
 
 elif len(sys.argv) >1 and "gnn_training_data" in str(sys.argv[1]):
-    os.system('cp ./build/src/cgra_xml_mapper ./build/src/cgra_xml_mapper_gnndata')
+    os.system('cp ./release/src/cgra_xml_mapper ./release/src/cgra_xml_mapper_gnndata')
     if not os.path.exists('lisa_training_log/'):
         os.makedirs('lisa_training_log/')
 
@@ -198,11 +199,11 @@ elif len(sys.argv) >1 and "gnn_training_data" in str(sys.argv[1]):
             print(arch_file, "arch_model_name",bench_file)
             # arg = [ "-m",  "0",  "-j",arch_file,  "-d", bench_file,">", "log/"+arch+"_"+bench+".txt"]
             arg = [ "-m",  "2",  "-j",arch_file,  "-d", bench_file, "--lisa_training", "--dfg_id", str(i), "--arch_name", arch_model_name]
-            ts = BasicTask(name="mapper", cmd="./build/src/cgra_xml_mapper_gnndata", args=arg)
+            ts = BasicTask(name="mapper", cmd="./release/src/cgra_xml_mapper_gnndata", args=arg)
             tm.addTask(ts)
 
 elif len(sys.argv) >1 and "baseline" in str(sys.argv[1]):
-    os.system('cp ./build/src/cgra_xml_mapper ./build/src/cgra_xml_mapper_baseline')
+    os.system('cp ./release/src/cgra_xml_mapper ./release/src/cgra_xml_mapper_baseline')
     for arch in target_arch.keys():
         arch_file = arch_folder + arch
         #iterate benchmark 
@@ -211,13 +212,15 @@ elif len(sys.argv) >1 and "baseline" in str(sys.argv[1]):
             print(arch_file, bench_file)
             # arg = [ "-m",  "0",  "-j",arch_file,  "-d", bench_file,">", "log/"+arch+"_"+bench+".txt"]
             arg = [ "-m",  "0",  "-j",arch_file,  "-d", bench_file]
-            ts = BasicTask(name="mapper", cmd="./build/src/cgra_xml_mapper_baseline", args=arg)
+            ts = BasicTask(name="mapper", cmd="./release/src/cgra_xml_mapper_baseline", args=arg)
+            tm.addTask(ts)
+            
             arg = [ "-m",  "1",  "-j",arch_file,  "-d", bench_file]
-            ts = BasicTask(name="mapper", cmd="./build/src/cgra_xml_mapper_baseline", args=arg)
+            ts = BasicTask(name="mapper", cmd="./release/src/cgra_xml_mapper_baseline", args=arg)
             tm.addTask(ts)
 
 elif len(sys.argv) >1 and "lisa" in str(sys.argv[1]):
-    os.system('cp ./build/src/cgra_xml_mapper ./build/src/cgra_xml_mapper_lisa')
+    os.system('cp ./release/src/cgra_xml_mapper ./release/src/cgra_xml_mapper_lisa')
     for arch, size in target_arch.items():
         arch_file = arch_folder + arch
         arch_model_name = "morpher_"+str(size[0]) + "_" + str(size[1])
@@ -227,7 +230,7 @@ elif len(sys.argv) >1 and "lisa" in str(sys.argv[1]):
             print(arch_file, bench_file)
             # arg = [ "-m",  "0",  "-j",arch_file,  "-d", bench_file,">", "log/"+arch+"_"+bench+".txt"]
             arg = [ "-m",  "2",  "-j",arch_file,  "-d", bench_file, "--arch_name", arch_model_name]
-            ts = BasicTask(name="mapper", cmd="./build/src/cgra_xml_mapper_lisa", args=arg)
+            ts = BasicTask(name="mapper", cmd="./release/src/cgra_xml_mapper_lisa", args=arg)
             tm.addTask(ts)
 
         

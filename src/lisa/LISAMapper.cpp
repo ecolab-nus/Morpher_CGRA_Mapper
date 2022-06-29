@@ -39,7 +39,7 @@ bool CGRAXMLCompile::LISAMapper::LISAMap( arguments arg, TimeDistInfo &tdi, int 
 
 	pass_lisa_arg(arg.lisa_arg);
 	// set lisa contoller
-	set_lisa_controller( arg );
+	set_lisa_controller( arg, start_II );
 	
 
 	
@@ -109,7 +109,7 @@ bool CGRAXMLCompile::LISAMapper::pass_lisa_arg(lisa_arguments la){
 	this->dfg_id = la.dfg_id;
 }
 
-void CGRAXMLCompile::LISAMapper::set_lisa_controller( arguments arg){
+void CGRAXMLCompile::LISAMapper::set_lisa_controller( arguments arg, int MII){
 	sortBackEdgePriorityASAP();
 	CGRA *testCGRA  = new CGRA(arg.json_file_name, 1, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
 	std::set<int> node_list;
@@ -136,6 +136,7 @@ void CGRAXMLCompile::LISAMapper::set_lisa_controller( arguments arg){
 	lisa_ctrl = std::make_shared<LISAController>( LISAController(testCGRA->get_x_max(), testCGRA->get_y_max() ,
 						dfg_id, node_list, node_op, lisa_edges, back_edges));
 	lisa_ctrl->setArchandDFGFileName(arg.json_file_name, arg.dfg_filename, arg.lisa_arg.arch_name);
+	lisa_ctrl->setMII(MII);
 }
 
 void CGRAXMLCompile::LISAMapper::do_training(  arguments arg, TimeDistInfo &tdi, int start_II ){

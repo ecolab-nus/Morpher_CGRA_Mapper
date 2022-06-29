@@ -34,7 +34,7 @@ public:
 	bool LISAMap( arguments arg, TimeDistInfo &tdi, int  & start_II);
 	
 	void do_training(  arguments arg, TimeDistInfo &tdi, int start_II );
-	void set_lisa_controller(arguments arg);
+	void set_lisa_controller(arguments arg, int MII);
 	bool initMap();
 	float inner_map();
 

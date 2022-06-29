@@ -71,7 +71,7 @@ struct node_label{
 
 struct perf_metric{
     int ii;
-    float cost;
+    int cost;
     int running_time;
 
     bool operator < (const perf_metric& other) const {
