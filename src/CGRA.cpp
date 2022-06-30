@@ -941,6 +941,7 @@ void CGRAXMLCompile::CGRA::analyzeTimeDist(TimeDistInfo tdi)
 TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 {
 	std::stringstream output_ss;
+	output_ss<<"initial time analayze start\n";
 	for (Module *m1 : subModArr[0])
 	{
 		output_ss << "m1 name = " << m1->getName() << ",";
@@ -966,6 +967,8 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 			output_ss<<"  dist:"<<dist <<"\n";
 			TimeDistBetweenPEMap[pe1->getName()][pe2->getName()] =dist;
 		}
+		LOG(ROUTE)<<output_ss.str();
+		output_ss.str("");
 	}
 	if (get_t_max() == 1)
 	{
@@ -990,7 +993,8 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 			}
 		}
 	}
-	LOG(ARCH)<<output_ss.str();
+	output_ss<<"initial time analayze done\n";
+	LOG(ROUTE)<<output_ss.str();
 
 	LOG(ROUTE) << "Timing analysis between PEs done.!\n";
 	for (auto it1 = TimeDistBetweenPEMap.begin(); it1 != TimeDistBetweenPEMap.end(); it1++)
@@ -1012,6 +1016,9 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 		LOG(ROUTE) << "PE=" << pe << "\ttime_dist=" << time_dist << "";
 	}
 
+
+	
+
 	IntraPETimeDistAnalysisDone = true;
 	TimeDistInfo tdi;
 	tdi.TimeDistBetweenClosestMEMPEMap = TimeDistBetweenClosestMEMPEMap;
@@ -1022,6 +1029,29 @@ TimeDistInfo CGRAXMLCompile::CGRA::analyzeTimeDist()
 
 void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, int time_dist, unordered_map<Port *, int> &already_traversed, int &result)
 {
+
+	auto in_rectangle_range =  [ &]( Port *port){
+		int port_x = port->getPE()->getPosition_X();
+		int port_y = port->getPE()->getPosition_Y();
+		bool in_range = true;
+
+		//release the constraint by +1/-1 as some memory PE might cause a problem
+		int max_x = std::max(srcPE->getPosition_X(), destPE->getPosition_X()) + 1;
+		int min_x = std::min(srcPE->getPosition_X(), destPE->getPosition_X()) -1 ;
+		int max_y = std::max(srcPE->getPosition_Y(), destPE->getPosition_Y()) + 1;
+		int min_y = std::min(srcPE->getPosition_Y(), destPE->getPosition_Y()) -1 ;
+
+		if(port_x > max_x || port_x < min_x){
+			in_range = false;
+		}
+
+		if(port_y > max_y || port_y < min_y){
+			in_range = false;
+		}
+
+
+		return in_range;
+	};
 
 	if (already_traversed.find(currPort) != already_traversed.end())
 	{
@@ -1064,6 +1094,9 @@ void CGRAXMLCompile::CGRA::traverseUntil(PE *srcPE, PE *destPE, Port *currPort, 
 	vector<Port *> nextPorts = currPort->getMod()->getNextPorts(currPort);
 	for (Port *p : nextPorts)
 	{
+		if(!in_rectangle_range(p)){
+			continue;
+		}
 		int time_delta = 0;
 		if (p->getMod()->get_t() != currPort->getMod()->get_t())
 		{
