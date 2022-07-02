@@ -142,7 +142,7 @@ void CGRAXMLCompile::LISAMapper::set_lisa_controller( arguments arg, int MII){
 void CGRAXMLCompile::LISAMapper::do_training(  arguments arg, TimeDistInfo &tdi, int start_II ){
 	std::vector<perf_metric> perf_hist;
 	std::ofstream training_log;
-	training_log.open ("lisa_training_log/"+ dfg_id+ ".txt", ios::trunc); 
+	training_log.open ("lisa_training_log/" + arg.lisa_arg.arch_name+ "/"+ dfg_id+ ".txt", ios::trunc); 
 	training_log << arg.json_file_name<<" "<<arg.dfg_filename<<"\n";
 	perf_metric  best_perf = {100 , 0 , 0};
 	//iterative method

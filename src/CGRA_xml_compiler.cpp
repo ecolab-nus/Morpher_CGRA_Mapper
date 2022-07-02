@@ -50,6 +50,7 @@ int main(int argn, char *argc[])
 	int initUserII = args.userII;
 	int mapping_method = args.mapping_method;
 	int max_II = args.max_II;
+	std::string arch_name  = args.arch_name;
 
 	
 	DFG currDFG;
@@ -217,7 +218,7 @@ int main(int argn, char *argc[])
 	std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec";
 	std::ofstream result_file;
 	result_file.open ("result.txt", std::ios_base::app); 
-	result_file<< mapper->cgra->get_x_max() <<"x"<<mapper->cgra->get_y_max() <<" "<<inputDFG_filename
+	result_file<< arch_name <<" "<<inputDFG_filename
 		<<" method:"<<mapper->getMappingMethodName()<<" "<<II<<" "
 		<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
 	result_file.close();

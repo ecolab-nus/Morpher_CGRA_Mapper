@@ -43,6 +43,7 @@ struct arguments
 	int max_hops = 4;  // for HyCUBE
 	int mapping_method = 0; // 0: PathFinderMapper, 1: SAMapper (SimulatedAnnealing),  HeuristicMapper will not be used
 	int max_II = 32;
+	std::string arch_name = "";
 	lisa_arguments lisa_arg;
 };
 
@@ -155,6 +156,7 @@ inline arguments parse_arguments(int argn, char *argc[]){
 	ret.mapping_method = args.get_option<int>("--mapping");
 	ret.max_II = args.get_option<int>("--max_II");
 	ret.use_json = true;
+	ret.arch_name = args.get_option<std::string>("--arch_name");
 	lisa_arg.arch_name = args.get_option<std::string>("--arch_name");
 	lisa_arg.training = args.get_option<bool>("--lisa_training");
 	lisa_arg.dfg_id = args.get_option<std::string>("--dfg_id");
