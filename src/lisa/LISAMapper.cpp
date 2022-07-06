@@ -1,8 +1,8 @@
-#include "../PathFinderMapper.h"
-#include "../SimulatedAnnealingMapper.h"
-#include "LISAMapper.h"
-#include "../DataPath.h"
-#include "../FU.h"
+#include <morpher/mapper/PathFinderMapper.h>
+#include <morpher/mapper/SimulatedAnnealingMapper.h>
+#include <morpher/lisa/LISAMapper.h>
+#include <morpher/arch/DataPath.h>
+#include <morpher/arch/FU.h>
 
 
 #include <queue>
@@ -30,7 +30,7 @@ bool CGRAXMLCompile::LISAMapper::LISAMap( arguments arg, TimeDistInfo &tdi, int 
 {
 	DFG tempDFG;
 	if(arg.lisa_arg.training){
-		tempDFG.dfg_parse_lisa_training = true;
+		tempDFG.dfg_parse_self_made_dfg = true;
 	}
 	tempDFG.parseXML(arg.dfg_filename);
 	// tempDFG.printDFG();
@@ -65,7 +65,7 @@ bool CGRAXMLCompile::LISAMapper::LISAMap( arguments arg, TimeDistInfo &tdi, int 
 	for(; curr_II < arg.max_II ; curr_II++){
 		DFG dfg;
 		if(arg.lisa_arg.training){
-			dfg.dfg_parse_lisa_training = true;
+			dfg.dfg_parse_self_made_dfg = true;
 		}
 		dfg.parseXML(arg.dfg_filename);
 		CGRA *tempCGRA  = new CGRA(arg.json_file_name, curr_II, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
@@ -160,7 +160,7 @@ void CGRAXMLCompile::LISAMapper::do_training(  arguments arg, TimeDistInfo &tdi,
 			
 			for(; curr_II < arg.max_II; curr_II++){
 				DFG dfg;
-				dfg.dfg_parse_lisa_training = true;
+				dfg.dfg_parse_self_made_dfg = true;
 				dfg.parseXML(arg.dfg_filename);
 				CGRA *tempCGRA = new CGRA(arg.json_file_name, curr_II, arg.xdim, arg.ydim, this->getcongestedPortsPtr());
 				tempCGRA->max_hops = arg.max_hops;

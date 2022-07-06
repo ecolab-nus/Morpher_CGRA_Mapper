@@ -1,4 +1,4 @@
-#include "gnn.h"
+#include <morpher/lisa/gnn.h>
 
 GNN::GNN(){
 

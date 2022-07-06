@@ -9,6 +9,10 @@ set(PROJ "cgra_xml_mapper")
 # set(CMAKE_BUILD_TYPE "Release")
 find_package(nlohmann_json CONFIG REQUIRED)
 
+
+
+
+
 add_executable(${PROJ} ${MyCPPSources} ${MyHSources})
 # add_subdirectory(src)
 

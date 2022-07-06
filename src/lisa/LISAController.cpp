@@ -1,4 +1,4 @@
-#include "LISAController.h"
+#include <morpher/lisa/LISAController.h>
 
 LISAController::LISAController(int fabric_x, int fabric_y, std::string dfg_id, std::set<int> nodes, std::map<int, std::string> node_op, 
                   std::vector<std::pair<int,int>> edges, std::vector<std::pair<int,int>> backedges){

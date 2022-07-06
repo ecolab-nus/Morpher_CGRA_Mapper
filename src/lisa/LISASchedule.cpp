@@ -1,4 +1,4 @@
-#include "LISASchedule.h"
+#include <morpher/lisa/LISASchedule.h>
 
 LISASchedule::LISASchedule(LISADFG* dfg, int x, int y, int t, std::map<int, pos3d> & mapping){
   // std::cout<<"fabric x2"<<x<<"fabric_y_"<<y<<std::endl;

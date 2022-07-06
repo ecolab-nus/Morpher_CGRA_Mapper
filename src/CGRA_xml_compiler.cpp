@@ -12,13 +12,13 @@
 #include <assert.h>
 #include <string.h>
 // 
-#include "util.h"
-#include "DFG.h"
-#include "CGRA.h"
-#include "HeuristicMapper.h"
-#include "PathFinderMapper.h"
-#include "SimulatedAnnealingMapper.h"
-#include "lisa/LISAMapper.h"
+#include <morpher/util/util.h>
+#include <morpher/dfg/DFG.h>
+#include <morpher/arch/CGRA.h>
+#include <morpher/mapper/HeuristicMapper.h>
+#include <morpher/mapper/PathFinderMapper.h>
+#include <morpher/mapper/SimulatedAnnealingMapper.h>
+#include <morpher/lisa/LISAMapper.h>
 #include <math.h>
 
 #include <ctype.h>
@@ -55,7 +55,7 @@ int main(int argn, char *argc[])
 	
 	DFG currDFG;
 	if(args.lisa_arg.training){
-		currDFG.dfg_parse_lisa_training = true;
+		currDFG.dfg_parse_self_made_dfg = true;
 	}
 	currDFG.parseXML(inputDFG_filename);
 	currDFG.printDFG();
@@ -128,7 +128,7 @@ int main(int argn, char *argc[])
 	{
 		DFG tempDFG;
 		if(args.lisa_arg.training){
-			tempDFG.dfg_parse_lisa_training = true;
+			tempDFG.dfg_parse_self_made_dfg= true;
 		}
 		tempDFG.parseXML(inputDFG_filename);
 		tempDFG.printDFG();
