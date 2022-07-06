@@ -11,12 +11,14 @@
 
 #include <assert.h>
 #include <string.h>
-
-#include "DFG.h"
-#include "CGRA.h"
-#include "HeuristicMapper.h"
-#include "PathFinderMapper.h"
-#include "SimulatedAnnealingMapper.h"
+// 
+#include <morpher/util/util.h>
+#include <morpher/dfg/DFG.h>
+#include <morpher/arch/CGRA.h>
+#include <morpher/mapper/HeuristicMapper.h>
+#include <morpher/mapper/PathFinderMapper.h>
+#include <morpher/mapper/SimulatedAnnealingMapper.h>
+#include <morpher/lisa/LISAMapper.h>
 #include <math.h>
 
 #include <ctype.h>
@@ -27,132 +29,6 @@
 using namespace std;
 using namespace CGRAXMLCompile;
 
-struct arguments
-{
-	string dfg_filename;
-	int xdim = -1;
-	int ydim = -1;
-	string PEType;
-	string json_file_name;
-	int userII = 0;
-	bool noMutexPaths=false;
-	int backtracklimit = 2; // for PathFinderMapper, do not set this for a high number.  
-	bool use_json = false;
-	int ndps = 1;
-	int maxiter = 30;  // for PathFinderMapper,
-	int max_hops = 4;  // for HyCUBE
-	int mapping_method = 0; // 0: PathFinderMapper, 1: SAMapper (SimulatedAnnealing),  HeuristicMapper will not be used
-};
-
-arguments parse_arguments(int argn, char *argc[])
-{
-	arguments ret;
-
-	int aflag = 0;
-	int bflag = 0;
-	char *cvalue = NULL;
-	int index;
-	int c;
-
-	opterr = 0;
-
-	while ((c = getopt(argn, argc, "d:x:y:t:j:i:eb:m:r:h:")) != -1)
-		switch (c)
-		{
-		case 'd':
-			ret.dfg_filename = string(optarg);
-			break;
-		case 'x':
-			ret.xdim = atoi(optarg);
-			break;
-		case 'y':
-			ret.ydim = atoi(optarg);
-			break;
-		case 't':
-			ret.PEType = string(optarg);
-			break;
-		case 'n':
-			ret.ndps = atoi(optarg);
-			break;
-		case 'j':
-			ret.json_file_name = string(optarg);
-			ret.use_json = true;
-			break;
-		case 'i':
-			ret.userII = atoi(optarg);
-			break;
-		case 'e':
-			ret.noMutexPaths = true;
-			break;
-		case 'b':
-			ret.backtracklimit = atoi(optarg);
-			break;
-		case 'r':
-			ret.maxiter = atoi(optarg);
-		case 'm':
-			ret.mapping_method = atoi(optarg);
-			break;
-		case 'h':
-			ret.max_hops = atoi(optarg);
-			break;
-		case '?':
-			if (optopt == 'c')
-				fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-			else if (isprint(optopt))
-				fprintf(stderr, "Unknown option `-%c'.\n", optopt);
-			else
-				fprintf(stderr,
-						"Unknown option character `\\x%x'.\n",
-						optopt);
-		default:
-			abort();
-		}
-		return ret;
-}
-
-struct port_edge
-{
-	Port* a;
-	Port* b;
-	bool operator==(const port_edge &other) const
-	{
-		
-		return other.a == a && other.b == b;
-	}
-
-	bool operator<(const port_edge &other) const
-	{
-		
-		return a < other.a || b < other.b;
-	}
-};
-
-void find_routing_resource(Module * md, std::set<Port*> & ports, std::set<port_edge> & port_edges){
-
-		// std::cout<<"vist "<<md->getFullName()<<"\n";
-	for (auto & port_conn: md->getconnectedTo()){
-		auto master_port = port_conn.first;
-		ports.insert(master_port);
-		for(auto slave_port: port_conn.second ){
-			ports.insert(slave_port);
-			port_edges.insert(port_edge{master_port, slave_port});
-		}
-	}
-
-	for (auto & port_conn: md->getconnectedFrom()){
-		auto slave_port = port_conn.first;
-		ports.insert(slave_port);
-		for(auto master_port: port_conn.second ){
-			ports.insert(slave_port);
-			port_edges.insert(port_edge{master_port, slave_port});
-		}
-	}
-
-	for(auto submod: md->subModules){
-		find_routing_resource(submod, ports, port_edges);
-	}
-
-}
 
 int main(int argn, char *argc[])
 {
@@ -173,8 +49,14 @@ int main(int argn, char *argc[])
 	string json_file_name = args.json_file_name;
 	int initUserII = args.userII;
 	int mapping_method = args.mapping_method;
+	int max_II = args.max_II;
+	std::string arch_name  = args.arch_name;
+
 	
 	DFG currDFG;
+	if(args.lisa_arg.training){
+		currDFG.dfg_parse_self_made_dfg = true;
+	}
 	currDFG.parseXML(inputDFG_filename);
 	currDFG.printDFG();
 
@@ -207,6 +89,8 @@ int main(int argn, char *argc[])
 		mapper = new SAMapper(inputDFG_filename);
 		
 		// assert(false && "convert to SA");
+	}else if(mapping_method  == 2){
+		mapper = new LISAMapper(inputDFG_filename);
 	}else{
 		assert(false && "did not set a valid mapping method");
 	}
@@ -243,6 +127,9 @@ int main(int argn, char *argc[])
 	while (!mappingSuccess)
 	{
 		DFG tempDFG;
+		if(args.lisa_arg.training){
+			tempDFG.dfg_parse_self_made_dfg= true;
+		}
 		tempDFG.parseXML(inputDFG_filename);
 		tempDFG.printDFG();
 
@@ -256,13 +143,8 @@ int main(int argn, char *argc[])
 			tempCGRA = new CGRA(json_file_name, II,xdim,ydim, mapper->getcongestedPortsPtr());
 		}
 
-		std::set<Port*>  ports; std::set<port_edge>  port_edges;
-		for(auto submod: tempCGRA->Name2SubMod){
-		
-			find_routing_resource(submod.second, ports, port_edges);
-		}
+	
 		std::cout << "Using II = " << II << "\n";
-		std::cout<<"number of ports: "<<ports.size()<<" number of edge: "<<port_edges.size();
 		// return 0;
 		// tempCGRA->analyzeTimeDist(tdi);
 		tempCGRA->max_hops = args.max_hops;
@@ -278,6 +160,13 @@ int main(int argn, char *argc[])
 		}else if(mapping_method  == 1){
 			SAMapper * sa_mapper = static_cast<SAMapper*>(mapper);
 			mappingSuccess = sa_mapper->SAMap(tempCGRA, &tempDFG);
+		}else if(mapping_method  == 2){
+			LISAMapper * lisa_mapper = static_cast<LISAMapper*>(mapper);
+			mappingSuccess = lisa_mapper->LISAMap(  args, tdi, II);
+			if(args.lisa_arg.dfg_id != "none"){
+				// this is genreatring traning data. No need to dump results;
+				return 0;
+			}
 		}else{
 			assert(false && "did not set a valid mapping method");
 		}
@@ -294,51 +183,45 @@ int main(int argn, char *argc[])
 			delete tempCGRA;
 			II++;
 
-			if (II == 65)
+			if (II == max_II)
 			{
 				std::cout << "############ cannot map:  II max of 65 has been reached and exiting...\n";
-				auto end = chrono::steady_clock::now();
-				std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec";
-				std::ofstream result_file;
-				result_file.open ("result.txt", std::ios_base::app); 
-				result_file<< mapper->cgra->get_x_max() <<"x"<<mapper->cgra->get_y_max() <<" "<<inputDFG_filename
-					<<" method:"<<mapper->getMappingMethodName()<<" "<<II<<" "
-					<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
-				result_file.close();
-
-				// return 0;
+				break;
 			}
 
 			if (II > mapper->upperboundII)
 			{
 				std::cout << "upperbound II reached : " << mapper->upperboundII << "\n";
 				std::cout << "Please use the mapping with II = " << mapper->upperboundFoundBy << ",with Iter = " << mapper->upperboundIter << "\n";
-				//return 0;
+				break;
 			}
 
 			std::cout << "Increasing II to " << II << "\n";
 		}
 		else
 		{
+			if(mapping_method  == 2){
+				break;
+			}
 			mapper->sanityCheck();
-
-			auto end = chrono::steady_clock::now();
-			std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec";
-			std::ofstream result_file;
-			result_file.open ("result.txt", std::ios_base::app); 
-			result_file<< mapper->cgra->get_x_max() <<"x"<<mapper->cgra->get_y_max() <<" "<<inputDFG_filename
-				<<" method:"<<mapper->getMappingMethodName()<<" "<<II<<" "
-				<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
-			result_file.close();
-
 			//mapper.assignLiveInOutAddr(&tempDFG);
 			if(PEType == "HyCUBE_4REG"){
 				std::cout << "Printing HyCUBE Binary...\n";
 				mapper->printHyCUBEBinary(tempCGRA);
 			}
+			break;
 			
 		}
 	}
+
+	auto end = chrono::steady_clock::now();
+	std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec";
+	std::ofstream result_file;
+	result_file.open ("result.txt", std::ios_base::app); 
+	result_file<< arch_name <<" "<<inputDFG_filename
+		<<" method:"<<mapper->getMappingMethodName()<<" "<<II<<" "
+		<<chrono::duration_cast<chrono::seconds>(end - start).count()<<"\n";
+	result_file.close();
 	 
 
 	return 0;
