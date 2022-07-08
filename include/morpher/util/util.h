@@ -36,7 +36,7 @@ struct arguments
 	string json_file_name;
 	int userII = 0;
 	bool noMutexPaths=false;
-	int backtracklimit = 2; // for PathFinderMapper, do not set this for a high number.  
+	int backtracklimit = 0; // for PathFinderMapper, do not set this for a high number.  
 	bool use_json = false;
 	int ndps = 1;
 	int maxiter = 30;  // for PathFinderMapper,
@@ -135,7 +135,7 @@ inline arguments parse_arguments(int argn, char *argc[]){
 		.add_option<int>("-r", "--max_iter", "max iteration", 30)
 		.add_option<int>("-h", "--hops", "hops for hycube", 4)
 		.add_option<bool>("-e", "--noMutexPaths", "noMutexPaths", false)
-		.add_option<int>("-b", "--backtrack_limit", "back track limit", 2)
+		.add_option<int>("-b", "--backtrack_limit", "back track limit", 0)
 		.add_option<int>("", "--max_II", "max II", 32)
 		.add_option<std::string>("", "--arch_name", "architecture name", "")
 		.add_option<bool>("", "--lisa_training", "lisa training", false)
