@@ -14,7 +14,8 @@
 #include "FU.h"
 #include <morpher/arch/DataPath.h>
 #include <memory>
-#include <nlohmann/json.hpp>
+//#include <nlohmann/json.hpp>
+#include "json.hpp"
 
 using namespace std;
 using json = nlohmann::json;
