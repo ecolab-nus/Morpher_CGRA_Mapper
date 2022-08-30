@@ -882,9 +882,9 @@ int CGRAXMLCompile::HeuristicMapper::getMinimumII(CGRA *cgra, DFG *dfg)
 	std::set<DataPath *> cummDP;
 	for (opFUstr a : opFUstr_vec)
 	{
-		std::cout << "op=" << a.op << ",opcount=" << opHist[a.op] << ",dpcount=" << a.count;
+		LOG(MAPPING) << "op=" << a.op << ",opcount=" << opHist[a.op] << ",dpcount=" << a.count;
 		int new_ratio = (opHist[a.op] + a.count - 1) / a.count; // int ceil
-		std::cout << ",ratio=" << new_ratio;
+		LOG(MAPPING) << ",ratio=" << new_ratio;
 		ii = std::max(ii, new_ratio);
 
 		cummOp += opHist[a.op];
@@ -892,12 +892,12 @@ int CGRAXMLCompile::HeuristicMapper::getMinimumII(CGRA *cgra, DFG *dfg)
 		{
 			cummDP.insert(dp);
 		}
-		std::cout << ",cummOp=" << cummOp << ",cummDP=" << cummDP.size();
+		LOG(MAPPING) << ",cummOp=" << cummOp << ",cummDP=" << cummDP.size();
 		int cumm_ratio = (cummOp + cummDP.size() - 1) / cummDP.size();
-		std::cout << ",ratio=" << cumm_ratio << "\n";
+		LOG(MAPPING) << ",ratio=" << cumm_ratio << "\n";
 		ii = std::max(ii, cumm_ratio);
 	}
-	std::cout << "Min II = " << ii << "\n";
+	LOG(MAPPING) << "Min II = " << ii << "\n";
 	return ii;
 }
 
@@ -1915,7 +1915,7 @@ bool CGRAXMLCompile::HeuristicMapper::checkRecParentViolation(DFGNode *node,
 		{
 			return true;
 		}else{
-			std::cout<<" satisfy data dependency: "<< node->idx <<","
+			LOG(ROUTE)<<" satisfy data dependency: "<< node->idx <<","
 			<< nextPort.first<<" -> recparent:"<<recParent->idx<<","<<recParentDP->getLat()<<"\n";
 		}
 	}
@@ -2012,11 +2012,11 @@ int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
 
 			if (child->ASAP <= node.ASAP)
 			{
-				std::cout << "Backedge Parent: " << node.idx << ", Child: " << child->idx <<"\n";
+				LOG(MAPPING) << "Backedge Parent: " << node.idx << ", Child: " << child->idx <<"\n";
 
-				std::cout << "Parent ASAP: " << node.ASAP << ", Child ASAP: " << child->ASAP <<"\n";
+				LOG(MAPPING) << "Parent ASAP: " << node.ASAP << ", Child ASAP: " << child->ASAP <<"\n";
 
-				std::cout << "Parent ALAP: " << node.ALAP << ", Child ALAP: " << child->ALAP <<"\n";
+				LOG(MAPPING) << "Parent ALAP: " << node.ALAP << ", Child ALAP: " << child->ALAP <<"\n";
 				number_of_backedges = number_of_backedges+ 1;
 				recDistance = node.ASAP - child->ASAP + 1; 
 				assert(recDistance>=0);
@@ -2031,8 +2031,8 @@ int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
 	}
 
 
-	std::cout << "Number of Backedges: " << number_of_backedges <<"\n";
-	std::cout << "Recurrence Minimum II: " << recMinII <<"\n";
+	LOG(MAPPING) << "Number of Backedges: " << number_of_backedges <<"\n";
+	LOG(MAPPING) << "Recurrence Minimum II: " << recMinII <<"\n";
 	//exit(true);
 	return recMinII;
 

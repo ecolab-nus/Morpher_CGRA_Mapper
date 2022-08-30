@@ -53,7 +53,7 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 	bool mapSuccess = false;
 
 	std::string congestionInfoFileName = mappingLogFileName + ".congestion.info";
-	cout << "Opening congestion file : " << congestionInfoFileName << "!\n";
+	LOG(SA) << "Opening congestion file : " << congestionInfoFileName << "!\n";
 	congestionInfoFile.open(congestionInfoFileName.c_str());
 	assert(congestionInfoFile.is_open());
 
@@ -65,8 +65,8 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 	mappingLog2.open(mappingLog2FileName_withIter.c_str());
 	mappingLog4.open(mappingLog4FileName_withIter.c_str());
 
-	cout << "Opening mapping csv file : " << mappingLogFileName_withIter << "\n";
-	cout << "Opening routeInfo log file : " << mappingLog2FileName_withIter << "\n";
+	LOG(SA) << "Opening mapping csv file : " << mappingLogFileName_withIter << "\n";
+	LOG(SA) << "Opening routeInfo log file : " << mappingLog2FileName_withIter << "\n";
 
 	assert(mappingLog.is_open());
 	assert(mappingLog2.is_open());
@@ -86,7 +86,7 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 		unmappedNodes.push(node);
 	}
 
-	std::cout << "*******************************************************SA MAP begin***************************\n";
+	LOG(SA_) << "*******************************************************SA MAP begin***************************\n";
 
 	data_routing_path.clear();
 	dfg_node_placement.clear();
@@ -104,13 +104,13 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 	int unmapped_node_numer = getNumberOfUnmappedNodes();
 	int overuse_number = getCongestionNumber(congestion_detail);
 	int conflict_number =  getConflictNumber(congestion_detail);
-	std::cout << "Initial mapping done. unmapped node:" << unmapped_node_numer << " overuse:" << overuse_number<< " conflict:" << conflict_number<<" cost:"<<getCost() << " \n";
-	std::cout<<"unmapped node: \n";
+	LOG(SA_) << "Initial mapping done. unmapped node:" << unmapped_node_numer << " overuse:" << overuse_number<< " conflict:" << conflict_number<<" cost:"<<getCost() << " \n";
+	LOG(SA_)<<"unmapped node: \n";
 	for (auto node : sortedNodeList)
 	{
 		if (dfg_node_placement.find(node) == dfg_node_placement.end())
 		{
-			std::cout<<"\t"<<node->idx<<"  "<<node->op<<"\n";
+			LOG(SA_)<<"\t"<<node->idx<<"  "<<node->op<<"\n";
 		}
 	}
 
@@ -120,42 +120,42 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 	
 	if (unmapped_node_numer == 0 && overuse_number == 0)
 	{
-		std::cout << "find a valid initial mapping, exit....II =" << this->cgra->get_t_max() << "\n";
+		LOG(SA_) << "find a valid initial mapping, exit....II =" << this->cgra->get_t_max() << "\n";
 		return true;
 	}
 
 
 	//start Simulated Annealing mapping
-	std::cout << "maximum temperature:" << maximum_temp << " minimum temperature:" << minimim_temp << "\n";
+	LOG(SA_) << "maximum temperature:" << maximum_temp << " minimum temperature:" << minimim_temp << "\n";
 	curr_cost = getCost();
 	curr_temp = maximum_temp;
 
-	std::cout<<"###############current mapping: \n"<<dumpMappingToStr();
+	LOG(SA_)<<"###############current mapping: \n"<<dumpMappingToStr();
 
 	while (curr_temp > minimim_temp)
 	{
-		std::cout << "*******************************current temperature:" << curr_temp << "\n";
+		LOG(SA_) << "*******************************current temperature:" << curr_temp << "\n";
 		float accept_rate = inner_map();
 
 		congestion_detail.clear();
-		std::cout << "accept_rate:" << accept_rate << " # of overuse:" << getCongestionNumber(congestion_detail)<< " # of conflict:" << getConflictNumber(congestion_detail)
+		LOG(SA_) << "accept_rate:" << accept_rate << " # of overuse:" << getCongestionNumber(congestion_detail)<< " # of conflict:" << getConflictNumber(congestion_detail)
 			<< " unmapped nodes:" << getNumberOfUnmappedNodes()<<" cost:"<<curr_cost << "\n";
-		std::cout<<"unmapped node: \n";
+		LOG(SA_)<<"unmapped node: \n";
 		for (auto node : sortedNodeList)
 		{
 			if (dfg_node_placement.find(node) == dfg_node_placement.end())
 			{
-				std::cout<<"\t"<<node->idx<<"  "<<node->op<<"\n";
+				LOG(SA_)<<"\t"<<node->idx<<"  "<<node->op<<"\n";
 			}
 		}
 		LOG(ROUTE)<<congestion_detail.str();
-		std::cout<<"###############current mapping: \n"<<dumpMappingToStr();
+		LOG(SA_)<<"###############current mapping: \n"<<dumpMappingToStr();
 
 		curr_temp = updateTemperature(curr_temp, accept_rate);
 
 		if (isCurrMappingValid())
 		{
-			std::cout << "find a valid mapping, exit...II =" << this->cgra->get_t_max() << "\n";
+			LOG(SA_) << "find a valid mapping, exit...II =" << this->cgra->get_t_max() << "\n";
 			break;
 		}
 	}
@@ -214,7 +214,7 @@ bool CGRAXMLCompile::SAMapper::initMap()
 		MapHeader << ",mutexPathEn = " << this->enableMutexPaths;
 		MapHeader << "\n";
 
-		std::cout << MapHeader.str();
+		LOG(SA_) << MapHeader.str();
 
 
 		bool isEstRouteSucc = false;
@@ -236,7 +236,7 @@ bool CGRAXMLCompile::SAMapper::initMap()
 		bool isRouteSucc = false;
 		DFGNode *failedNode = NULL;
 
-		std::cout << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
+		LOG(SA_)<< "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
 		mappingLog << "estimatedRouteInfo[node].size = " << estimatedRouteInfo[node].size() << "\n";
 		if (!estimatedRouteInfo[node].empty())
 		{

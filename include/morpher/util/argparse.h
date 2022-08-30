@@ -515,7 +515,7 @@ class argparser
     {
         if(options.size() > 0)
         {
-            os << "[options]\n";
+            //os << "[options]\n";
         }
         for (const auto &opt : options)
         {

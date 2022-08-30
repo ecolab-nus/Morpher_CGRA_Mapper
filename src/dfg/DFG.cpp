@@ -272,31 +272,31 @@ bool DFG::parseXML(std::string fileName)
 
 void DFG::printDFG()
 {
-	std::cout << "Printing DFG...\n";
+	LOG(DFG) << "Printing DFG...\n";
 	for (DFGNode &node : nodeList)
 	{
-		std::cout << "idx=" << node.idx << ",OP=" << node.op;
+		LOG(DFG) << "idx=" << node.idx << ",OP=" << node.op;
 
-		std::cout << "|Parents=";
+		LOG(DFG) << "|Parents=";
 		for (DFGNode *parent : node.parents)
 		{
-			std::cout << parent->idx << ",";
+			LOG(DFG) << parent->idx << ",";
 		}
 
-		std::cout << "|Children=";
+		LOG(DFG) << "|Children=";
 		for (DFGNode *child : node.children)
 		{
-			std::cout << child->idx << ",";
+			LOG(DFG) << child->idx << ",";
 		}
 
-		std::cout << "|Rec_Parent=";
+		LOG(DFG) << "|Rec_Parent=";
 		for (DFGNode *parent : node.recParents)
 		{
-			std::cout << parent->idx << ",";
+			LOG(DFG) << parent->idx << ",";
 		}
-		std::cout << "\n";
+		LOG(DFG) << "\n";
 	}
-	std::cout << "Printing DFG Done!\n";
+	LOG(DFG) << "Printing DFG Done!\n";
 }
 
 DFGNode *DFG::findNode(int idx)

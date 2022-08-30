@@ -607,7 +607,7 @@ bool CGRAXMLCompile::CGRA::ParseJSONArch(string fileName, int II)
 
 	//TODO : remove hardcoding of II=2
 	ParseCGRA(json["ARCH"]["CGRA"], II);
-	cout << "Parsing JSON Success!!!\n";
+	LOG(JSONARCH)  << "Parsing JSON Success!!!\n";
 
 
 	// exit(EXIT_SUCCESS);
@@ -1176,7 +1176,7 @@ void CGRAXMLCompile::CGRA::EstablishTemporalLinkageModule(Module *curr_cycle_mod
 
 void CGRAXMLCompile::CGRA::EstablishTemporalLinkage()
 {
-	cout << "EstablishTemporalLinkage started!.\n";
+	LOG(CGRA) << "EstablishTemporalLinkage started!.\n";
 	if (!subModArr.empty())
 	{
 		//through parsed json
@@ -1210,7 +1210,7 @@ void CGRAXMLCompile::CGRA::EstablishTemporalLinkage()
 		}
 	}
 
-	cout << "EstablishTemporalLinkage done!.\n";
+	LOG(CGRA) << "EstablishTemporalLinkage done!.\n";
 }
 
 void CGRAXMLCompile::CGRA::PrintMappedJSON(string fileName)
@@ -1311,7 +1311,7 @@ string CGRAXMLCompile::CGRA::getMuxName(string src_port_name, string desc_port_n
 			return descName;
 		}
 	}else{
-		std::cout<<"!!!!!!!!!!!!!!Wrong!!!!!!!!!!!!"<<std::endl;
+		LOG(PILLARS)<<"!!!!!!!!!!!!!!Wrong!!!!!!!!!!!!"<<"\n";
 	}
 	return descName;
 }
@@ -1323,7 +1323,7 @@ string CGRAXMLCompile::CGRA::getFUName(string operations, int* output_ID){
 		*output_ID = Op_iter->second;
 	}else{
 		interConnection = true; // to judge whether needs to add suffix to op
-		std::cout<<"!!!!!!!!!!!!!!Wrong!!!!!!!!!!!!"<<std::endl;
+		LOG(PILLARS)<<"!!!!!!!!!!!!!!Wrong!!!!!!!!!!!!"<<"\n";
 	}
 	if(*output_ID==18||*output_ID==19||(*output_ID>=27 && *output_ID<=32)){
 		return "loadStoreUnit";
@@ -1468,12 +1468,12 @@ void CGRAXMLCompile::Module::UpdateMappedConnectionsPillars(json &output_json, o
 							suffix_op = "_CONST";
 						}
 						mux_desc = cgra->getFUName(mod_dp->getMappedNode()->op+suffix_op, &output_ID);
-						std::cout<< mod_dp->getMappedNode()->op+suffix_op <<std::endl;
+						LOG(PILLARS)<< mod_dp->getMappedNode()->op+suffix_op <<"\n";
 
 						if(cgra->interConnection){
 							cgra->interConnection = false;
 							mux_desc = cgra->getFUName(mod_dp->getMappedNode()->op, &output_ID);
-							std::cout<< mod_dp->getMappedNode()->op<<std::endl;
+							LOG(PILLARS)<< mod_dp->getMappedNode()->op<<"\n";
 						}
 						
 						outFile_i<<"<"<<(t+1)%II<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<"."<<mux_desc<<".internalNode_0>"<<std::endl;
@@ -1603,7 +1603,7 @@ void GetEndMPDs(Module *curr, Port *connecting_isocket, unordered_set<DataPath *
 
 void CGRAXMLCompile::CGRA::checkMDPVars(unordered_set<Module *> &spms)
 {
-	cout << "checkMDPVars started.\n";
+	LOG(CGRA) << "checkMDPVars started.\n";
 	// unordered_set<Module *> spms;
 	// SearchALLSPMs(this, spms);
 
@@ -1611,7 +1611,7 @@ void CGRAXMLCompile::CGRA::checkMDPVars(unordered_set<Module *> &spms)
 
 	for (Module *spm : spms)
 	{
-		cout << "spm = " << spm->getFullName() << "\n";
+		LOG(CGRA) << "spm = " << spm->getFullName() << "\n";
 		unordered_set<Port *> last_tsockets;
 		for (Port *sp : spm->socketPorts)
 		{
@@ -1623,11 +1623,11 @@ void CGRAXMLCompile::CGRA::checkMDPVars(unordered_set<Module *> &spms)
 		unordered_set<DataPath *> end_datapaths;
 		for (Port *ts : last_tsockets)
 		{
-			cout << "last tsocket = " << ts->getFullName() << "\n";
+			LOG(CGRA) << "last tsocket = " << ts->getFullName() << "\n";
 			vector<Port *> next_isockets = connectedFrom[ts];
 			for (Port *is : next_isockets)
 			{
-				cout << "\t next isocket = " << is->getFullName() << "\n";
+				LOG(CGRA) << "\t next isocket = " << is->getFullName() << "\n";
 				assert(is->getType() == SOCKET);
 				GetEndMPDs(is->getMod(), is, end_datapaths);
 			}
@@ -1636,7 +1636,7 @@ void CGRAXMLCompile::CGRA::checkMDPVars(unordered_set<Module *> &spms)
 		assert(spm->isSPM);
 		for (string memvar : spm->data_layout)
 		{
-			cout << "memvar = " << memvar << "\n";
+			LOG(CGRA) << "memvar = " << memvar << "\n";
 			for (DataPath *dp : end_datapaths)
 			{
 				unordered_set<DataPath*> all_t_end_datapaths;
@@ -1647,14 +1647,14 @@ void CGRAXMLCompile::CGRA::checkMDPVars(unordered_set<Module *> &spms)
 				}while(next_t_dp != dp);
 
 				for(DataPath* tdp : all_t_end_datapaths){
-					cout << "\t dp = " << tdp->getFullName() << "\n";
+					LOG(CGRA) << "\t dp = " << tdp->getFullName() << "\n";
 					tdp->accesible_memvars.insert(memvar);
 				}
 			}
 		}
 	}
 
-	cout << "checkMDPVars done.\n";
+	LOG(CGRA) << "checkMDPVars done.\n";
 	// assert(false);
 }
 

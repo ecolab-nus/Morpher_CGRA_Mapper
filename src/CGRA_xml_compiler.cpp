@@ -32,16 +32,17 @@ using namespace CGRAXMLCompile;
 
 int main(int argn, char *argc[])
 {
-	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
+	//cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 
 	// if (argn < 7)
 	// {
 	// 	std::cout << "arguments : <DFG.xml> <peType::\nGENERIC_8REGF,\nHyCUBE_8REGF,\nHyCUBE_4REG,\nN2N_4REGF,\nN2N_8REGF,\nSTDNOC_8REGF,\nSTDNOC_4REGF,\nSTDNOC_4REG,\nSTDNOC_4REGF_1P\nMFU_HyCUBE_4REG\nMFU_HyCUBE_4REGF\nMFU_STDNOC_4REG\nMFU_STDNOC_4REGF> <XYDim> <numberofDPS> <backtracklimit> <initII> <-arch_json> <-noMTpath>\n";
 	// }
 	// assert(argn >= 7);
-
+	std::cout<<"Mapper arguments:\n";
 	arguments args = parse_arguments(argn,argc);
-	std::string inputDFG_filename = args.dfg_filename;\
+	std::cout<<"\n";
+	std::string inputDFG_filename = args.dfg_filename;
 	int xdim = args.xdim;
 	int ydim = args.ydim;
 	string PEType = args.PEType;
@@ -62,9 +63,9 @@ int main(int argn, char *argc[])
 
 	bool isGenericPE;
 
-	std::cout<<"mapping method:"<<mapping_method<<"\n";
+	//std::cout<<"mapping method:"<<mapping_method<<"\n";
 
-	std::cout<<"json file:"<<json_file_name<<"\n";
+	//std::cout<<"architecture json file:"<<json_file_name<<"\n";
 
 	// CGRA testCGRA(NULL, "testCGRA", 1, ydim, xdim, &currDFG, PEType, numberOfDPs);
 
@@ -97,18 +98,18 @@ int main(int argn, char *argc[])
 
 	
 	mapper->setMaxIter(args.maxiter);
-
+	std::cout << "MAP begin... \n";
 	int resII = mapper->getMinimumII(testCGRA, &currDFG);
 	int recII  = mapper->getRecMinimumII(&currDFG);
 	// int recII = 0; // for SA initial mapping test.
-	std::cout << "Res Minimum II = " << resII << "\n";
-	std::cout << "Rec Minimum II = " << recII << "\n";
-	std::cout << "Init User II = " << initUserII << "\n";
+//	std::cout << "Res Minimum II = " << resII << ", ";
+//	std::cout << "Rec Minimum II = " << recII << ", ";
+//	std::cout << "Init User II = " << initUserII << "\n";
 	int II = std::max(recII, resII);
 
 	II = std::max(initUserII, II);
 
-	std::cout << "Using II = " << II << "\n";
+	std::cout << "Initial target II = " << II << " (ResMin II = "<<resII<<" , RecMin II = "<<recII<<", UserGiven II = "<<initUserII<<" )\n";
 
 	mapper->enableMutexPaths = true;
 	if (args.noMutexPaths)
@@ -118,7 +119,7 @@ int main(int argn, char *argc[])
 	mapper->enableBackTracking = true;
 	mapper->backTrackLimit = args.backtracklimit;
 
-	cout << "json_file_name = " << json_file_name << "\n";
+	//cout << "json_file_name = " << json_file_name << "\n";
 	// exit(EXIT_SUCCESS);
 
 	auto start = chrono::steady_clock::now();
@@ -144,7 +145,7 @@ int main(int argn, char *argc[])
 		}
 
 	
-		std::cout << "Using II = " << II << "\n";
+		//std::cout << "Using II = " << II << "\n";
 		// return 0;
 		// tempCGRA->analyzeTimeDist(tdi);
 		tempCGRA->max_hops = args.max_hops;
@@ -185,7 +186,7 @@ int main(int argn, char *argc[])
 
 			if (II == max_II)
 			{
-				std::cout << "############ cannot map:  II max of 65 has been reached and exiting...\n";
+				std::cout << "### cannot map:  II max has been reached and exiting...\n";
 				break;
 			}
 
@@ -200,13 +201,14 @@ int main(int argn, char *argc[])
 		}
 		else
 		{
+			std::cout << "Map Success with II = "<< II <<"!!!\n";
 			if(mapping_method  == 2){
 				break;
 			}
 			mapper->sanityCheck();
 			//mapper.assignLiveInOutAddr(&tempDFG);
 			if(PEType == "HyCUBE_4REG"){
-				std::cout << "Printing HyCUBE Binary...\n";
+				std::cout << "\nPrinting HyCUBE Binary...\n";
 				mapper->printHyCUBEBinary(tempCGRA);
 			}
 			break;
@@ -215,7 +217,7 @@ int main(int argn, char *argc[])
 	}
 
 	auto end = chrono::steady_clock::now();
-	std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec";
+	std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec\n";
 	std::ofstream result_file;
 	result_file.open ("result.txt", std::ios_base::app); 
 	result_file<< arch_name <<" "<<inputDFG_filename
