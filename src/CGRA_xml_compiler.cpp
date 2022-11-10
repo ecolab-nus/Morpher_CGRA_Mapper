@@ -201,6 +201,11 @@ int main(int argn, char *argc[])
 		}
 		else
 		{
+			std::ofstream mapped_ii_file;
+			mapped_ii_file.open("mapped_ii.txt", std::ios_base::trunc); 
+			mapped_ii_file << II <<"\n";
+			mapped_ii_file.close();
+
 			std::cout << "Map Success with II = "<< II <<"!!!\n";
 			if(mapping_method  == 2){
 				break;

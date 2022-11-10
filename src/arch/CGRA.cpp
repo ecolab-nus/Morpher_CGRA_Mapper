@@ -1259,7 +1259,7 @@ void CGRAXMLCompile::CGRA::PrintMappingForPillars(string fileName_i, string file
 		output_json["CGRA_INS"]["TYPE"] = "CGRA";
 		string pe_name = pe->getName();
 		string spatial_pe_name = pe_name.substr(0, pe_name.size() - 3); //remove the last "-T0" component;
-		LOG(JSONARCH)  <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
+		LOG(JSONARCH)  <<"PE NAME:"<< spatial_pe_name<<"\n";
 
 		PrintMappedPillarsModule(pe, output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name], outFile_i);
 	}
@@ -1267,7 +1267,7 @@ void CGRAXMLCompile::CGRA::PrintMappingForPillars(string fileName_i, string file
 	outJsonFile.close();
 	outFile_i.close();
 	for (std::map<int, int*>::iterator iter = ConstRecord.begin(); iter != ConstRecord.end(); ++iter) {
-		outFile_r<<"const"<<iter->first<<" "<<iter->second[0]<<":cgra.tile_0.pe_"<<iter->second[1]<<"_"<<iter->second[2]<<".const0.internalNode_0"<<" "<<iter->second[0]<<" 0"<<std::endl;
+		outFile_r<<"const"<<iter->first<<" "<<iter->second[0]<<":cgra.tile_0.pe_"<<iter->second[1]<<"_"<<iter->second[2]<<".const0.internalNode_0"<<" "<<iter->second[0]<<" 0 val:"<< iter->second[3]<<std::endl;
 		delete []iter->second;
 	}
 	outFile_r.close();
@@ -1501,7 +1501,7 @@ void CGRAXMLCompile::Module::UpdateMappedConnectionsPillars(json &output_json, o
 							outFile_i<<"SELECTED_OP"<<std::endl<<7<<std::endl;
 							// std::cout<<"<"<<(t+1)%cgra->get_t_max()<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<".const0.internalNode_0>"<<std::endl;
 							// std::cout<<"SELECTED_OP"<<std::endl<<7<<std::endl;
-							cgra->insertConstOp(mod_dp->getMappedNode()->idx, (t+1)%II, Y, X);
+							cgra->insertConstOp(mod_dp->getMappedNode()->idx, (t+1)%II, Y, X, mod_dp->getMappedNode()->constant);
 							// outFile_r<<"const"<<mod_dp->getMappedNode()->idx<<" "<<(t+1)%II<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<".const0.internalNode_0"<<" "<<(t+1)%II<<" 0"<<std::endl;
 						}
 

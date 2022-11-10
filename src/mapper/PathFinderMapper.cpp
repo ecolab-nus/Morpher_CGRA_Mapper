@@ -724,7 +724,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	int minLatSucc = 1000000000;
 	std::priority_queue<dest_with_cost> estimatedRoutesTemp;
 
-	int allowed_time_steps_for_connection = 30;
+	int allowed_time_steps_for_connection = 5;
 	int iterations = allowed_time_steps_for_connection;
 
 	//Route Estimation
@@ -1620,7 +1620,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 		// by Yujie
 		// cgra->PrintMappedJSON(fNameLog1 + cgra->getCGRAName() + "mapping.json");
-		cgra->PrintMappingForPillars(fNameLog1 + cgra->getCGRAName() + "mapping_i.txt", fNameLog1 + cgra->getCGRAName() + "mapping_r.txt");
+		cgra->PrintMappingForPillars(fNameLog1 + cgra->getCGRAName() + "mapping_pillars_i.txt", fNameLog1 + cgra->getCGRAName() + "mapping_pillars_r.txt");
 
 		//std::cout << "Map Success!.\n";
 		mappingLog.close();
@@ -3276,20 +3276,20 @@ bool CGRAXMLCompile::PathFinderMapper::Check_DFG_CGRA_Compatibility(){
 	unordered_set<string> base_pointers;
 
 	std::stringstream output_ss;
-	output_ss << "all supported pointers : \n";
+	LOG(ARCH) << "all supported pointers : \n";
 	for(string ptr : all_supp_pointers){
-		output_ss << "\t" << ptr << "\n";
+		LOG(ARCH) << "\t" << ptr << "\n";
 	}
 
-	output_ss << "all required pointers : \n";
+	LOG(ARCH) << "all required pointers : \n";
 	for(auto it = dfg->pointer_sizes.begin(); it != dfg->pointer_sizes.end(); it++){
-		output_ss << "\t" << it->first << ",size = " << it->second << "\n";
+		LOG(ARCH) << "\t" << it->first << ",size = " << it->second << "\n";
 	}
 
 	for(DFGNode& node : dfg->nodeList){
 		string op = node.op;
 		if(all_supp_ops.find(op) == all_supp_ops.end()){
-			output_ss << "op=" << op << " is not supported in this CGRA, exiting....\n";
+			LOG(ARCH) << "op=" << op << " is not supported in this CGRA, exiting....\n";
 			exit(EXIT_FAILURE);
 			return false;
 		}
@@ -3299,16 +3299,16 @@ bool CGRAXMLCompile::PathFinderMapper::Check_DFG_CGRA_Compatibility(){
 		for(auto it = dfg->ldst_pointer_sizes.begin(); it != dfg->ldst_pointer_sizes.end(); it++){
 			string pointer = it->first;
 			if(all_supp_pointers.find(pointer) == all_supp_pointers.end()){
-				output_ss << "pointer=" << pointer << " is not present in the CGRA, exiting....\n";
+				LOG(ARCH) << "pointer=" << pointer << " is not present in the CGRA, exiting....\n";
 				exit(EXIT_FAILURE);
 				return false;
 			}
 		}
 	}
 	else{
-		output_ss << "SPMs are not modelled, therefore ignoring supported pointers check.\n";
+		LOG(ARCH) << "SPMs are not modelled, therefore ignoring supported pointers check.\n";
 	}
-	LOG(ARCH)<<output_ss.str();
+	//LOG(ARCH)<<output_ss.str();
 
 	return true;
 }
