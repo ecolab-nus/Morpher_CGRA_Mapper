@@ -30,7 +30,7 @@ bool DFG::parseXML(std::string fileName)
 {
 
 #ifdef HIERARCHICAL
-	std::string clustering_outcome_file_name = "clustering_outcome.txt";
+	std::string clustering_outcome_file_name = "dfg_clustering_result.txt";
 	std::ifstream clustering_outcome(clustering_outcome_file_name.c_str());
 	std::map<int, int> nodeid_to_clusterid;
 
@@ -71,7 +71,7 @@ bool DFG::parseXML(std::string fileName)
 	 * One DFG cluster can be mapped onto multiple CGRA clusters
 	 * Therefore it needs a vector of pairs to hold CGRA cluster information
 	 * */
-	std::string dfg_to_cgra_cluster_mapping_outcome_file_name = "dfg_to_cgra_cluster_mapping_outcome.txt";
+	std::string dfg_to_cgra_cluster_mapping_outcome_file_name = "cluster_mapping_result.txt";
 	std::ifstream dfg_to_cgra_cluster_mapping(dfg_to_cgra_cluster_mapping_outcome_file_name.c_str());
 //	std::map<int,std::vector<std::pair<int,int>> > dfg_cluster_to_cgra_cluster;
 	std::map<int,std::vector<std::string> > dfg_cluster_to_cgra_cluster;
