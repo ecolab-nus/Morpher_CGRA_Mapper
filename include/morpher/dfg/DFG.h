@@ -26,7 +26,7 @@ public:
 	DFG();
 	std::vector<DFGNode> nodeList;
 
-	bool parseXML(std::string fileName);
+	bool parseXML(std::string fileName, bool is_synthetic_dfg = false);
 	void printDFG();
 	DFGNode *findNode(int idx);
 	DFGNode *getNodePtr(int it);
@@ -48,11 +48,12 @@ public:
 	std::unordered_map<std::string,int> pointer_sizes;
 	std::unordered_map<std::string,int> ldst_pointer_sizes;
 
-	bool dfg_parse_self_made_dfg = false;  
 	// this is to fix a weird bug in tinyxml parser.
 	// bug happens if the name of child element is a substr of the current element.
+	bool dfg_parse_synthetic_dfg = false; 
 
 private:
+	 
 	void strongconnect(DFGNode *v,
 					   std::map<DFGNode *, int> &v_idx,
 					   std::map<DFGNode *, int> &v_lowlink,

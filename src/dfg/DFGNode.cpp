@@ -153,6 +153,8 @@ void CGRAXMLCompile::DFGNode::clear(DFG *dfg)
 			dfg->unmappedMemOps++;
 			dfg->unmappedMemOpSet.insert(this);
 		}
+		assert(rootDP->getMappedNode()== NULL);
+		// LOG(SA)<<"clear root dp"<<this->idx<<" "<<rootDP->getFullName();
 
 		rootDP = NULL;
 	}
@@ -195,13 +197,17 @@ void CGRAXMLCompile::DFGNode::clear(DFG *dfg)
 	}
 }
 
-
-void CGRAXMLCompile::DFGNode::SAClear(DFG *dfg)
+/* this function is originally designed for SA. Now also used for backtrack in PathFinder
+ As both functions need to clear utilization info of only one node in ports. 
+ The previous clear function will clear all the info (Port allows over-used, this will clear
+ other nodes' mapping info). 
+*/
+void CGRAXMLCompile::DFGNode::CarefulClear(DFG *dfg)
 {
-        std::string output_port_fullname ;
-	if (rootDP != NULL)
+	std::string output_port_fullname ;
+	if (rootDP != NULL )
 	{
-                output_port_fullname = rootDP->getOutputDP()->getOutPort("T")->getFullName();
+		output_port_fullname = rootDP->getOutputDP()->getOutPort("T")->getFullName();
 		rootDP->getOutputDP()->getOutPort("T")->clear();
 
 		rootDP->clear();
@@ -219,6 +225,8 @@ void CGRAXMLCompile::DFGNode::SAClear(DFG *dfg)
 			dfg->unmappedMemOps++;
 			dfg->unmappedMemOpSet.insert(this);
 		}
+		assert(rootDP->getMappedNode() == NULL);
+		// LOG(SA)<<"clear root dp"<<this->idx<<" "<<rootDP->getFullName();
 
 		rootDP = NULL;
 	}
@@ -234,7 +242,9 @@ void CGRAXMLCompile::DFGNode::SAClear(DFG *dfg)
 				//has been cleared
 				continue;
 		}
+		// LOG(SA)<<"erase 1"<<p->getFullName();
 		p->erase(this, pair.second);
+		
                 
 	}
 
@@ -257,6 +267,8 @@ void CGRAXMLCompile::DFGNode::SAClear(DFG *dfg)
 			if (destIdx == this->idx)
 			{
 				if(erased_ports.find(p->getFullName()) == erased_ports.end()){
+						// LOG(SA)<<"erase 1"<<p->getFullName();
+
 						p->erase(parent, destIdx);
 						erased_ports.insert(p->getFullName()+std::to_string(destIdx));
 				}

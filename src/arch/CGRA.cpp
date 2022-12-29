@@ -12,7 +12,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-//#include <nlohmann/json.hpp>
+#include <nlohmann/json.hpp>
 #include <iomanip>
 #include <regex>
 
@@ -188,8 +188,8 @@ void CGRAXMLCompile::CGRA::insertConflictPort(Port *a, Port *b)
 {
 	assert(a != NULL);
 	assert(b != NULL);
-	std::cout << "insertConflict Port b : " << b->getFullName();
-	std::cout << ", a : " << a->getFullName() << "\n";
+	//std::cout << "insertConflict Port b : " << b->getFullName();
+	//std::cout << ", a : " << a->getFullName() << "\n";
 	conflictPorts[a].insert(b);
 }
 

@@ -121,6 +121,7 @@ public:
 	}
 	std::tuple<int, int, int> getIndexOfBin(int index);
 
+
 	
 
 protected:

@@ -121,14 +121,20 @@ void CGRAXMLCompile::DataPath::assignNode(DFGNode *node, int lat, DFG *dfg)
 
 	if (fu->supportedOPs.find("LOAD") != fu->supportedOPs.end())
 	{
-		cgra->freeMemNodes--;
-		cgra->freeMemNodeSet.erase(this);
+		if(cgra->freeMemNodeSet.find(this) != cgra->freeMemNodeSet.end()){
+			cgra->freeMemNodes--;
+			cgra->freeMemNodeSet.erase(this);
+		}
 	}
 
 	if (node->isMemOp())
 	{
-		dfg->unmappedMemOps--;
-		dfg->unmappedMemOpSet.erase(node);
+		
+		if(dfg->unmappedMemOpSet.find(node) != dfg->unmappedMemOpSet.end()){
+			dfg->unmappedMemOpSet.erase(node);
+			dfg->unmappedMemOps--;
+		}
+		
 	}
 }
 
@@ -145,6 +151,8 @@ void CGRAXMLCompile::DataPath::clear()
 	// if(detailed) std::cout << "PE=" << fu->getPE()->getName() << "is cleared!\n";
 
 	bool restDPsNOP = true;
+	fu->currOP = "NOP";
+	// LOG(SA) << "PE=" << fu->getPE()->getName() << " is cleared!\n";
 	for (Module *mod : fu->subModules)
 	{
 		if (DataPath *dp = dynamic_cast<DataPath *>(mod))

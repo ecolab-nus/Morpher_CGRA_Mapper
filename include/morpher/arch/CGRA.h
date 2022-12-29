@@ -334,6 +334,7 @@ public:
 		// SourcePort.insert(pair<string, std::map<string, int>>("muxT", muxT));
 	}
 
+	unordered_map<PE*,PE*> NextCyclePEMap;
 private:
 	int x_max;
 	int y_max;
@@ -343,7 +344,6 @@ private:
 	std::map<Port *, std::set<DFGNode *>> *congestedPortPtr;
 
 	std::map<int, std::map<int, std::map<int, PE *>>> PEArr;
-	unordered_map<PE*,PE*> NextCyclePEMap;
 	unordered_map<string,int> GlobalOPMinLatencyMap;
 	string json_file;
 

@@ -4,12 +4,12 @@
  *  Created on: 31 Mar 2018
  *      Author: manupa
  * 
- *  notes on the mapper (zhaoying):
+ *  notes on the mapper :
  *  1) register connection in MRRG: to support store data into reg, it will connect reg.out -> reg.in (next cycle). It will also mark
  * 		this as a reg_conn to set latency as 1.
  * 	2) SortByASAPBAckEdge. It is sorted by path. 
  *  3) Each iteration, it will put the information of congested prt into congestedPorts. The port can only hold one data (even in code), so the
- * 	 later assignment will overwrite the old one. It uses congestedPorts to keep track of port history. It will set congested part a higher cost 
+ * 	 later assignment will overwrite the old one. (I fixed it by using storing multiple values and destinations)It uses congestedPorts to keep track of port history. It will set congested part a higher cost 
  * 		to avoid congestion in next iteration.
  * 	4) Conflict and congestion are different. Conflict means it cannot connect to multiple ports due to design limitation (usually between REGF 
  * 		and FU in N2N).
@@ -604,7 +604,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			if(node->childNextIter[child] == 1){
 				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() + ii);
 			}else if (node->childNextIter[child] == 0){
-				if(mapping_method_name.find("SA") != std::string::npos){
+				if(mapping_method_name.find("PathFinder") != std::string::npos){
 					assert(false);
 				}
 				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() );
@@ -796,14 +796,15 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					}
 
 					pathExist = pathExist & LeastCostPathAstar(startCandLat, destPortLat, dest, path, cost, parent, mutexPaths, node);
-					path.clear();
 					if (!pathExist)
 					{
 						LOG(ROUTE)<< "par Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
+						path.clear();
 						continue;
 					}
 					cost += dpPenaltyMap[dest];
-					res.push(cand_src_with_cost(startCandLat, destPortLat, cost));
+					res.push(cand_src_with_cost(startCandLat, destPortLat, cost, path_toStr(path)));
+					path.clear();
 				}
 				if (res.empty())
 				{
@@ -979,8 +980,8 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 				int cost;
 				if (LeastCostPathAstar(p, dest_child_with_cost_ins.childDest, dest_child_with_cost_ins.childDP, pathTmp, cost, node, mutexPathsTmp, dest_child_with_cost_ins.child))
 				{
+					q.push(cand_src_with_cost(p, dest_child_with_cost_ins.childDest, cost, path_toStr(pathTmp)));
 					pathTmp.clear();
-					q.push(cand_src_with_cost(p, dest_child_with_cost_ins.childDest, cost));
 				}
 			}
 
@@ -1114,7 +1115,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 				else
 				{
 					addedRoutingParentPorts = 0;
-					node->clear(this->dfg);
+					node->CarefulClear(this->dfg);
 					LOG(ROUTE) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
 				}
 				path.clear();
@@ -1172,7 +1173,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 			node->rootDP = currDest.dest;
 			break;
 		}
-		node->clear(this->dfg);
+		node->CarefulClear(this->dfg);
 	}
 
 	if (routeSucc)
@@ -1204,7 +1205,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 	{
 		currDest.dest->assignNode(node, currDest.destLat, this->dfg);
 		node->rootDP = currDest.dest;
-		node->clear(this->dfg);
+		node->CarefulClear(this->dfg);
 		LOG(ROUTE) << "Route failed...\n";
 
 		int parentRoutingPortCountEnd = 0;
@@ -1475,7 +1476,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						unmappedNodes.push(node);
 						unmappedNodes.push(prevNode);
 
-						prevNode->clear(this->dfg);
+						prevNode->CarefulClear(this->dfg);
 						estimatedRouteInfo.erase(node);
 
 						//										assert(failedNode!=NULL);

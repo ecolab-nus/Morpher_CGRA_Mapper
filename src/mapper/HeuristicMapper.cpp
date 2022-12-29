@@ -434,7 +434,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 					LOG(ROUTE) << "Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
 					continue;
 				}
-				res.push(cand_src_with_cost(startCandLat, destPortLat, cost));
+				res.push(cand_src_with_cost(startCandLat, destPortLat, cost, path_toStr(path)));
 			}
 			if (res.empty())
 			{
@@ -574,7 +574,7 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode *node,
 
 				if (LeastCostPathAstar(p, dest_child_with_cost_ins.childDest, pathTmp, cost, node, mutexPathsTmp, node))
 				{
-					q.push(cand_src_with_cost(p, dest_child_with_cost_ins.childDest, cost));
+					q.push(cand_src_with_cost(p, dest_child_with_cost_ins.childDest, cost, path_toStr(pathTmp)));
 				}
 			}
 
@@ -1902,10 +1902,12 @@ bool CGRAXMLCompile::HeuristicMapper::checkRecParentViolation(DFGNode *node,
 															  LatPort nextPort)
 {
 	//assert(false);
-	if(!check_parent_violation) { return false;}
 	for (DFGNode *recParent : node->recParents)
 	{
-		assert(recParent->rootDP != NULL); //should be mapped
+		if(recParent->rootDP == NULL){
+			continue;
+		}
+		// assert(recParent->rootDP != NULL); //should be mapped
 		DataPath *recParentDP = recParent->rootDP;
 		//	assert(false);
 		//	std::cout << "RecParent = " << recParent->idx << ",";
@@ -2019,6 +2021,30 @@ int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
 				LOG(MAPPING) << "Parent ALAP: " << node.ALAP << ", Child ALAP: " << child->ALAP <<"\n";
 				number_of_backedges = number_of_backedges+ 1;
 				recDistance = node.ASAP - child->ASAP + 1; 
+				assert(recDistance>=0);
+				if(recDistance > recMinII){
+					recMinII = recDistance;
+				}
+				// cout << "node.childrenEdgeType[child]" << node.childrenEdgeType[child] <<"\n";
+				// assert(node.childrenEdgeType[child] == "INTER");
+
+			}
+		}
+		for (DFGNode *rec_parent : node.recParents)
+		{
+
+			if (rec_parent->ASAP <= node.ASAP)
+			{
+				//std::cout << "Backedge Parent: " << node.idx << ", Child: " << rec_parent->idx <<"\n";
+
+				//std::cout << "Parent ASAP: " << node.ASAP << ", Child ASAP: " << rec_parent->ASAP <<"\n";
+
+				//std::cout << "Parent ALAP: " << node.ALAP << ", Child ALAP: " << rec_parent->ALAP <<"\n";
+				number_of_backedges = number_of_backedges+ 1;
+				recDistance = node.ASAP - rec_parent->ASAP + 1; 
+				if(rec_parent->op.compare("LOAD")==0){
+					recDistance += 1;
+				}
 				assert(recDistance>=0);
 				if(recDistance > recMinII){
 					recMinII = recDistance;

@@ -55,10 +55,7 @@ int main(int argn, char *argc[])
 
 	
 	DFG currDFG;
-	if(args.lisa_arg.training){
-		currDFG.dfg_parse_self_made_dfg = true;
-	}
-	currDFG.parseXML(inputDFG_filename);
+	currDFG.parseXML(inputDFG_filename, args.synthetic_dfg);
 	currDFG.printDFG();
 
 	bool isGenericPE;
@@ -129,7 +126,7 @@ int main(int argn, char *argc[])
 	{
 		DFG tempDFG;
 		if(args.lisa_arg.training){
-			tempDFG.dfg_parse_self_made_dfg= true;
+			tempDFG.dfg_parse_synthetic_dfg= true;
 		}
 		tempDFG.parseXML(inputDFG_filename);
 		tempDFG.printDFG();

@@ -62,7 +62,7 @@ public:
 
 	int getCongCost();
 	void increastCongCost();
-	void increaseUse(HeuristicMapper *hm = NULL);
+	void increaseUse(DFGNode * the_node = NULL, HeuristicMapper *hm = NULL);
 	void decreaseUse(DFGNode *extnode, HeuristicMapper *hm = NULL);
 	void increaseConflictedUse(DFGNode *node, HeuristicMapper *hm = NULL);
 	int getHistoryCost() { return history_cost; }
@@ -70,6 +70,7 @@ public:
 	void setLat(int lat);
 
 	PE* getPE(){return pe;}
+	std::vector<std::tuple<DFGNode*, int, int>> mapped_nodes; // <node, dest, lat> 
 
 private:
 	std::string name;
@@ -77,7 +78,6 @@ private:
 	PE* pe;
 	PortType pType;
 	// DFGNode *mappedNode = NULL; // this is the latest node that this port stores
-	std::vector<std::tuple<DFGNode*, int, int>> mapped_nodes; // <node, dest, lat> 
 	// std::map<DFGNode *, std::set<std::pair<int,int>>> node_value_dests;  // this stores the destinations of node value.
 	int latency = -1;
 
