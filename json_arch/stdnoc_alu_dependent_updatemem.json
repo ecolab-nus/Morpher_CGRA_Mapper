@@ -96,7 +96,7 @@
           }
         ,
         "CONNECTIONS" : {
-            "THIS.DP0_I1" : ["DP0.I1"],
+            "THIS.DP0_I1" : ["DP0.I1", "THIS.DP0_T"],
             "THIS.DP0_I2" : ["DP0.I2"],
             "THIS.DP0_P" : ["DP0.P"],
             "DP0.T" : ["THIS.DP0_T"]
@@ -161,7 +161,7 @@
         }
         ,
         "CONNECTIONS" : {
-            "THIS.DP0_I1" : ["DP0.I1"],
+            "THIS.DP0_I1" : ["DP0.I1", "THIS.DP0_T"],
             "THIS.DP0_I2" : ["DP0.I2"],
             "THIS.DP0_P" : ["DP0.P"],
             "DP0.T" : ["THIS.DP0_T"],

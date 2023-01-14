@@ -79,6 +79,13 @@ std::vector<LatPort> Module::getNextPorts(LatPort currPort, HeuristicMapper *hm)
 	{
 		bool conflicted = false;
 
+
+		//if this port is belong to a DP and has been mapped, then we should not use it.
+		if(p->mapped_nodes.size() > 0 && p->getFullName().find("DP") != std::string::npos){
+			// std::cout<<"-----------port name:"<<p->getFullName()<<", num:"<< p->mapped_nodes.size()<<", skip...\n";
+			continue;
+		}
+
 		if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
 		{
 

@@ -1001,12 +1001,12 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 					assignPath(node, dest_child_with_cost_ins.child, path);
 					mappedChildPaths[dest_child_with_cost_ins.child] = path;
 					mappedChildMutexPaths[dest_child_with_cost_ins.child] = mutexPaths;
-					LOG(ROUTE) << "Route success :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "|node=" << node->idx << "\n";
+					LOG(MAPPING) << "Route success :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "|node=" << node->idx << "\n";
 					break;
 				}
 				else
 				{
-					LOG(ROUTE) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
+					LOG(MAPPING) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
 					for (LatPort p : path)
 					{
 						if (p.second->getMod()->getPE())
@@ -1116,7 +1116,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 				{
 					addedRoutingParentPorts = 0;
 					node->CarefulClear(this->dfg);
-					LOG(ROUTE) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
+					LOG(MAPPING) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
 				}
 				path.clear();
 			}
@@ -1133,31 +1133,30 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 		if (parentRoutSucc)
 		{ //all parents routed succesfull + all mapped childs are connected
 			routeSucc = true;
-			LOG(ROUTE) << "node=" << node->idx << ",op=" << node->op << " is mapped to " << currDest.dest->getPE()->getName() << ",lat=" << currDest.destLat << "\n";
-			LOG(ROUTE) << "routing info ::\n";
+			LOG(MAPPING) << "node=" << node->idx << ",op=" << node->op << " is mapped to " << currDest.dest->getPE()->getName() << ",lat=" << currDest.destLat << "\n";
+			LOG(MAPPING) << "routing info ::\n";
 			for (DFGNode *parent : node->parents)
 			{
-				LOG(ROUTE) << "parent routing port size = " << parent->routingPorts.size() << "\n";
+				LOG(MAPPING) << "parent routing port size = " << parent->routingPorts.size() << "\n";
 				int prev_lat = -1;
 				for (std::pair<Port *, int> pair : parent->routingPorts)
 				{
 					Port *p = pair.first;
 					//					if(node.routingPortDestMap[p]==&node){
-					LOG(ROUTE) << "fr:" << parent->idx << " :: ";
-					LOG(ROUTE) << ",dest=" << pair.second << " :: ";
-					LOG(ROUTE) << p->getFullName();
-					LOG(ROUTE) << ",lat=" << p->getLat();
+					LOG(MAPPING) << "fr:" << parent->idx << " :: "
+					 			<< ",dest=" << pair.second << " :: "
+								<< p->getFullName()
+								<< ",lat=" << p->getLat();
 
 					if (mappedParentMutexPaths[parent].find(p) != mappedParentMutexPaths[parent].end())
 					{
-						LOG(ROUTE) << "|mutex(";
+						LOG(MAPPING) << "|mutex(";
 						for (DFGNode *mutexnode : mappedParentMutexPaths[parent][p])
 						{
-							LOG(ROUTE) << mutexnode->idx << ",";
+							LOG(MAPPING) << mutexnode->idx << ",";
 						}
-						LOG(ROUTE) << ")";
+						LOG(MAPPING) << ")";
 					}
-					LOG(ROUTE) << "\n";
 					//					}
 					if (prev_lat != -1)
 					{
@@ -1178,7 +1177,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 
 	if (routeSucc)
 	{
-		LOG(ROUTE) << "Route success...\n";
+		LOG(MAPPING) << "Route success...\n";
 
 		int parentRoutingPortCountEnd = 0;
 		//		int mappedParentCount=0;
@@ -1597,6 +1596,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 			//		this->printMappingLog2();
 			backTrackCredits = std::min(this->backTrackLimit, backTrackCredits + 1);
 			mappedNodes.push(node);
+
 		}
 		mapSuccess = updateCongestionCosts(i);
 		if (mapSuccess)
@@ -2026,6 +2026,7 @@ bool CGRAXMLCompile::PathFinderMapper::checkDPFree(DataPath *dp, DFGNode *node, 
 	PE *currPE = dp->getPE();
 	FU *currFU = dp->getFU();
 
+	
 	int numberFUs = 0;
 	int numberUsedFUs = 0;
 	int numberConstants = 0;
