@@ -1727,38 +1727,66 @@ bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts(int iter)
 	for (std::pair<Port *, std::set<DFGNode *>> pair : congestedPorts)
 	{
 		Port *p = pair.first;
-		if (pair.second.size() > 1)
+		if (pair.first->mapped_nodes.size() > 1)
 		{
-			for (DFGNode *node1 : pair.second)
-			{
-				for (DFGNode *node2 : pair.second)
-				{
-					if (node1 == node2)
-					{
-						continue;
-					}
-					if (this->dfg->isMutexNodes(node1, node2, p))
-						continue;
-					LOG(CONGESTION)  << "CONGESTION:" << p->getFullName();
-					congestionInfoFile << "CONGESTION:" << p->getFullName();
-					for (DFGNode *node : pair.second)
-					{
-						LOG(CONGESTION)  << "," << node->idx << "|BB=" << node->BB;
-						congestionInfoFile << "," << node->idx << "|BB=" << node->BB;
-					}
-					LOG(CONGESTION)  << "\n";
-					congestionInfoFile << "\n";
-					p->increastCongCost();
-					noCongestion = false;
-					conflictedTimeSteps.insert(p->getMod()->getPE()->T);
-					//					break;
-				}
-				if (!noCongestion)
-				{
-					//					break;
-				}
+			std::set<DFGNode*> mapped_value;
+			for(auto node: pair.first->mapped_nodes){
+				auto n = std::get<0>(node);
+				mapped_value.insert(n);
 			}
+			if(mapped_value.size()<=1){
+				continue;
+			}
+			auto mapped_nodes = pair.first->mapped_nodes;
+			for(auto & [node, dest, lat]: mapped_nodes){
+				LOG(CONGESTION)  << "," << node->idx << "|BB=" << node->BB;
+				congestionInfoFile << "," << node->idx << "|BB=" << node->BB;
+				// congestion_detail<<p->getFullName()<<" " <<node->idx<<"->"<<dest<<"(lat:"<<lat<<"),\n";
+			}
+
+			LOG(CONGESTION)  << "CONGESTION:" << p->getFullName();
+			congestionInfoFile << "CONGESTION:" << p->getFullName();
+			
+			LOG(CONGESTION)  << "\n";
+			congestionInfoFile << "\n";
+			p->increastCongCost();
+			noCongestion = false;
+			conflictedTimeSteps.insert(p->getMod()->getPE()->T);
+			
+			
 		}
+		// if (pair.second.size() > 1)
+		// {
+		// 	for (DFGNode *node1 : pair.second)
+		// 	{
+		// 		for (DFGNode *node2 : pair.second)
+		// 		{
+		// 			if (node1 == node2)
+		// 			{
+		// 				continue;
+		// 			}
+		// 			if (this->dfg->isMutexNodes(node1, node2, p))
+		// 				continue;
+		// 			LOG(CONGESTION)  << "CONGESTION:" << p->getFullName();
+		// 			congestionInfoFile << "CONGESTION:" << p->getFullName();
+		// 			for (DFGNode *node : pair.second)
+		// 			{
+		// 				LOG(CONGESTION)  << "," << node->idx << "|BB=" << node->BB;
+		// 				congestionInfoFile << "," << node->idx << "|BB=" << node->BB;
+		// 			}
+		// 			LOG(CONGESTION)  << "\n";
+		// 			congestionInfoFile << "\n";
+		// 			p->increastCongCost();
+		// 			noCongestion = false;
+		// 			conflictedTimeSteps.insert(p->getMod()->getPE()->T);
+		// 			//					break;
+		// 		}
+		// 		if (!noCongestion)
+		// 		{
+		// 			//					break;
+		// 		}
+		// 	}
+		// }
 		if (p->getHistoryCost() > 0)
 		{
 			LOG(CONGESTION)  << "HISTORY_COST :: " << p->getFullName() << "," << p->getHistoryCost() << "\n";
@@ -2027,6 +2055,7 @@ bool CGRAXMLCompile::PathFinderMapper::checkDPFree(DataPath *dp, DFGNode *node, 
 	FU *currFU = dp->getFU();
 
 	
+
 	int numberFUs = 0;
 	int numberUsedFUs = 0;
 	int numberConstants = 0;
