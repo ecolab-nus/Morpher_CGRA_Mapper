@@ -103,6 +103,8 @@ std::vector<LatPort> Module::getNextPorts(LatPort currPort, HeuristicMapper *hm)
 				assert(false);
 			}
 		}
+
+		// if there is an operation mapped, we disable routing
 		if(p->getName().find("T_ROUTE") != std::string::npos ){
 			auto dp_ptr = p->getMod()->getSubMod("DP0");
 			assert(dp_ptr != NULL);

@@ -342,6 +342,74 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 			}
 		}
 	}
+
+
+	
+	auto insert_t_route_connection = [&](FU * fu) {
+		auto & dp_output_ports = fu->outputPorts;
+		auto t_route_port = std::find_if(dp_output_ports.begin(), dp_output_ports.end(),
+    			[](Port * x) { return x->getName().compare("DP0_T_ROUTE") == 0 ;});
+		if(t_route_port == dp_output_ports.end()){
+			return;
+		}
+
+		std::stack<std::string> submodule_strings;
+
+		//push the submodule string
+		Module* m = fu;
+		while(!dynamic_cast<PE *>(m)){
+			submodule_strings.push(m->getName());
+			m = m->getParent();
+		}
+
+		// get the next cycle PE
+		assert(m->getFullName() == fu->getPE()->getFullName());
+		auto curr_pe = fu->getPE();
+		assert(NextCyclePEMap.find(curr_pe)!= NextCyclePEMap.end());
+
+		Module * next_cycle_m = NextCyclePEMap[curr_pe];
+
+		// get the dp of next cycle
+		while(!submodule_strings.empty()){
+			auto sub_module_str = submodule_strings.top();
+			submodule_strings.pop();
+			next_cycle_m = next_cycle_m->getSubMod(sub_module_str);
+			assert(next_cycle_m != NULL);
+		}
+
+		//insert the connection
+		auto this_cycle_I1 = fu->getInPort("DP0_I1");
+		auto next_cycle_r_toute = next_cycle_m->getOutPort("DP0_T_ROUTE"); 
+		fu->insertConnection(this_cycle_I1,next_cycle_r_toute);
+		std::cout<<"insert connection:"<<this_cycle_I1->getFullName()<<" to "<<next_cycle_r_toute->getFullName()<<"\n";
+	};
+
+	std::function<void(Module* md)> recursive_find_fu = [&](Module* md) {
+		if (dynamic_cast<FU *>(md)){
+			FU *fu = static_cast<FU *>(md);
+			insert_t_route_connection(fu);
+			// std::cout<<"!!!! find a fu\n";
+		}else{
+			for(Module * sub_md: md->subModules){
+				recursive_find_fu(sub_md);
+			}
+		}
+				
+	};
+
+	for (int t = 0; t < II; t++)
+	{
+		for (int i = 0; i < subModArr[t].size(); i++)
+		{
+			if (!dynamic_cast<PE *>(subModArr[t][i]))
+				continue;
+
+			
+			PE *currPE = static_cast<PE *>(subModArr[t][i]);
+			Module * m = currPE;
+			recursive_find_fu(m);
+		}
+	}
 }
 
 Module *CGRAXMLCompile::CGRA::ParseModule(json &module_desc, Module *parent, string module_name, string type, int t, int x, int y)

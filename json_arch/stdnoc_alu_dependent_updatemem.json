@@ -97,7 +97,7 @@
           }
         ,
         "CONNECTIONS" : {
-            "THIS.DP0_I1" : ["DP0.I1","THIS.DP0_T_ROUTE"],
+            "THIS.DP0_I1" : ["DP0.I1"],
             "THIS.DP0_I2" : ["DP0.I2"],
             "THIS.DP0_P" : ["DP0.P"],
             "DP0.T" : ["THIS.DP0_T"]
@@ -163,7 +163,7 @@
         }
         ,
         "CONNECTIONS" : {
-            "THIS.DP0_I1" : ["DP0.I1","THIS.DP0_T_ROUTE"],
+            "THIS.DP0_I1" : ["DP0.I1"],
             "THIS.DP0_I2" : ["DP0.I2"],
             "THIS.DP0_P" : ["DP0.P"],
             "DP0.T" : ["THIS.DP0_T"],
@@ -228,7 +228,7 @@
           "RF0.RP0" : ["FU0.DP0_I1","FU0.DP0_I2","FU0.DP0_P","THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
           "RF0.RP1" : ["FU0.DP0_I1","FU0.DP0_I2","FU0.DP0_P","THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
           "FU0.DP0_T" : ["RF0.WP0","RF0.WP1","THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
-          "FU0.DP0_T_ROUTE" : ["RF0.WP0","RF0.WP1"],
+          "FU0.DP0_T_ROUTE" : ["RF0.WP0","RF0.WP1","THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
           "FU0.MEMPORT" : ["THIS.MEMPORT"]
         }
       
@@ -262,7 +262,7 @@
           "THIS.SOUTH_I" : ["FU0.DP0_I1","FU0.DP0_I2","FU0.DP0_P"],
           "RF0.RP0" : ["FU0.DP0_I1","FU0.DP0_I2","FU0.DP0_P","THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
           "RF0.RP1" : ["FU0.DP0_I1","FU0.DP0_I2","FU0.DP0_P","THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
-          "FU0.DP0_T_ROUTE" : ["RF0.WP0","RF0.WP1"],
+          "FU0.DP0_T_ROUTE" : ["RF0.WP0","RF0.WP1","THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"],
           "FU0.DP0_T" : ["RF0.WP0","RF0.WP1","THIS.NORTH_O","THIS.EAST_O","THIS.WEST_O","THIS.SOUTH_O"]
         }
     },
