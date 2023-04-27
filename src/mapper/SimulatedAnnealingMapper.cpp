@@ -95,6 +95,12 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 	if (isCurrMappingValid())
 	{
 		std::cout << "find a valid initial mapping, exit....II =" << this->cgra->get_t_max() << "\n";
+		mapped_mrrg_info mmi;
+		get_mapped_mrrg_info(mmi);
+		std::ofstream result_file;
+		result_file.open("/home/zhaoying/gemver_before.txt");
+		result_file<< mmi.toStr();
+		result_file.close();
 		return true;
 	}
 
@@ -138,7 +144,14 @@ bool CGRAXMLCompile::SAMapper::SAMap(CGRA *cgra, DFG *dfg)
 			break;
 		}
 	}
-
+	if(isCurrMappingValid()){
+		mapped_mrrg_info mmi;
+		get_mapped_mrrg_info(mmi);
+		std::ofstream result_file;
+		result_file.open("/home/zhaoying/gemver_before.txt");
+		result_file<< mmi.toStr();
+		result_file.close();
+	}
 	
 
 	return isCurrMappingValid();
@@ -1510,4 +1523,169 @@ int CGRAXMLCompile::SAMapper::checkAnyUnroutedEdge()
 		}
 	}
 	return n;
+}
+
+void CGRAXMLCompile::SAMapper::get_mapped_mrrg_info(mapped_mrrg_info & m_mrrg){
+	m_mrrg.nodes.clear();
+	m_mrrg.edges.clear();
+	m_mrrg.congestion.clear();
+	m_mrrg.unmapped_nodes.clear();
+
+	int max_latency = 0;
+
+	std::vector< std::set<DFGNode *>> latency_to_node_vector; // the index represend the latency
+	for(int i = 0; i < 1000; i++){
+		std::set<DFGNode *> temp;
+		latency_to_node_vector.push_back( temp);
+	}
+	std::set<DFGNode *> unmapped_dfg_nodes;
+	std::map<DFGNode *, int> node_latency;
+
+	
+	//get the latency of each operation
+	for(auto node: sortedNodeList){
+		if(node->rootDP == NULL){
+			unmapped_dfg_nodes.insert(node);
+			// std::cout<<"unmapped_node:"<<node->idx<<"\n";
+			continue;
+		}
+		int lat = node->rootDP->getLat();
+		// std::cout<<"node:"<<node->idx<<" lat "<<lat<<"\n";
+		latency_to_node_vector[lat].insert(node);
+		node_latency.emplace(node, lat);
+		max_latency = max_latency>lat ? max_latency:lat;
+	}
+
+	//verify that the latency satisfies the data dependency
+	for(auto& [node, lat]: node_latency){
+		for(auto parent: node->parents){
+			if (parent->childrenOPType[node] == "PS")
+			{
+				continue;
+			}
+			if(parent->childNextIter[node] == 0){
+				if(node_latency.find(parent)!= node_latency.end()){
+					assert(node_latency[parent] <  lat);
+				}
+			}else if (parent->childNextIter[node] == 1){
+				if(node_latency.find(parent)!= node_latency.end()){
+					assert(node_latency[parent] <  lat + this->cgra->get_t_max());
+				}
+			}else {
+				assert(false && "why this value");
+			}
+			
+		}
+
+		for(auto child: node->children){
+			if (node->childrenOPType[child] == "PS")
+			{
+				continue;
+			}
+			if(node->childNextIter[child] == 0){
+				if(node_latency.find(child)!= node_latency.end()){
+					assert(node_latency[child] >  lat);
+				}
+			}else if (node->childNextIter[child] == 1){
+				if(node_latency.find(child)!= node_latency.end()){
+					assert(node_latency[child]  + this->cgra->get_t_max()>  lat );
+				}
+			}else {
+				assert(false && "why this value");
+			}
+		}
+	}
+
+	//get the node placement
+	auto & mrrg_info_nodes = m_mrrg.nodes;
+	for(auto &[node, info]: dfg_node_placement){
+		auto & dp = info.first;
+		mrrg_info_nodes.emplace(node->idx, mrrg_node_info{dp->getPE()->getPosition_X(),dp->getPE()->getPosition_Y(),
+									dp->get_t(), info.second});
+	}	
+
+	//get the routing path
+	auto & mrrg_info_edges = m_mrrg.edges;
+	for(auto & [data, path]: data_routing_path){
+		mrrg_edge_info m_edge;
+		mrrg_info_edges.push_back(m_edge);
+		auto & the_edge = mrrg_info_edges.back();
+		the_edge.parent_node_id  = data.first->idx;
+		the_edge.child_node_id = data.second->idx;
+		auto & routing_nodes = the_edge.routing_nodes;
+        auto dp = data.first->rootDP; 
+
+        // add the src node, which not stored in the path
+        routing_nodes.push_back(mrrg_node_info{dp->getPE()->getPosition_X(),dp->getPE()->getPosition_Y(),
+									dp->get_t(), dp->getLat()});
+		
+        //add the node in routing path      
+        for(auto & l_port: path){
+			auto & port = l_port.second; 
+            mrrg_node_info tmp{port->getPE()->getPosition_X(), 
+							port->getPE()->getPosition_Y(),port->getPE()->get_t(),l_port.first};
+            if(std::find(routing_nodes.begin(), routing_nodes.end(), tmp) == routing_nodes.end()){
+                // avoid redundancy 
+                routing_nodes.push_back(tmp);
+            }
+		}
+
+	}
+	auto & mrrg_info_congestion = m_mrrg.congestion;
+	for (std::pair<Port *, std::set<DFGNode *>> pair : congestedPorts)
+	{
+		Port *p = pair.first;
+		// assert(pair.second.size()  == pair.first->mapped_nodes.size());
+		if (pair.first->mapped_nodes.size() > 1)
+		{
+			// for (DFGNode *node1 : pair.second)
+			// {
+			// 	for (DFGNode *node2 : pair.second)
+			// 	{
+			// 		if (node1 == node2)
+			// 		{
+			// 			continue;
+			// 		}
+			// 		if (this->dfg->isMutexNodes(node1, node2, p))
+			// 			continue;
+					
+			// 		//					break;
+			// 	}
+			// 	mrrg_node_info tmp_node{p->getPE()->getPosition_X(), 
+			// 				p->getPE()->getPosition_Y(),p->getPE()->get_t(), p->getLat()};
+			// 	if(mrrg_info_congestion.find(tmp_node) == mrrg_info_congestion.end()){
+			// 		mrrg_info_congestion.emplace(tmp_node, 1);
+			// 	}else{
+			// 		mrrg_info_congestion[tmp_node] += 1;
+			// 	}
+			// }
+
+			std::set<DFGNode*> mapped_value;
+			for(auto node: pair.first->mapped_nodes){
+				auto n = std::get<0>(node);
+				mapped_value.insert(n);
+			}
+			if(mapped_value.size()<=1){
+				continue;
+			}
+
+			// add routing information
+			auto mapped_nodes = pair.first->mapped_nodes;
+			std::stringstream routing_info;
+			for(auto & [node, dest, lat]: mapped_nodes){
+				routing_info<<node->idx<<"->"<<dest<<"(lat:"<<lat<<"),";
+			}
+			mrrg_node_info tmp_node{p->getPE()->getPosition_X(), 
+			 				p->getPE()->getPosition_Y(),p->getPE()->get_t(), p->getLat()};
+			// assert(mrrg_info_congestion.find(tmp_node) == mrrg_info_congestion.end());
+			mrrg_info_congestion.emplace(tmp_node, std::make_pair(mapped_nodes.size(), routing_info.str()));
+		}
+	}
+	for(auto node: unmapped_dfg_nodes){
+		m_mrrg.unmapped_nodes.push_back(node->idx);
+	}
+	m_mrrg.cgra_x = this->cgra->get_x_max();
+	m_mrrg.cgra_y = this->cgra->get_y_max();
+	m_mrrg.II = this->cgra->get_t_max();
+	m_mrrg.max_lat = max_latency;
 }

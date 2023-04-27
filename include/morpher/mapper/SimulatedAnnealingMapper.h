@@ -23,6 +23,91 @@ namespace CGRAXMLCompile
 using port_util = std::pair<int,int>;
 using dfg_data = std::pair<DFGNode*,DFGNode*>; // <src, des>
 
+struct mrrg_node_info{
+  int x = -1;
+  int y = -1;
+  int t = -1;
+  int lat = -1;
+  mrrg_node_info(int x_ = -1, int y_ = -1, int t_ = -1, int lat_ = -1): x(x_), y(y_), t(t_), lat(lat_){
+  }
+  mrrg_node_info(DataPath * dp){
+    x = dp->getPE()->getPosition_X();
+    y = dp->getPE()->getPosition_Y();
+    t = dp->get_t();
+    lat  =dp->getLat();
+  }
+
+  std::string toStr() const{
+    return std::to_string(x)+","+std::to_string(y)+","+std::to_string(t)+","+std::to_string(lat)+"";
+  }
+
+  bool operator==(const mrrg_node_info& m) const
+  {
+      return x == m.x && y == m.y && t == m.t && lat == m.lat;
+  }
+
+  bool operator<(const mrrg_node_info& m) const
+  {
+      return (this->toStr()).compare(m.toStr()) < 0;
+  }
+};
+
+struct mrrg_edge_info{
+  int parent_node_id;
+  int child_node_id;
+  std::vector<mrrg_node_info> routing_nodes;
+
+  std::string toStr(){
+    std::string str  = "";
+    str += std::to_string(parent_node_id) + "," + std::to_string(child_node_id) + ",";
+    for(auto node: routing_nodes){
+        str += "("+ node.toStr() + "),";
+    }
+    str = str.substr(0, str.size()-1);
+    return str;
+  }
+};
+
+
+struct mapped_mrrg_info{
+  int cgra_x;
+  int cgra_y;
+  int II;
+  int max_lat;
+  std::map<int, mrrg_node_info> nodes;//DFG node id -> mrrg_node_info
+  std::vector<mrrg_edge_info> edges;
+  std::map<mrrg_node_info, std::pair<int, std::string>> congestion;
+  std::vector<int> unmapped_nodes;
+
+  std::string toStr(){
+    std::string str  = "";
+    str += std::to_string(cgra_x) + "," + std::to_string(cgra_y) + "," + std::to_string(II) +
+           "," + std::to_string(max_lat) + "\n###\n";
+    for(auto& [node_id_, mrrg_node_info_]: nodes){
+        str += std::to_string(node_id_) + "," + mrrg_node_info_.toStr() + "\n";
+    }
+    str += "###\n";
+    for(auto & edge: edges){
+        str += edge.toStr() + "\n";
+    }
+    str += "###\n";
+    for(auto & [mrrg_node_info_, info]: congestion){
+        str += mrrg_node_info_.toStr()+ ":" + std::to_string(info.first)+ " " + info.second  + "\n";
+    }
+    str += "###\n";
+    int idx = 0;
+    for(auto & node: unmapped_nodes){
+        str += std::to_string(node);
+        if(idx!= unmapped_nodes.size()-1){
+          str += ",";
+        }
+        idx ++;
+    }
+    return str;
+  }
+};
+
+
 class SAMapper : public PathFinderMapper
 {
 public:
@@ -130,7 +215,7 @@ public:
 	}
 	//	bool LeastCostPathAstar(Port* start, Port* end, DataPath* endDP, std::vector<Port*>& path, int& cost, DFGNode* node, std::map<Port*,std::set<DFGNode*>>& mutexPaths, DFGNode* currNode);
 
-
+	void get_mapped_mrrg_info(mapped_mrrg_info & m_mrrg);
 	int total_accepted_number = 0;
 protected:
 
