@@ -267,6 +267,7 @@ public:
 	void printMappingLog2();
 
 	std::string dumpMappingToStr();
+	std::string dumpCGRAMappingStat();
 
 	bool checkRecParentViolation(DFGNode *node, LatPort nextPort);
 

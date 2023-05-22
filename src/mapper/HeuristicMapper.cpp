@@ -5,6 +5,7 @@
  *      Author: manupa
  */
 
+#include "morpher/dfg/DFGNode.h"
 #include <morpher/mapper/HeuristicMapper.h>
 #include <queue>
 #include <assert.h>
@@ -12,12 +13,13 @@
 #include <algorithm> // std::reverse
 #include <morpher/arch/DataPath.h>
 #include <morpher/arch/FU.h>
-
+#include <iomanip>
 #include <stack>
 #include <functional>
 #include <set>
 #include <iostream>
 #include <sstream>
+#include <utility>
 
 namespace CGRAXMLCompile
 {
@@ -2064,6 +2066,59 @@ int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
 
 }
 
+std::string CGRAXMLCompile::HeuristicMapper::dumpCGRAMappingStat(){
+	std::vector< std::set<DFGNode *>> II_to_node_vector; // the index represend the latency
+	int II_  = this->cgra->get_t_max();
+	for(int i = 0; i < II_; i++){
+		std::set<DFGNode *> temp;
+		II_to_node_vector.push_back( temp);
+	}
+	std::set<DFGNode *> unmapped_dfg_nodes;
+	std::map<std::pair<int,int>,std::set<DFGNode*>> physical_pe_mapped_nodes;
+
+	for(auto pe: cgra->getSpatialPEList(0)){
+		physical_pe_mapped_nodes[std::make_pair(pe->X, pe->Y)] = std::set<DFGNode*>();
+	}
+	//get the latency of each operation
+	for(auto node: sortedNodeList){
+		if(node->rootDP == NULL){
+			unmapped_dfg_nodes.insert(node);
+			// std::cout<<"unmapped_node:"<<node->idx<<"\n";
+			continue;
+		}
+		int lat = node->rootDP->get_t();
+		// std::cout<<"node:"<<node->idx<<" lat "<<lat<<"\n";
+		II_to_node_vector[lat].insert(node);
+		int x = node->rootDP->getPE()->getPosition_X();
+		int y = node->rootDP->getPE()->getPosition_Y();
+		physical_pe_mapped_nodes[std::make_pair(x, y)].insert(node);
+	}
+
+	
+
+	//print the mapping
+	std::stringstream ss;
+	
+	for(int t = 0;  t < II_ ; t++ ){
+		ss<<"t = "<<t <<":\n\t";
+		for(auto node: II_to_node_vector[t]){
+			ss<<"("<<node->rootDP->getPE()->getPosition_X()<<", "<<node->rootDP->getPE()->getPosition_Y()<<")->"
+			 << node->idx <<"  ";
+		}
+		ss<<"\n";
+	}
+	for(auto [pe, nodes]:physical_pe_mapped_nodes ){
+		ss<<"("<<pe.first<<", "<<pe.second<<"):\t";
+		ss<<"utilization:"<< std::fixed << std::setprecision(2)<< (float)nodes.size()/II_<<"\t mapped nodes:";
+		for(auto node: nodes){
+			ss<<node->idx<<", ";
+		}
+		ss<<"\n";
+	}
+	
+	
+	return ss.str();
+}
 
 std::string CGRAXMLCompile::HeuristicMapper::dumpMappingToStr(){
 	std::vector< std::set<DFGNode *>> latency_to_node_vector; // the index represend the latency

@@ -204,6 +204,8 @@ int main(int argn, char *argc[])
 			mapped_ii_file.close();
 
 			std::cout << "Map Success with II = "<< II <<"!!!\n";
+			if(args.print_stat)
+			std::cout<<mapper->dumpCGRAMappingStat();
 			if(mapping_method  == 2){
 				break;
 			}
@@ -213,11 +215,12 @@ int main(int argn, char *argc[])
 				std::cout << "\nPrinting HyCUBE Binary...\n";
 				mapper->printHyCUBEBinary(tempCGRA);
 			}
+			
 			break;
 			
 		}
 	}
-
+	
 	auto end = chrono::steady_clock::now();
 	std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec\n";
 	std::ofstream result_file;
