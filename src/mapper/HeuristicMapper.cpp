@@ -2098,7 +2098,7 @@ std::string CGRAXMLCompile::HeuristicMapper::dumpCGRAMappingStat(){
 
 	//print the mapping
 	std::stringstream ss;
-	
+	ss<<"############## mapping info at each configuration time:\n";
 	for(int t = 0;  t < II_ ; t++ ){
 		ss<<"t = "<<t <<":\n\t";
 		for(auto node: II_to_node_vector[t]){
@@ -2107,6 +2107,7 @@ std::string CGRAXMLCompile::HeuristicMapper::dumpCGRAMappingStat(){
 		}
 		ss<<"\n";
 	}
+	ss<<"############## physical PE info:\n";
 	for(auto [pe, nodes]:physical_pe_mapped_nodes ){
 		ss<<"("<<pe.first<<", "<<pe.second<<"):\t";
 		ss<<"utilization:"<< std::fixed << std::setprecision(2)<< (float)nodes.size()/II_<<"\t mapped nodes:";
