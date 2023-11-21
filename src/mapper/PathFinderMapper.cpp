@@ -3896,12 +3896,15 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					if(mappedOP && mappedOP->hasConst){
 						insF.constant_valid = "1";
 						insF.constant = mappedOP->get27bitConstantBinaryString();
-					}else if(insF.opcode == "00000"){
+					}
+					//THILINI : Removing NOP clock gating logic due to logic bug(in RTL)
+					/*
+					else if(insF.opcode == "00000"){
 						// if nop, select constant 1 to enable power gating.
 					    insF.constant_valid = "1";
 						insF.constant = "000000000000000000000000001";
 
-					}
+					}*/
 					else{
 						insF.constant_valid = "0";
 						//					insF.constant = "123456789012345678901234567";
@@ -3923,7 +3926,8 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 				}
 	}
 
-
+	//THILINI : Removing NOP clock gating logic due to logic bug(in RTL)
+	/*
 	for (int t = 0; t < this->cgra->get_t_max(); ++t)
 	{
 		// the code to count continuous nop
@@ -3951,7 +3955,7 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 			}
 			tempIns.constant = std::bitset<27>(nop_count).to_string();;
 		}
-	}
+	}*/
 	InsFormat jumpl;
 	jumpl.negated_predicate = "0";
 	jumpl.constant_valid = "1";
