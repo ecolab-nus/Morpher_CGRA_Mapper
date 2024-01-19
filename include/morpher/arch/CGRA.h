@@ -182,11 +182,12 @@ public:
 
 	bool is_spm_modelled = false;
 	int max_hops = 4;
-	void insertConstOp(int id, int t, int Y, int X){
-		int* second = new int[3];
+	void insertConstOp(int id, int t, int Y, int X, int constval){
+		int* second = new int[4];
 		second[0] = t;
 		second[1] = Y;
 		second[2] = X;
+		second[3] = constval;
 		ConstRecord.insert(pair<int, int*>(id, second));
 	}
 	void DataPrepare(){
@@ -333,6 +334,7 @@ public:
 		// SourcePort.insert(pair<string, std::map<string, int>>("muxT", muxT));
 	}
 
+	unordered_map<PE*,PE*> NextCyclePEMap;
 private:
 	int x_max;
 	int y_max;
@@ -342,7 +344,6 @@ private:
 	std::map<Port *, std::set<DFGNode *>> *congestedPortPtr;
 
 	std::map<int, std::map<int, std::map<int, PE *>>> PEArr;
-	unordered_map<PE*,PE*> NextCyclePEMap;
 	unordered_map<string,int> GlobalOPMinLatencyMap;
 	string json_file;
 

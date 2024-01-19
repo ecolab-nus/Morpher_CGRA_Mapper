@@ -55,10 +55,7 @@ int main(int argn, char *argc[])
 
 	
 	DFG currDFG;
-	if(args.lisa_arg.training){
-		currDFG.dfg_parse_self_made_dfg = true;
-	}
-	currDFG.parseXML(inputDFG_filename);
+	currDFG.parseXML(inputDFG_filename, args.synthetic_dfg);
 	currDFG.printDFG();
 
 	bool isGenericPE;
@@ -129,7 +126,7 @@ int main(int argn, char *argc[])
 	{
 		DFG tempDFG;
 		if(args.lisa_arg.training){
-			tempDFG.dfg_parse_self_made_dfg= true;
+			tempDFG.dfg_parse_synthetic_dfg= true;
 		}
 		tempDFG.parseXML(inputDFG_filename);
 		tempDFG.printDFG();
@@ -201,7 +198,14 @@ int main(int argn, char *argc[])
 		}
 		else
 		{
+			std::ofstream mapped_ii_file;
+			mapped_ii_file.open("mapped_ii.txt", std::ios_base::trunc); 
+			mapped_ii_file << II <<"\n";
+			mapped_ii_file.close();
+
 			std::cout << "Map Success with II = "<< II <<"!!!\n";
+			if(args.print_stat)
+			std::cout<<mapper->dumpCGRAMappingStat();
 			if(mapping_method  == 2){
 				break;
 			}
@@ -211,11 +215,12 @@ int main(int argn, char *argc[])
 				std::cout << "\nPrinting HyCUBE Binary...\n";
 				mapper->printHyCUBEBinary(tempCGRA);
 			}
+			
 			break;
 			
 		}
 	}
-
+	
 	auto end = chrono::steady_clock::now();
 	std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec\n";
 	std::ofstream result_file;

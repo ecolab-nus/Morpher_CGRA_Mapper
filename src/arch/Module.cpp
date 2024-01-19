@@ -79,6 +79,46 @@ std::vector<LatPort> Module::getNextPorts(LatPort currPort, HeuristicMapper *hm)
 	{
 		bool conflicted = false;
 
+
+		//if this port belongs to a DP and has been mapped, then we should not use it.
+		if(p->mapped_nodes.size() > 0 && p->getFullName().find("DP") != std::string::npos){
+			// std::cout<<"-----------port name:"<<p->getFullName()<<", num:"<< p->mapped_nodes.size()<<", skip...\n";
+			continue;
+		}
+
+
+		// if the T_ROUTE has been used, then we should not use DP0.I1 as next ports.
+		bool cause_confict = false;
+		if (currP->getFullName().find("DP0.T") != std::string::npos && 
+				p->getFullName().find("DP0.I") != std::string::npos ){
+			if (DataPath *dp = dynamic_cast<DataPath *>(p->getMod())){
+				auto fu = dp->getFU();
+				for(auto output_port: fu->outputPorts){
+					if(output_port->getName().find("T_ROUTE") != std::string::npos && output_port->mapped_nodes.size()>0){
+						cause_confict = true;
+						break;
+					}
+				}
+			}else{
+				assert(false);
+			}
+		}
+
+		// if there is an operation mapped, we disable routing
+		if(p->getName().find("T_ROUTE") != std::string::npos ){
+			auto dp_ptr = p->getMod()->getSubMod("DP0");
+			assert(dp_ptr != NULL);
+			if (DataPath *dp = dynamic_cast<DataPath *>(dp_ptr)){
+				if(dp->getMappedNode()!= NULL){
+					cause_confict = true;
+				}
+			}
+		}
+
+		if(cause_confict){
+			continue;
+		}
+
 		if (PathFinderMapper *pfm = dynamic_cast<PathFinderMapper *>(hm))
 		{
 

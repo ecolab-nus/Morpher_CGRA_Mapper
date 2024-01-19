@@ -5,6 +5,7 @@
  *      Author: manupa
  */
 
+#include "morpher/dfg/DFGNode.h"
 #include <morpher/mapper/HeuristicMapper.h>
 #include <queue>
 #include <assert.h>
@@ -12,12 +13,13 @@
 #include <algorithm> // std::reverse
 #include <morpher/arch/DataPath.h>
 #include <morpher/arch/FU.h>
-
+#include <iomanip>
 #include <stack>
 #include <functional>
 #include <set>
 #include <iostream>
 #include <sstream>
+#include <utility>
 
 namespace CGRAXMLCompile
 {
@@ -434,7 +436,7 @@ bool CGRAXMLCompile::HeuristicMapper::estimateRouting(DFGNode *node,
 					LOG(ROUTE) << "Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
 					continue;
 				}
-				res.push(cand_src_with_cost(startCandLat, destPortLat, cost));
+				res.push(cand_src_with_cost(startCandLat, destPortLat, cost, path_toStr(path)));
 			}
 			if (res.empty())
 			{
@@ -574,7 +576,7 @@ bool CGRAXMLCompile::HeuristicMapper::Route(DFGNode *node,
 
 				if (LeastCostPathAstar(p, dest_child_with_cost_ins.childDest, pathTmp, cost, node, mutexPathsTmp, node))
 				{
-					q.push(cand_src_with_cost(p, dest_child_with_cost_ins.childDest, cost));
+					q.push(cand_src_with_cost(p, dest_child_with_cost_ins.childDest, cost, path_toStr(pathTmp)));
 				}
 			}
 
@@ -1902,10 +1904,12 @@ bool CGRAXMLCompile::HeuristicMapper::checkRecParentViolation(DFGNode *node,
 															  LatPort nextPort)
 {
 	//assert(false);
-	if(!check_parent_violation) { return false;}
 	for (DFGNode *recParent : node->recParents)
 	{
-		assert(recParent->rootDP != NULL); //should be mapped
+		if(recParent->rootDP == NULL){
+			continue;
+		}
+		// assert(recParent->rootDP != NULL); //should be mapped
 		DataPath *recParentDP = recParent->rootDP;
 		//	assert(false);
 		//	std::cout << "RecParent = " << recParent->idx << ",";
@@ -2028,6 +2032,30 @@ int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
 
 			}
 		}
+		for (DFGNode *rec_parent : node.recParents)
+		{
+
+			if (rec_parent->ASAP <= node.ASAP)
+			{
+				//std::cout << "Backedge Parent: " << node.idx << ", Child: " << rec_parent->idx <<"\n";
+
+				//std::cout << "Parent ASAP: " << node.ASAP << ", Child ASAP: " << rec_parent->ASAP <<"\n";
+
+				//std::cout << "Parent ALAP: " << node.ALAP << ", Child ALAP: " << rec_parent->ALAP <<"\n";
+				number_of_backedges = number_of_backedges+ 1;
+				recDistance = node.ASAP - rec_parent->ASAP + 1; 
+				if(rec_parent->op.compare("LOAD")==0){
+					recDistance += 1;
+				}
+				assert(recDistance>=0);
+				if(recDistance > recMinII){
+					recMinII = recDistance;
+				}
+				// cout << "node.childrenEdgeType[child]" << node.childrenEdgeType[child] <<"\n";
+				// assert(node.childrenEdgeType[child] == "INTER");
+
+			}
+		}
 	}
 
 
@@ -2038,6 +2066,60 @@ int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
 
 }
 
+std::string CGRAXMLCompile::HeuristicMapper::dumpCGRAMappingStat(){
+	std::vector< std::set<DFGNode *>> II_to_node_vector; // the index represend the latency
+	int II_  = this->cgra->get_t_max();
+	for(int i = 0; i < II_; i++){
+		std::set<DFGNode *> temp;
+		II_to_node_vector.push_back( temp);
+	}
+	std::set<DFGNode *> unmapped_dfg_nodes;
+	std::map<std::pair<int,int>,std::set<DFGNode*>> physical_pe_mapped_nodes;
+
+	for(auto pe: cgra->getSpatialPEList(0)){
+		physical_pe_mapped_nodes[std::make_pair(pe->X, pe->Y)] = std::set<DFGNode*>();
+	}
+	//get the latency of each operation
+	for(auto node: sortedNodeList){
+		if(node->rootDP == NULL){
+			unmapped_dfg_nodes.insert(node);
+			// std::cout<<"unmapped_node:"<<node->idx<<"\n";
+			continue;
+		}
+		int lat = node->rootDP->get_t();
+		// std::cout<<"node:"<<node->idx<<" lat "<<lat<<"\n";
+		II_to_node_vector[lat].insert(node);
+		int x = node->rootDP->getPE()->getPosition_X();
+		int y = node->rootDP->getPE()->getPosition_Y();
+		physical_pe_mapped_nodes[std::make_pair(x, y)].insert(node);
+	}
+
+	
+
+	//print the mapping
+	std::stringstream ss;
+	ss<<"############## mapping info at each configuration time:\n";
+	for(int t = 0;  t < II_ ; t++ ){
+		ss<<"t = "<<t <<":\n\t";
+		for(auto node: II_to_node_vector[t]){
+			ss<<"("<<node->rootDP->getPE()->getPosition_X()<<", "<<node->rootDP->getPE()->getPosition_Y()<<")->"
+			 << node->idx <<"  ";
+		}
+		ss<<"\n";
+	}
+	ss<<"############## physical PE info:\n";
+	for(auto [pe, nodes]:physical_pe_mapped_nodes ){
+		ss<<"("<<pe.first<<", "<<pe.second<<"):\t";
+		ss<<"utilization:"<< std::fixed << std::setprecision(2)<< (float)nodes.size()/II_<<"\t mapped nodes:";
+		for(auto node: nodes){
+			ss<<node->idx<<", ";
+		}
+		ss<<"\n";
+	}
+	
+	
+	return ss.str();
+}
 
 std::string CGRAXMLCompile::HeuristicMapper::dumpMappingToStr(){
 	std::vector< std::set<DFGNode *>> latency_to_node_vector; // the index represend the latency

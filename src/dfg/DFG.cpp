@@ -25,8 +25,9 @@ DFG::DFG()
 	// TODO Auto-generated constructor stub
 }
 
-bool DFG::parseXML(std::string fileName)
+bool DFG::parseXML(std::string fileName,bool is_synthetic_dfg )
 {
+	this->dfg_parse_synthetic_dfg = is_synthetic_dfg;
 	XMLDocument doc;
 	doc.LoadFile(fileName.c_str());
 	std::stringstream output_ss;
@@ -167,7 +168,7 @@ bool DFG::parseXML(std::string fileName)
 		output_ss << "|Inputs=";
 
 		XMLElement *input;
-		if(dfg_parse_self_made_dfg){
+		if(dfg_parse_synthetic_dfg){
 			input = Inputs->FirstChildElement("MyInput");
 		}else{
 			input = Inputs->FirstChildElement("Input");
@@ -180,7 +181,7 @@ bool DFG::parseXML(std::string fileName)
 
 			findNode(idx)->parents.push_back(findNode(input_idx));
 
-		if(dfg_parse_self_made_dfg){
+		if(dfg_parse_synthetic_dfg){
 			input = input->NextSiblingElement("MyInput");
 		}else{
 			input = input->NextSiblingElement("Input");
@@ -193,7 +194,7 @@ bool DFG::parseXML(std::string fileName)
 		output_ss << "|Outputs=";
 
 		XMLElement *output;
-		if(dfg_parse_self_made_dfg){
+		if(dfg_parse_synthetic_dfg){
 			output = Outputs->FirstChildElement("MyOutput");
 		}else{
 			output = Outputs->FirstChildElement("Output");
@@ -241,7 +242,7 @@ bool DFG::parseXML(std::string fileName)
 
 			}
 
-			if(dfg_parse_self_made_dfg){
+			if(dfg_parse_synthetic_dfg){
 				output = output->NextSiblingElement("MyOutput");
 			}else{
 				output = output->NextSiblingElement("Output");

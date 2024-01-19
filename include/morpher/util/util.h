@@ -44,6 +44,8 @@ struct arguments
 	int mapping_method = 0; // 0: PathFinderMapper, 1: SAMapper (SimulatedAnnealing),  HeuristicMapper will not be used
 	int max_II = 32;
 	std::string arch_name = "";
+	bool synthetic_dfg = false;
+	bool print_stat = false;
 	lisa_arguments lisa_arg;
 };
 
@@ -139,6 +141,8 @@ inline arguments parse_arguments(int argn, char *argc[]){
 		.add_option<int>("", "--max_II", "max II", 32)
 		.add_option<std::string>("", "--arch_name", "architecture name", "")
 		.add_option<bool>("", "--lisa_training", "lisa training", false)
+		.add_option<bool>("", "--syn_dfg", "synthetic DFG", false)
+		.add_option<bool>("-p", "--print_stat", "printing status", false)
 		.add_option<std::string>("", "--dfg_id", "the dfg id used to generate training data", "none")
         .parse(argn, argc);
 
@@ -149,6 +153,7 @@ inline arguments parse_arguments(int argn, char *argc[]){
 	ret.json_file_name = args.get_option<std::string>("--json_arch");
 	ret.userII = args.get_option<int>("--ii");
 	ret.noMutexPaths = args.get_option<bool>("--noMutexPaths");
+	ret.synthetic_dfg = args.get_option<bool>("--syn_dfg");
 	ret.backtracklimit = args.get_option<int>("--backtrack_limit");
 	ret.ndps =  args.get_option<int>("--datapath_number");
 	ret.maxiter = args.get_option<int>("--max_iter");
@@ -156,6 +161,7 @@ inline arguments parse_arguments(int argn, char *argc[]){
 	ret.mapping_method = args.get_option<int>("--mapping");
 	ret.max_II = args.get_option<int>("--max_II");
 	ret.use_json = true;
+	ret.print_stat = args.get_option<bool>("--print_stat");
 	ret.arch_name = args.get_option<std::string>("--arch_name");
 	lisa_arg.arch_name = args.get_option<std::string>("--arch_name");
 	lisa_arg.training = args.get_option<bool>("--lisa_training");

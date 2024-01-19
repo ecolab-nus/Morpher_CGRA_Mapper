@@ -37,6 +37,10 @@ struct dest_child_with_cost
 	dest_child_with_cost(DFGNode *child, DataPath* dp, LatPort childDest, LatPort startPort, int cost) : child(child), childDP(dp), childDest(childDest), startPort(startPort), cost(cost) {}
 	bool operator<(const dest_child_with_cost &rhs) const
 	{
+		if(cost == rhs.cost){
+			return (childDest.second->getFullName()+startPort.second->getFullName()).compare(
+				rhs.childDest.second->getFullName()+rhs.startPort.second->getFullName()) > 0;
+		}
 		return cost > rhs.cost;
 	}
 };
@@ -46,11 +50,16 @@ struct cand_src_with_cost
 	LatPort src;
 	LatPort dest;
 	int cost;
-	cand_src_with_cost(LatPort src, LatPort dest, int cost) : src(src), dest(dest), cost(cost) {}
+	std::string path_in_str;
+	cand_src_with_cost(LatPort src, LatPort dest, int cost, std::string path_in_str) : src(src), dest(dest), cost(cost), path_in_str(path_in_str) {}
 
 	bool operator<(const cand_src_with_cost &rhs) const
 	{
-		return cost > rhs.cost;
+		if(cost != rhs.cost){
+			return cost > rhs.cost;
+		}else{
+			return path_in_str.compare(rhs.path_in_str) < 0;
+		}
 	}
 };
 
@@ -66,6 +75,10 @@ struct parent_cand_src_with_cost
 
 	bool operator<(const parent_cand_src_with_cost &rhs) const
 	{
+		if(this->cost == rhs.cost){
+			return (cswc.top().path_in_str + std::to_string(cswc.size())).compare(
+				rhs.cswc.top().path_in_str + std::to_string(rhs.cswc.size()) ) > 0;
+		}
 		return this->cost > rhs.cost;
 	}
 };
@@ -254,16 +267,28 @@ public:
 	void printMappingLog2();
 
 	std::string dumpMappingToStr();
+	std::string dumpCGRAMappingStat();
 
 	bool checkRecParentViolation(DFGNode *node, LatPort nextPort);
 
 
 	std::string getMappingMethodName(){return mapping_method_name;}
+	int MOD(int t){
+		int cgra_t =  this->cgra->get_t_max();
+		return (t + cgra_t * 100 ) %  cgra_t;
+	}
 
 	int upperboundII = 1000000;
 	int upperboundIter = -1;
 	int upperboundFoundBy = -1;
 	std::string mapping_method_name  = "heuristic";
+	std::string path_toStr(std::vector<LatPort> path){
+		std::stringstream output_stream;
+		for(auto p: path){
+			output_stream<<p.first<<","<<p.second->getFullName()<<" -> ";
+		}
+		return output_stream.str();
+	};
 
 protected:
 	int regDiscourageFactor = 10;
@@ -285,7 +310,7 @@ protected:
 	int getlatMinStarts(const std::map<DFGNode *, std::vector<Port *>> &possibleStarts);
 	std::map<DataPath *, int> getLatCandDests(const std::vector<DataPath *> &candidateDests, int minlat);
 
-	bool check_parent_violation = true;
+	// bool check_parent_violation = true;
 };
 
 } /* namespace CGRAXMLCompile */

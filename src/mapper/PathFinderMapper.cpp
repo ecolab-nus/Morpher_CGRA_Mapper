@@ -4,12 +4,12 @@
  *  Created on: 31 Mar 2018
  *      Author: manupa
  * 
- *  notes on the mapper (zhaoying):
+ *  notes on the mapper :
  *  1) register connection in MRRG: to support store data into reg, it will connect reg.out -> reg.in (next cycle). It will also mark
  * 		this as a reg_conn to set latency as 1.
  * 	2) SortByASAPBAckEdge. It is sorted by path. 
  *  3) Each iteration, it will put the information of congested prt into congestedPorts. The port can only hold one data (even in code), so the
- * 	 later assignment will overwrite the old one. It uses congestedPorts to keep track of port history. It will set congested part a higher cost 
+ * 	 later assignment will overwrite the old one. (I fixed it by using storing multiple values and destinations)It uses congestedPorts to keep track of port history. It will set congested part a higher cost 
  * 		to avoid congestion in next iteration.
  * 	4) Conflict and congestion are different. Conflict means it cannot connect to multiple ports due to design limitation (usually between REGF 
  * 		and FU in N2N).
@@ -604,7 +604,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 			if(node->childNextIter[child] == 1){
 				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() + ii);
 			}else if (node->childNextIter[child] == 0){
-				if(mapping_method_name.find("SA") != std::string::npos){
+				if(mapping_method_name.find("PathFinder") != std::string::npos){
 					assert(false);
 				}
 				alreadyMappedChildPorts[child]->setLat(child->rootDP->getLat() );
@@ -724,7 +724,7 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 	int minLatSucc = 1000000000;
 	std::priority_queue<dest_with_cost> estimatedRoutesTemp;
 
-	int allowed_time_steps_for_connection = 30;
+	int allowed_time_steps_for_connection = 5;
 	int iterations = allowed_time_steps_for_connection;
 
 	//Route Estimation
@@ -796,14 +796,15 @@ bool CGRAXMLCompile::PathFinderMapper::estimateRouting(DFGNode *node,
 					}
 
 					pathExist = pathExist & LeastCostPathAstar(startCandLat, destPortLat, dest, path, cost, parent, mutexPaths, node);
-					path.clear();
 					if (!pathExist)
 					{
 						LOG(ROUTE)<< "par Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
+						path.clear();
 						continue;
 					}
 					cost += dpPenaltyMap[dest];
-					res.push(cand_src_with_cost(startCandLat, destPortLat, cost));
+					res.push(cand_src_with_cost(startCandLat, destPortLat, cost, path_toStr(path)));
+					path.clear();
 				}
 				if (res.empty())
 				{
@@ -979,8 +980,8 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 				int cost;
 				if (LeastCostPathAstar(p, dest_child_with_cost_ins.childDest, dest_child_with_cost_ins.childDP, pathTmp, cost, node, mutexPathsTmp, dest_child_with_cost_ins.child))
 				{
+					q.push(cand_src_with_cost(p, dest_child_with_cost_ins.childDest, cost, path_toStr(pathTmp)));
 					pathTmp.clear();
-					q.push(cand_src_with_cost(p, dest_child_with_cost_ins.childDest, cost));
 				}
 			}
 
@@ -1000,12 +1001,12 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 					assignPath(node, dest_child_with_cost_ins.child, path);
 					mappedChildPaths[dest_child_with_cost_ins.child] = path;
 					mappedChildMutexPaths[dest_child_with_cost_ins.child] = mutexPaths;
-					LOG(ROUTE) << "Route success :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "|node=" << node->idx << "\n";
+					LOG(MAPPING) << "Route success :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "|node=" << node->idx << "\n";
 					break;
 				}
 				else
 				{
-					LOG(ROUTE) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
+					LOG(MAPPING) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
 					for (LatPort p : path)
 					{
 						if (p.second->getMod()->getPE())
@@ -1114,8 +1115,8 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 				else
 				{
 					addedRoutingParentPorts = 0;
-					node->clear(this->dfg);
-					LOG(ROUTE) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
+					node->CarefulClear(this->dfg);
+					LOG(MAPPING) << "Route Failed :: from=" << src.second->getFullName() << "--> to=" << dest.second->getFullName() << "\n";
 				}
 				path.clear();
 			}
@@ -1132,31 +1133,30 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 		if (parentRoutSucc)
 		{ //all parents routed succesfull + all mapped childs are connected
 			routeSucc = true;
-			LOG(ROUTE) << "node=" << node->idx << ",op=" << node->op << " is mapped to " << currDest.dest->getPE()->getName() << ",lat=" << currDest.destLat << "\n";
-			LOG(ROUTE) << "routing info ::\n";
+			LOG(MAPPING) << "node=" << node->idx << ",op=" << node->op << " is mapped to " << currDest.dest->getPE()->getName() << ",lat=" << currDest.destLat << "\n";
+			LOG(MAPPING) << "routing info ::\n";
 			for (DFGNode *parent : node->parents)
 			{
-				LOG(ROUTE) << "parent routing port size = " << parent->routingPorts.size() << "\n";
+				LOG(MAPPING) << "parent routing port size = " << parent->routingPorts.size() << "\n";
 				int prev_lat = -1;
 				for (std::pair<Port *, int> pair : parent->routingPorts)
 				{
 					Port *p = pair.first;
 					//					if(node.routingPortDestMap[p]==&node){
-					LOG(ROUTE) << "fr:" << parent->idx << " :: ";
-					LOG(ROUTE) << ",dest=" << pair.second << " :: ";
-					LOG(ROUTE) << p->getFullName();
-					LOG(ROUTE) << ",lat=" << p->getLat();
+					LOG(MAPPING) << "fr:" << parent->idx << " :: "
+					 			<< ",dest=" << pair.second << " :: "
+								<< p->getFullName()
+								<< ",lat=" << p->getLat();
 
 					if (mappedParentMutexPaths[parent].find(p) != mappedParentMutexPaths[parent].end())
 					{
-						LOG(ROUTE) << "|mutex(";
+						LOG(MAPPING) << "|mutex(";
 						for (DFGNode *mutexnode : mappedParentMutexPaths[parent][p])
 						{
-							LOG(ROUTE) << mutexnode->idx << ",";
+							LOG(MAPPING) << mutexnode->idx << ",";
 						}
-						LOG(ROUTE) << ")";
+						LOG(MAPPING) << ")";
 					}
-					LOG(ROUTE) << "\n";
 					//					}
 					if (prev_lat != -1)
 					{
@@ -1172,12 +1172,12 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 			node->rootDP = currDest.dest;
 			break;
 		}
-		node->clear(this->dfg);
+		node->CarefulClear(this->dfg);
 	}
 
 	if (routeSucc)
 	{
-		LOG(ROUTE) << "Route success...\n";
+		LOG(MAPPING) << "Route success...\n";
 
 		int parentRoutingPortCountEnd = 0;
 		//		int mappedParentCount=0;
@@ -1204,7 +1204,7 @@ bool CGRAXMLCompile::PathFinderMapper::Route(DFGNode *node,
 	{
 		currDest.dest->assignNode(node, currDest.destLat, this->dfg);
 		node->rootDP = currDest.dest;
-		node->clear(this->dfg);
+		node->CarefulClear(this->dfg);
 		LOG(ROUTE) << "Route failed...\n";
 
 		int parentRoutingPortCountEnd = 0;
@@ -1475,7 +1475,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 						unmappedNodes.push(node);
 						unmappedNodes.push(prevNode);
 
-						prevNode->clear(this->dfg);
+						prevNode->CarefulClear(this->dfg);
 						estimatedRouteInfo.erase(node);
 
 						//										assert(failedNode!=NULL);
@@ -1596,6 +1596,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 			//		this->printMappingLog2();
 			backTrackCredits = std::min(this->backTrackLimit, backTrackCredits + 1);
 			mappedNodes.push(node);
+
 		}
 		mapSuccess = updateCongestionCosts(i);
 		if (mapSuccess)
@@ -1620,7 +1621,7 @@ bool CGRAXMLCompile::PathFinderMapper::Map(CGRA *cgra, DFG *dfg)
 
 		// by Yujie
 		// cgra->PrintMappedJSON(fNameLog1 + cgra->getCGRAName() + "mapping.json");
-		cgra->PrintMappingForPillars(fNameLog1 + cgra->getCGRAName() + "mapping_i.txt", fNameLog1 + cgra->getCGRAName() + "mapping_r.txt");
+		cgra->PrintMappingForPillars(fNameLog1 + cgra->getCGRAName() + "mapping_pillars_i.txt", fNameLog1 + cgra->getCGRAName() + "mapping_pillars_r.txt");
 
 		//std::cout << "Map Success!.\n";
 		mappingLog.close();
@@ -1726,38 +1727,66 @@ bool CGRAXMLCompile::PathFinderMapper::updateCongestionCosts(int iter)
 	for (std::pair<Port *, std::set<DFGNode *>> pair : congestedPorts)
 	{
 		Port *p = pair.first;
-		if (pair.second.size() > 1)
+		if (pair.first->mapped_nodes.size() > 1)
 		{
-			for (DFGNode *node1 : pair.second)
-			{
-				for (DFGNode *node2 : pair.second)
-				{
-					if (node1 == node2)
-					{
-						continue;
-					}
-					if (this->dfg->isMutexNodes(node1, node2, p))
-						continue;
-					LOG(CONGESTION)  << "CONGESTION:" << p->getFullName();
-					congestionInfoFile << "CONGESTION:" << p->getFullName();
-					for (DFGNode *node : pair.second)
-					{
-						LOG(CONGESTION)  << "," << node->idx << "|BB=" << node->BB;
-						congestionInfoFile << "," << node->idx << "|BB=" << node->BB;
-					}
-					LOG(CONGESTION)  << "\n";
-					congestionInfoFile << "\n";
-					p->increastCongCost();
-					noCongestion = false;
-					conflictedTimeSteps.insert(p->getMod()->getPE()->T);
-					//					break;
-				}
-				if (!noCongestion)
-				{
-					//					break;
-				}
+			std::set<DFGNode*> mapped_value;
+			for(auto node: pair.first->mapped_nodes){
+				auto n = std::get<0>(node);
+				mapped_value.insert(n);
 			}
+			if(mapped_value.size()<=1){
+				continue;
+			}
+			auto mapped_nodes = pair.first->mapped_nodes;
+			for(auto & [node, dest, lat]: mapped_nodes){
+				LOG(CONGESTION)  << "," << node->idx << "|BB=" << node->BB;
+				congestionInfoFile << "," << node->idx << "|BB=" << node->BB;
+				// congestion_detail<<p->getFullName()<<" " <<node->idx<<"->"<<dest<<"(lat:"<<lat<<"),\n";
+			}
+
+			LOG(CONGESTION)  << "CONGESTION:" << p->getFullName();
+			congestionInfoFile << "CONGESTION:" << p->getFullName();
+			
+			LOG(CONGESTION)  << "\n";
+			congestionInfoFile << "\n";
+			p->increastCongCost();
+			noCongestion = false;
+			conflictedTimeSteps.insert(p->getMod()->getPE()->T);
+			
+			
 		}
+		// if (pair.second.size() > 1)
+		// {
+		// 	for (DFGNode *node1 : pair.second)
+		// 	{
+		// 		for (DFGNode *node2 : pair.second)
+		// 		{
+		// 			if (node1 == node2)
+		// 			{
+		// 				continue;
+		// 			}
+		// 			if (this->dfg->isMutexNodes(node1, node2, p))
+		// 				continue;
+		// 			LOG(CONGESTION)  << "CONGESTION:" << p->getFullName();
+		// 			congestionInfoFile << "CONGESTION:" << p->getFullName();
+		// 			for (DFGNode *node : pair.second)
+		// 			{
+		// 				LOG(CONGESTION)  << "," << node->idx << "|BB=" << node->BB;
+		// 				congestionInfoFile << "," << node->idx << "|BB=" << node->BB;
+		// 			}
+		// 			LOG(CONGESTION)  << "\n";
+		// 			congestionInfoFile << "\n";
+		// 			p->increastCongCost();
+		// 			noCongestion = false;
+		// 			conflictedTimeSteps.insert(p->getMod()->getPE()->T);
+		// 			//					break;
+		// 		}
+		// 		if (!noCongestion)
+		// 		{
+		// 			//					break;
+		// 		}
+		// 	}
+		// }
 		if (p->getHistoryCost() > 0)
 		{
 			LOG(CONGESTION)  << "HISTORY_COST :: " << p->getFullName() << "," << p->getHistoryCost() << "\n";
@@ -2024,6 +2053,8 @@ bool CGRAXMLCompile::PathFinderMapper::checkDPFree(DataPath *dp, DFGNode *node, 
 {
 	PE *currPE = dp->getPE();
 	FU *currFU = dp->getFU();
+
+	
 
 	int numberFUs = 0;
 	int numberUsedFUs = 0;
@@ -3276,20 +3307,20 @@ bool CGRAXMLCompile::PathFinderMapper::Check_DFG_CGRA_Compatibility(){
 	unordered_set<string> base_pointers;
 
 	std::stringstream output_ss;
-	output_ss << "all supported pointers : \n";
+	LOG(ARCH) << "all supported pointers : \n";
 	for(string ptr : all_supp_pointers){
-		output_ss << "\t" << ptr << "\n";
+		LOG(ARCH) << "\t" << ptr << "\n";
 	}
 
-	output_ss << "all required pointers : \n";
+	LOG(ARCH) << "all required pointers : \n";
 	for(auto it = dfg->pointer_sizes.begin(); it != dfg->pointer_sizes.end(); it++){
-		output_ss << "\t" << it->first << ",size = " << it->second << "\n";
+		LOG(ARCH) << "\t" << it->first << ",size = " << it->second << "\n";
 	}
 
 	for(DFGNode& node : dfg->nodeList){
 		string op = node.op;
 		if(all_supp_ops.find(op) == all_supp_ops.end()){
-			output_ss << "op=" << op << " is not supported in this CGRA, exiting....\n";
+			LOG(ARCH) << "op=" << op << " is not supported in this CGRA, exiting....\n";
 			exit(EXIT_FAILURE);
 			return false;
 		}
@@ -3299,16 +3330,16 @@ bool CGRAXMLCompile::PathFinderMapper::Check_DFG_CGRA_Compatibility(){
 		for(auto it = dfg->ldst_pointer_sizes.begin(); it != dfg->ldst_pointer_sizes.end(); it++){
 			string pointer = it->first;
 			if(all_supp_pointers.find(pointer) == all_supp_pointers.end()){
-				output_ss << "pointer=" << pointer << " is not present in the CGRA, exiting....\n";
+				LOG(ARCH) << "pointer=" << pointer << " is not present in the CGRA, exiting....\n";
 				exit(EXIT_FAILURE);
 				return false;
 			}
 		}
 	}
 	else{
-		output_ss << "SPMs are not modelled, therefore ignoring supported pointers check.\n";
+		LOG(ARCH) << "SPMs are not modelled, therefore ignoring supported pointers check.\n";
 	}
-	LOG(ARCH)<<output_ss.str();
+	//LOG(ARCH)<<output_ss.str();
 
 	return true;
 }
@@ -3865,12 +3896,15 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					if(mappedOP && mappedOP->hasConst){
 						insF.constant_valid = "1";
 						insF.constant = mappedOP->get27bitConstantBinaryString();
-					}else if(insF.opcode == "00000"){
+					}
+					//THILINI : Removing NOP clock gating logic due to logic bug(in RTL)
+					/*
+					else if(insF.opcode == "00000"){
 						// if nop, select constant 1 to enable power gating.
 					    insF.constant_valid = "1";
 						insF.constant = "000000000000000000000000001";
 
-					}
+					}*/
 					else{
 						insF.constant_valid = "0";
 						//					insF.constant = "123456789012345678901234567";
@@ -3892,7 +3926,8 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 				}
 	}
 
-
+	//THILINI : Removing NOP clock gating logic due to logic bug(in RTL)
+	/*
 	for (int t = 0; t < this->cgra->get_t_max(); ++t)
 	{
 		// the code to count continuous nop
@@ -3920,7 +3955,7 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 			}
 			tempIns.constant = std::bitset<27>(nop_count).to_string();;
 		}
-	}
+	}*/
 	InsFormat jumpl;
 	jumpl.negated_predicate = "0";
 	jumpl.constant_valid = "1";

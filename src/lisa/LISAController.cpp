@@ -312,7 +312,7 @@ void LISAController::generateCombinedBestLabelHistorically(perf_metric best_perf
   for(auto lp: label_perf){
     if(lp.second.ii == best_perf.ii){
       float coef = (float(lp.second.cost)) / best_perf.cost;
-      if(coef <= 1.1){
+      if(coef <= 1.2){
         LOG(COMBINELABEL)<<"select label: "<<lp.second.ii<<" "<<lp.second.cost;
         best_labels.push_back(lp.first);
       }
@@ -569,12 +569,15 @@ void LISAController::callGNNInference(){
   std::string lisa_dir_name ="" ;
   lisa_dir_name.assign(pPath);
   
-  std::string command  =  "bash  "+lisa_dir_name+"/morpher_mapper/call_gnn.sh " + graph_name + " " + arch_name_;
+  std::string command  =  "bash  "+lisa_dir_name+"/morpher_mapper/src/lisa/call_lisa_gnn.sh " + graph_name + " " + arch_name_;
   // std::cout<<"command line"<<command<<"\n";
   system(command.c_str());
   std::shared_ptr<DFG_label> gnn_dfg_label = std::make_shared<DFG_label> (); 
   getLabelFromFile(*gnn_dfg_label, graph_name);
   std::cout<<"gnn label"<<DFGLabelToStr(*gnn_dfg_label);
+  command  =  "rm  "+lisa_dir_name+"/lisa_gnn/data/infer/" + graph_name + "* ";
+  std::cout<<"command line"<<command<<"\n";
+  system(command.c_str());
   best_label_ = gnn_dfg_label;
 }
 

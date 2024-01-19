@@ -188,8 +188,8 @@ void CGRAXMLCompile::CGRA::insertConflictPort(Port *a, Port *b)
 {
 	assert(a != NULL);
 	assert(b != NULL);
-	std::cout << "insertConflict Port b : " << b->getFullName();
-	std::cout << ", a : " << a->getFullName() << "\n";
+	//std::cout << "insertConflict Port b : " << b->getFullName();
+	//std::cout << ", a : " << a->getFullName() << "\n";
 	conflictPorts[a].insert(b);
 }
 
@@ -340,6 +340,74 @@ void CGRAXMLCompile::CGRA::ParseCGRA(json &cgra_desc, int II)
 				mod->insertConnection(curr_portpair.second, next_portpair.first);
 				mod->regCons[std::make_pair(curr_portpair.second, next_portpair.first)] = true;
 			}
+		}
+	}
+
+
+	
+	auto insert_t_route_connection = [&](FU * fu) {
+		auto & dp_output_ports = fu->outputPorts;
+		auto t_route_port = std::find_if(dp_output_ports.begin(), dp_output_ports.end(),
+    			[](Port * x) { return x->getName().compare("DP0_T_ROUTE") == 0 ;});
+		if(t_route_port == dp_output_ports.end()){
+			return;
+		}
+
+		std::stack<std::string> submodule_strings;
+
+		//push the submodule string
+		Module* m = fu;
+		while(!dynamic_cast<PE *>(m)){
+			submodule_strings.push(m->getName());
+			m = m->getParent();
+		}
+
+		// get the next cycle PE
+		assert(m->getFullName() == fu->getPE()->getFullName());
+		auto curr_pe = fu->getPE();
+		assert(NextCyclePEMap.find(curr_pe)!= NextCyclePEMap.end());
+
+		Module * next_cycle_m = NextCyclePEMap[curr_pe];
+
+		// get the dp of next cycle
+		while(!submodule_strings.empty()){
+			auto sub_module_str = submodule_strings.top();
+			submodule_strings.pop();
+			next_cycle_m = next_cycle_m->getSubMod(sub_module_str);
+			assert(next_cycle_m != NULL);
+		}
+
+		//insert the connection
+		auto this_cycle_I1 = fu->getInPort("DP0_I1");
+		auto next_cycle_r_toute = next_cycle_m->getOutPort("DP0_T_ROUTE"); 
+		fu->insertConnection(this_cycle_I1,next_cycle_r_toute);
+		std::cout<<"insert connection:"<<this_cycle_I1->getFullName()<<" to "<<next_cycle_r_toute->getFullName()<<"\n";
+	};
+
+	std::function<void(Module* md)> recursive_find_fu = [&](Module* md) {
+		if (dynamic_cast<FU *>(md)){
+			FU *fu = static_cast<FU *>(md);
+			insert_t_route_connection(fu);
+			// std::cout<<"!!!! find a fu\n";
+		}else{
+			for(Module * sub_md: md->subModules){
+				recursive_find_fu(sub_md);
+			}
+		}
+				
+	};
+
+	for (int t = 0; t < II; t++)
+	{
+		for (int i = 0; i < subModArr[t].size(); i++)
+		{
+			if (!dynamic_cast<PE *>(subModArr[t][i]))
+				continue;
+
+			
+			PE *currPE = static_cast<PE *>(subModArr[t][i]);
+			Module * m = currPE;
+			recursive_find_fu(m);
 		}
 	}
 }
@@ -1259,7 +1327,7 @@ void CGRAXMLCompile::CGRA::PrintMappingForPillars(string fileName_i, string file
 		output_json["CGRA_INS"]["TYPE"] = "CGRA";
 		string pe_name = pe->getName();
 		string spatial_pe_name = pe_name.substr(0, pe_name.size() - 3); //remove the last "-T0" component;
-		LOG(JSONARCH)  <<"DMD PE NAME:"<< spatial_pe_name<<"\n";
+		LOG(JSONARCH)  <<"PE NAME:"<< spatial_pe_name<<"\n";
 
 		PrintMappedPillarsModule(pe, output_json["CGRA_INS"]["SUBMODS"][spatial_pe_name], outFile_i);
 	}
@@ -1267,7 +1335,7 @@ void CGRAXMLCompile::CGRA::PrintMappingForPillars(string fileName_i, string file
 	outJsonFile.close();
 	outFile_i.close();
 	for (std::map<int, int*>::iterator iter = ConstRecord.begin(); iter != ConstRecord.end(); ++iter) {
-		outFile_r<<"const"<<iter->first<<" "<<iter->second[0]<<":cgra.tile_0.pe_"<<iter->second[1]<<"_"<<iter->second[2]<<".const0.internalNode_0"<<" "<<iter->second[0]<<" 0"<<std::endl;
+		outFile_r<<"const"<<iter->first<<" "<<iter->second[0]<<":cgra.tile_0.pe_"<<iter->second[1]<<"_"<<iter->second[2]<<".const0.internalNode_0"<<" "<<iter->second[0]<<" 0 val:"<< iter->second[3]<<std::endl;
 		delete []iter->second;
 	}
 	outFile_r.close();
@@ -1501,7 +1569,7 @@ void CGRAXMLCompile::Module::UpdateMappedConnectionsPillars(json &output_json, o
 							outFile_i<<"SELECTED_OP"<<std::endl<<7<<std::endl;
 							// std::cout<<"<"<<(t+1)%cgra->get_t_max()<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<".const0.internalNode_0>"<<std::endl;
 							// std::cout<<"SELECTED_OP"<<std::endl<<7<<std::endl;
-							cgra->insertConstOp(mod_dp->getMappedNode()->idx, (t+1)%II, Y, X);
+							cgra->insertConstOp(mod_dp->getMappedNode()->idx, (t+1)%II, Y, X, mod_dp->getMappedNode()->constant);
 							// outFile_r<<"const"<<mod_dp->getMappedNode()->idx<<" "<<(t+1)%II<<":cgra.tile_0.pe_"<<Y<<"_"<<X<<".const0.internalNode_0"<<" "<<(t+1)%II<<" 0"<<std::endl;
 						}
 

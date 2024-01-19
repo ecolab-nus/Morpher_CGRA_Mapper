@@ -35,6 +35,7 @@ public:
 	
 	void do_training(  arguments arg, TimeDistInfo &tdi, int start_II );
 	void set_lisa_controller(arguments arg, int MII);
+	bool initMap_with_PathFinder();
 	bool initMap();
 	float inner_map();
 
@@ -73,6 +74,7 @@ public:
 protected:
 
 	std::shared_ptr<LISAController> lisa_ctrl;
+	int training_time_limit = 3600 * 96; // by seconds
 	bool is_training = false;
 	int max_training_iteration = 5;
 
@@ -85,6 +87,7 @@ protected:
 	// std::map<DFGNode*, int>  node_to_id_;
     // std::map<int, DFGNode*>  id_to_node_;
 	std::shared_ptr<std::map<int, node_label>> dfg_label_;
+	int total_accepted = 0;
 
 	
 };
