@@ -139,11 +139,11 @@
         }
       ,
       "OPS" : {
-        "NOP": 1,   
-        "LOAD": 1,
-        "LOADB": 1,
-        "STORE": 1,
-        "STOREB": 1
+        "NOP": 2,   
+        "LOAD": 2,
+        "LOADB": 2,
+        "STORE": 2,
+        "STOREB": 2
       }
       ,
       "CONNECTIONS" : {
@@ -306,8 +306,7 @@
             "MODS" : [
               {"X":0,"Y":0,"MOD":"PE_MEM","name" : "PE_MEM_X0_Y0"}, {"X":1,"Y":0,"MOD":"PE_ADD"},  {"X":2,"Y":0,"MOD":"PE_ADD"}, {"X":3,"Y":0,"MOD":"PE"},
               {"X":0,"Y":1,"MOD":"PE_MEM","name" : "PE_MEM_X0_Y1"}, {"X":1,"Y":1,"MOD":"PE"},  {"X":2,"Y":1,"MOD":"PE"}, {"X":3,"Y":1,"MOD":"PE"},
-              {"X":0,"Y":2,"MOD":"PE_MEM","name" : "PE_MEM_X0_Y2"}, {"X":1,"Y":2,"MOD":"PE_ADD"},  {"X":2,"Y":2,"MOD":"PE_ADD"}, {"X":3,"Y":2,"MOD":"PE"}
-            ],
+              {"X":0,"Y":2,"MOD":"PE_MEM","name" : "PE_MEM_X0_Y2"}, {"X":1,"Y":2,"MOD":"PE_ADD"},  {"X":2,"Y":2,"MOD":"PE_ADD"}, {"X":3,"Y":2,"MOD":"PE"}            ],
             "CONNECTIONS" : [
               {"FROM_X" : "X", "FROM_Y" : "Y", "FROM_PORT" : "NORTH_O", "TO_X" : "X", "TO_Y" : "Y-1", "TO_PORT" : "SOUTH_I"},
               {"FROM_X" : "X", "FROM_Y" : "Y", "FROM_PORT" : "EAST_O",  "TO_X" : "X+1", "TO_Y" : "Y", "TO_PORT" : "WEST_I"},
