@@ -203,7 +203,7 @@ int main(int argn, char *argc[])
 			mapped_ii_file << II <<"\n";
 			mapped_ii_file.close();
 
-			std::cout << "Map Success with II = "<< II <<"!!!\n";
+			std::cout << "Map Success with II = "<< II <<"  (lat = "<<mapper->getMaxLat()<<")\n";
 			if(args.print_stat)
 			std::cout<<mapper->dumpCGRAMappingStat();
 			if(mapping_method  == 2){

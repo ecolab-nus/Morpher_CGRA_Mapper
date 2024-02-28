@@ -265,7 +265,8 @@ public:
 
 	void printMappingLog();
 	void printMappingLog2();
-
+	
+	int getMaxLat();
 	std::string dumpMappingToStr();
 	std::string dumpCGRAMappingStat();
 

@@ -2121,6 +2121,17 @@ std::string CGRAXMLCompile::HeuristicMapper::dumpCGRAMappingStat(){
 	return ss.str();
 }
 
+
+int CGRAXMLCompile::HeuristicMapper::getMaxLat(){
+	int max_latency = 0;
+	for(auto node: sortedNodeList){
+		int lat = node->rootDP->getLat();
+		// std::cout<<"node:"<<node->idx<<" lat "<<lat<<"\n";
+		max_latency = max_latency>lat ? max_latency:lat;
+	}
+
+	return max_latency;
+}
 std::string CGRAXMLCompile::HeuristicMapper::dumpMappingToStr(){
 	std::vector< std::set<DFGNode *>> latency_to_node_vector; // the index represend the latency
 	for(int i = 0; i < 1000; i++){
