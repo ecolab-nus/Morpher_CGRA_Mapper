@@ -92,7 +92,7 @@ int main(int argn, char *argc[])
 	}else{
 		assert(false && "did not set a valid mapping method");
 	}
-
+	std::cout<<"DFG node size:"<<currDFG.nodeList.size()<<"\n";
 	
 	mapper->setMaxIter(args.maxiter);
 	std::cout << "MAP begin... \n";
@@ -105,7 +105,7 @@ int main(int argn, char *argc[])
 	int II = std::max(recII, resII);
 
 	II = std::max(initUserII, II);
-
+	
 	std::cout << "Initial target II = " << II << " (ResMin II = "<<resII<<" , RecMin II = "<<recII<<", UserGiven II = "<<initUserII<<" )\n";
 
 	mapper->enableMutexPaths = true;
