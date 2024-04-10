@@ -66,6 +66,81 @@ FU *Module::getFU()
 	return NULL;
 }
 
+std::vector<LatPort> Module::getNextPortsForQuickRoute(LatPort currPort, Port* src, Port * des,int des_lat, HeuristicMapper *hm){
+	// std::cout<<"___________________________________\n";
+	// std::cout<<"this module name:"<<this->getFullName()<<"\n";
+	// Module * currmd = this ;
+	// while(currmd != nullptr && currmd != NULL){
+
+	// 	std::cout<<"this module name:"<<currmd->getFullName()<<"\n";
+	// 	std::cout<<"input ports:  ";
+	// 	for(auto i_port: currmd->inputPorts){
+	// 		std::cout<<i_port->getName()<<"   ";
+	// 	}
+	// 	std::cout<<"\n output ports:  ";
+	// 	for(auto o_port: currmd->outputPorts){
+	// 		std::cout<<o_port->getName()<<"   ";
+	// 	}
+	// 	std::cout<<"\n connected ports: \n";
+	// 	for(auto pair: currmd->connectedTo){
+	// 		std::cout<<pair.first->getFullName()<<" ->   ";
+	// 		for(auto port: pair.second){
+	// 			std::cout<<port->getFullName()<<"   ";
+	// 		}
+	// 		std::cout<<"\n";
+	// 	}
+	// 	currmd = currmd->getParent();
+	// }
+	std::vector<LatPort> all_ports;
+	auto & src_pe_output_ports = src->getMod()->getPE()->outputPorts;
+	auto & src_pe_input_ports = src->getMod()->getPE()->inputPorts;
+	// thess cases
+	if(currPort.second->getMod()->getPE() == des->getMod()->getPE()){
+		// just need to get connected ports
+		all_ports = getNextPorts(currPort, hm);
+	}
+	else if(currPort.second->getMod()->getPE() == src->getMod()->getPE() && std::find(src_pe_output_ports.begin(), 
+	src_pe_output_ports.end(), currPort.second) == src_pe_output_ports.end() ){
+		// get the output port of curr PE
+		all_ports = getNextPorts(currPort, hm);
+	
+	}else if(currPort.second->getType() == OUT){
+		// get the connect ports
+		all_ports = getNextPorts(currPort, hm);
+	}
+	else if(currPort.second->getType() == IN &&  std::find(src_pe_input_ports.begin(), 
+	src_pe_input_ports.end(), currPort.second) == src_pe_input_ports.end() ){
+		// as data can stay in regf as long as possible, 
+		// So it can reach to any cycle for this pe's output ports
+		auto currPE = currPort.second->getMod()->getPE();
+		auto curr_cgra = currPE->getCGRA();
+		int start_lat = currPort.first ;
+		int end_lat = des_lat ;
+		if (end_lat< start_lat +2) end_lat = start_lat +2; // to avoid go too far along time
+		for( int reachable_lat = start_lat; reachable_lat<= end_lat; reachable_lat++){
+			for(auto port: currPE->outputPorts){
+				all_ports.push_back(std::make_pair(reachable_lat , port));
+			}
+			currPE = curr_cgra->NextCyclePEMap[currPE];
+		}
+		
+	}
+	else{
+		// get the output port of this PE
+		for(auto port: currPort.second->getMod()->getPE()->outputPorts){
+			all_ports.push_back(std::make_pair(currPort.first, port));
+		}
+	}
+	// std::cout<<"\n ...." << currPort.second->getFullName()<<" connected to: ";
+	// for(auto port: all_ports){
+	// 	std::cout<<port.first<<", "<<port.second->getFullName()<<"   ";
+	// }
+	// std::cout<<"\n";
+	// assert(false);
+	return all_ports;
+	
+
+}
 std::vector<LatPort> Module::getNextPorts(LatPort currPort, HeuristicMapper *hm)
 {
 	std::vector<LatPort> nextPorts;

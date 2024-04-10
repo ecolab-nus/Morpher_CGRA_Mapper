@@ -12,7 +12,8 @@ benchmark_folder = "./applications/polybench/"
 
 # target_arch = [(4,4),  (4,4, "leftmostmemory"), (4,4, "1reg"),(3,3), (5,5, "systolic")
 all_arch = {  'hycube_original.json': "hycube_4_4", 'hycube_8x8.json': "hycube_8_8"}
-target_arch = {  'hycube_original.json': "hycube_4_4"}
+
+target_arch = {  'stdnoc.json': "stdnoc_4_4"}
 
 
 ori_bench = ["2mm", "atax", "bicg", "cholesky", "doitgen", "gemm", "gemver", "gesummv", "mvt", "symm", "syr2k", "syrk", "trmm" ]
@@ -20,7 +21,9 @@ unroll_bench = ["2mm_unroll", "atax_unroll", "bicg_unroll", "cholesky_unroll", "
 unroll_5_bench = ["2mm_unroll_5", "atax_unroll_5", "bicg_unroll_5", "cholesky_unroll_5", "doitgen_unroll_5", "gemm_unroll_5", "gemver_unroll_5", "gesummv_unroll_5", "mvt_unroll_5", "symm_unroll_5", "syr2k_unroll_5", "syrk_unroll_5", "trmm_unroll_5" ]
 
 # target_bench = ["2mm", "atax", "bicg", "cholesky", "doitgen"]
-target_bench = ["2mm_unroll4", "atax_unroll4", "bicg_unroll3", "cholesky_unroll4", "doitgen_unroll4"]
+target_bench = ["2mm", "atax", "bicg", "cholesky", "doitgen", "gemm", "gemver", "gesummv", "mvt", "symm", "syr2k", "syrk", "trmm",
+                "2mm_unroll2", "atax_unroll2", "bicg_unroll2", "cholesky_unroll2", "doitgen_unroll2", "gemm_unroll2", "gemver_unroll2", "gesummv_unroll2", "mvt_unroll2", "symm_unroll2", "syr2k_unroll2", "syrk_unroll2", "trmm_unroll2",
+                 "2mm_unroll4", "atax_unroll4", "bicg_unroll4", "cholesky_unroll4", "doitgen_unroll4", "gemm_unroll4", "gemver_unroll4", "gesummv_unroll4", "mvt_unroll4", "symm_unroll4", "syr2k_unroll4", "syrk_unroll4", "trmm_unroll4"]
 process_num =80 # number of cpu cores to be used
 
 max_II = 36
@@ -217,10 +220,26 @@ elif len(sys.argv) >1 and "baseline" in str(sys.argv[1]):
             ts = BasicTask(name="mapper", cmd="./release/src/cgra_xml_mapper_baseline", args=arg)
             tm.addTask(ts)
             
-            arg = [ "-m",  "1",  "-j",arch_file,  "-d", bench_file, "--arch_name", arch_model_name]
-            ts = BasicTask(name="mapper", cmd="./release/src/cgra_xml_mapper_baseline", args=arg)
+            # arg = [ "-m",  "1",  "-j",arch_file,  "-d", bench_file, "--arch_name", arch_model_name]
+            # ts = BasicTask(name="mapper", cmd="./release/src/cgra_xml_mapper_baseline", args=arg)
+            # tm.addTask(ts)
+elif len(sys.argv) >1 and "light" in str(sys.argv[1]):
+    os.system('cp ./release/src/cgra_xml_mapper ./release/src/cgra_xml_mapper_light')
+    for arch, arch_model_name in target_arch.items():
+        arch_file = arch_folder + arch
+        #iterate benchmark 
+        for bench in target_bench:
+            bench_file =  benchmark_folder + bench  + ".xml"
+            print(arch_file, bench_file)
+            # arg = [ "-m",  "0",  "-j",arch_file,  "-d", bench_file,">", "log/"+arch+"_"+bench+".txt"]
+            arg = [  "-j",arch_file,  "-d", bench_file, "--arch_name", arch_model_name, "--morpher_light" ]
+            ts = BasicTask(name="mapper", cmd="./release/src/cgra_xml_mapper_light", args=arg)
             tm.addTask(ts)
-
+            
+            # arg = [ "-m",  "1",  "-j",arch_file,  "-d", bench_file, "--arch_name", arch_model_name]
+            # ts = BasicTask(name="mapper", cmd="./release/src/cgra_xml_mapper_baseline", args=arg)
+            # tm.addTask(ts)
+            
 elif len(sys.argv) >1 and "lisa" in str(sys.argv[1]):
     os.system('cp ./release/src/cgra_xml_mapper ./release/src/cgra_xml_mapper_lisa')
     for arch, arch_model_name in target_arch.items():
