@@ -66,35 +66,17 @@ bool CGRAXMLCompile::QuickMapper::QuickMap(CGRA *cgra, DFG *dfg)
 	sortBackEdgePriorityASAP();
 	//	sortBackEdgePriorityALAP();
 
-	std::string mappingLogFileName = fNameLog1 + cgra->getCGRAName() + "_MTP=" + std::to_string(enableMutexPaths);  // + ".mapping.csv";
-	std::string mappingLog2FileName = fNameLog1 + cgra->getCGRAName() + "_MTP=" + std::to_string(enableMutexPaths); // + ".routeInfo.log";
 	
 	
 
 	bool mapSuccess = false;
 
-	std::string congestionInfoFileName = mappingLogFileName + ".congestion.info";
-	LOG(MAPPING) << "Opening congestion file : " << congestionInfoFileName << "!\n";
-	congestionInfoFile.open(congestionInfoFileName.c_str());
-	assert(congestionInfoFile.is_open());
 
 	for (int i = 0; i < this->maxIter; ++i)
 	{
 
-		std::string mappingLogFileName_withIter = mappingLogFileName + "_Iter=" + std::to_string(i) + ".mapping.csv";
-		std::string mappingLog2FileName_withIter = mappingLog2FileName + "_Iter=" + std::to_string(i) + ".routeInfo.log";
-		std::string mappingLog4FileName_withIter = mappingLogFileName + "_II=" + std::to_string(cgra->get_t_max())+ "_Iter=" + std::to_string(i) + ".mappingwithlatency.txt";
 
-		mappingLog.open(mappingLogFileName_withIter.c_str());
-		mappingLog2.open(mappingLog2FileName_withIter.c_str());
-		mappingLog4.open(mappingLog4FileName_withIter.c_str());
 
-		LOG(MAPPING) << "Opening mapping csv file : " << mappingLogFileName_withIter << "\n";
-		LOG(MAPPING) << "Opening routeInfo log file : " << mappingLog2FileName_withIter << "\n";
-
-		assert(mappingLog.is_open());
-		assert(mappingLog2.is_open());
-		assert(mappingLog4.is_open());
 
 		while (!mappedNodes.empty())
 		{
@@ -141,8 +123,6 @@ bool CGRAXMLCompile::QuickMapper::QuickMap(CGRA *cgra, DFG *dfg)
 			MapHeader << ",Iter = " << i;
 			MapHeader << "\n";
 
-			LOG(MAPPING) << MapHeader.str();
-			mappingLog << MapHeader.str();
 
 			bool isEstRouteSucc = false;
 
@@ -210,10 +190,6 @@ bool CGRAXMLCompile::QuickMapper::QuickMap(CGRA *cgra, DFG *dfg)
 							prevNode->clear(this->dfg);
 						}
 						std::cout << "Map Failed!.\n";
-						mappingLog << "Map Failed!.\n";
-						mappingLog.close();
-						mappingLog2.close();
-						mappingLog4.close();
 						return false;
 					}
 				}
@@ -237,24 +213,15 @@ bool CGRAXMLCompile::QuickMapper::QuickMap(CGRA *cgra, DFG *dfg)
 				{
 					mappingLog << "Map Failed!.\n";
 					std::cout << "Map Failed!.\n";
-					mappingLog.close();
-					mappingLog2.close();
-					mappingLog4.close();
 					return false;
 				}
 			}
 
 			if (!isRouteSucc)
 			{
-				this->printMappingLog();
-				this->printMappingLog2();
 				if (mappedNodes.empty())
 				{
-					mappingLog << "Map Failed!.\n";
 					std::cout << "Map Failed!.\n";
-					mappingLog.close();
-					mappingLog2.close();
-					mappingLog4.close();
 					return false;
 				}
 
@@ -262,11 +229,7 @@ bool CGRAXMLCompile::QuickMapper::QuickMap(CGRA *cgra, DFG *dfg)
 				{
 					if (backTrackCredits == 0)
 					{
-						mappingLog << "Map Failed!.\n";
 						std::cout << "Map Failed!.\n";
-						mappingLog.close();
-						mappingLog2.close();
-						mappingLog4.close();
 						return false;
 					}
 					//					assert(failedNode!=NULL);
@@ -296,11 +259,7 @@ bool CGRAXMLCompile::QuickMapper::QuickMap(CGRA *cgra, DFG *dfg)
 						mappedNodes.pop();
 						prevNode->clear(this->dfg);
 					}
-					mappingLog << "Map Failed!.\n";
 					std::cout << "Map Failed!.\n";
-					mappingLog.close();
-					mappingLog2.close();
-					mappingLog4.close();
 					return false;
 				}
 			}
@@ -327,26 +286,14 @@ bool CGRAXMLCompile::QuickMapper::QuickMap(CGRA *cgra, DFG *dfg)
 
 	if (mapSuccess)
 	{
-		mappingLog << "Map Success!.\n";
-		mappingLog2 << "Map Success!.\n";
-		this->printMappingLog();
-		this->printMappingLog2();
 
 		// by Yujie
 		// cgra->PrintMappedJSON(fNameLog1 + cgra->getCGRAName() + "mapping.json");
-		cgra->PrintMappingForPillars(fNameLog1 + cgra->getCGRAName() + "mapping_pillars_i.txt", fNameLog1 + cgra->getCGRAName() + "mapping_pillars_r.txt");
 
 		//std::cout << "Map Success!.\n";
-		mappingLog.close();
-		mappingLog2.close();
 
 		LOG(MAPPING) << "Checking conflict compatibility!\n";
-		checkConflictedPortCompatibility();
 
-		if (this->cgra->peType == "STDNOC_4REGF_1P")
-		{
-			checkRegALUConflicts();
-		}
 		return true;
 	}
 	else
@@ -357,10 +304,7 @@ bool CGRAXMLCompile::QuickMapper::QuickMap(CGRA *cgra, DFG *dfg)
 			mappedNodes.pop();
 			prevNode->clear(this->dfg);
 		}
-		mappingLog << "Map Failed!.\n";
 		std::cout << "Map Failed!.\n";
-		mappingLog.close();
-		mappingLog2.close();
 		return false;
 	}
 }
@@ -840,7 +784,7 @@ bool CGRAXMLCompile::QuickMapper::quickEstimateRouting(DFGNode *node,
 		}
 	}
 	
-	std::cout<< "Candidate Dests = " << candidateDests.size() << "\n";
+	// std::cout<< "Candidate Dests = " << candidateDests.size() << "\n";
 	LOG(ROUTE)<< "Candidate Dests = " << candidateDests.size() << "\n";
 	if (candidateDests.empty())
 		return false;
@@ -943,19 +887,15 @@ bool CGRAXMLCompile::QuickMapper::quickEstimateRouting(DFGNode *node,
 						if (test_quick_estimation){
 							bool truepathExistMappedChild  = pathExist;
 							auto end = std::chrono::steady_clock::now();
-							std::chrono::duration<double> elapsed_seconds = end - start;
-							float quick_time= elapsed_seconds.count();
+							float quick_time=  chrono::duration_cast<chrono::microseconds>(end - start).count();;
 							std::vector<LatPort> truepath;
 							start = std::chrono::steady_clock::now();
-							truepathExistMappedChild =truepathExistMappedChild & quickLeastCostPathAstar(startCandLat, destPortLat, dest, truepath, cost, parent, mutexPaths, node);
+							truepathExistMappedChild =truepathExistMappedChild & LeastCostPathAstar(startCandLat, destPortLat, dest, truepath, cost, parent, mutexPaths, node);
 							end = std::chrono::steady_clock::now();
-							elapsed_seconds = end - start;
-							float true_time= elapsed_seconds.count();
-							if(truepathExistMappedChild != pathExist && truepathExistMappedChild){
-								LOG(SA)<<"true path: time:"<<true_time<<"  "<<path_toStr(truepath);
-								LOG(SA)<<"quick path: time:"<<quick_time<<"  "<<path_toStr(path);
-								LOG(SA)<<"";
-							}
+							float true_time= 	chrono::duration_cast<chrono::microseconds>(end - start).count();
+
+								std::cout<<true_time<<" "<< quick_time<<" "<<truepath.size()<<" "<<path.size();
+								std::cout<<"\n";
 						}
 					}
 					if (!pathExist)
@@ -1240,15 +1180,7 @@ bool CGRAXMLCompile::QuickMapper::quickLeastCostPathAstar(LatPort start,
 	int connected_num = 0;
 	while (!q.empty())
 	{
-		connected_num ++;
-		if(connected_num % 10 == 0){
-			auto time_end = std::chrono::steady_clock::now();
-			std::chrono::duration<double> elapsed_seconds_duration = time_end - time_start;
-			if( elapsed_seconds_duration.count()>0.1){
-				path.clear();
-				return false;
-			}
-		}
+		
 		
 		port_heuristic curr = q.top();
 		currPort = curr.p;
@@ -1261,9 +1193,10 @@ bool CGRAXMLCompile::QuickMapper::quickLeastCostPathAstar(LatPort start,
 			currPath = curr.path.get();
 			currPathVec = curr.pathVec.get();
 			paths[currPort] = curr.path;
-			if (currPort == end)
+			if (currPort.second == end.second)
 			{
 				finalPath = *curr.pathVec;
+				break;
 			}
 		}
 
