@@ -2037,7 +2037,7 @@ int CGRAXMLCompile::HeuristicMapper::getRecMinimumII(DFG *dfg)
 
 			if (rec_parent->ASAP <= node.ASAP)
 			{
-				//std::cout << "Backedge Parent: " << node.idx << ", Child: " << rec_parent->idx <<"\n";
+				std::cout << "Backedge Parent: " << node.idx << ", Child: " << rec_parent->idx <<"\n";
 
 				//std::cout << "Parent ASAP: " << node.ASAP << ", Child ASAP: " << rec_parent->ASAP <<"\n";
 

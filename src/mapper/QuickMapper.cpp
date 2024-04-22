@@ -123,7 +123,7 @@ bool CGRAXMLCompile::QuickMapper::QuickMap(CGRA *cgra, DFG *dfg)
 			MapHeader << ",Iter = " << i;
 			MapHeader << "\n";
 
-
+			LOG(MAPPING)<<MapHeader.str();
 			bool isEstRouteSucc = false;
 
 			//fill the routing information
@@ -136,32 +136,18 @@ bool CGRAXMLCompile::QuickMapper::QuickMap(CGRA *cgra, DFG *dfg)
 
 				if (!isEstRouteSucc)
 				{
-					printMappingLog();
-					printMappingLog2();
+
 					if (enableBackTracking)
 					{
 						if (backTrackCredits == 0 || failedNode == NULL)
 						{
 							std::cout << "route estimation failed...\n";
 							std::cout << "Map Failed!.\n";
-							mappingLog << "route estimation failed...\n";
-							mappingLog << "Map Failed!.\n";
-
-							mappingLog.close();
-							mappingLog2.close();
-							mappingLog4.close();
+						
 							return false;
 						}
 						backTrackCredits--;
 
-						//					DFGNode* prevNode = mappedNodes.top();
-						//					mappedNodes.pop();
-						//					unmappedNodes.push(node);
-						//					unmappedNodes.push(prevNode);
-						//					prevNode->clear(this->dfg);
-						//					std::cout << "route estimation failed...\n";
-						//					mappingLog << "route estimation failed...\n";
-						//					continue;
 
 						DFGNode *prevNode = mappedNodes.top();
 						mappedNodes.pop();
@@ -900,7 +886,7 @@ bool CGRAXMLCompile::QuickMapper::quickEstimateRouting(DFGNode *node,
 					}
 					if (!pathExist)
 					{
-						LOG(ROUTE)<< "par Estimate Path Failed :: " << startCand->getFullName() << "--->" << destPort->getFullName() << "\n";
+						LOG(ROUTE)<< "par Estimate Path Failed :: " << startCand->getFullName() <<","<<startCandLat.first<< "--->" << destPort->getFullName() <<","<<destPortLat.first<< "\n";
 						path.clear();
 						continue;
 					}

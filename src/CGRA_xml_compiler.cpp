@@ -81,7 +81,10 @@ int main(int argn, char *argc[])
 	
 
 	//	HeuristicMapper mapper(inputDFG_filename);
-	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
+	TimeDistInfo tdi;
+	if(!morpher_light){
+		tdi = testCGRA->analyzeTimeDist();
+	};
 	PathFinderMapper * mapper;
 	if(morpher_light){
 		mapper = new QuickMapper(inputDFG_filename);

@@ -110,8 +110,16 @@ std::vector<LatPort> Module::getNextPortsForQuickRoute(LatPort currPort, Port* s
 		auto currPE = currPort.second->getMod()->getPE();
 		auto curr_cgra = currPE->getCGRA();
 		int start_lat = currPort.first ;
+
+
+		// end_lat is greater than start_lat, but the differernce is not grater than II.
 		int end_lat = des_lat ;
-		end_lat = end_lat % this->getCGRA()->get_t_max();
+		int II = this->getCGRA()->get_t_max();
+		end_lat =  end_lat % II;
+		while(end_lat < start_lat){
+			end_lat +=  II;
+		}
+
 		for( int reachable_lat = start_lat; reachable_lat<= end_lat; reachable_lat++){
 			for(auto port: currPE->outputPorts){
 				all_ports.push_back(std::make_pair(reachable_lat , port));
