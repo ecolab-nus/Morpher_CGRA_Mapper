@@ -18,6 +18,7 @@
 #include <morpher/mapper/HeuristicMapper.h>
 #include <morpher/mapper/PathFinderMapper.h>
 #include <morpher/mapper/SimulatedAnnealingMapper.h>
+#include <morpher/mapper/QuickMapper.h>
 #include <morpher/lisa/LISAMapper.h>
 #include <math.h>
 
@@ -52,6 +53,7 @@ int main(int argn, char *argc[])
 	int mapping_method = args.mapping_method;
 	int max_II = args.max_II;
 	std::string arch_name  = args.arch_name;
+	bool morpher_light = args.morpher_light;
 
 	
 	DFG currDFG;
@@ -81,12 +83,12 @@ int main(int argn, char *argc[])
 	//	HeuristicMapper mapper(inputDFG_filename);
 	TimeDistInfo tdi = testCGRA->analyzeTimeDist();
 	PathFinderMapper * mapper;
-	if (mapping_method == 0){
+	if(morpher_light){
+		mapper = new QuickMapper(inputDFG_filename);
+	}else if (mapping_method == 0){
 		mapper = new PathFinderMapper(inputDFG_filename);
 	}else if(mapping_method  == 1){
 		mapper = new SAMapper(inputDFG_filename);
-		
-		// assert(false && "convert to SA");
 	}else if(mapping_method  == 2){
 		mapper = new LISAMapper(inputDFG_filename);
 	}else{
@@ -151,9 +153,15 @@ int main(int argn, char *argc[])
 
 		mapper->getcongestedPortsPtr()->clear();
 		mapper->getconflictedPortsPtr()->clear();
-		tempCGRA->analyzeTimeDist(tdi);
+		if(!morpher_light){
+			tempCGRA->analyzeTimeDist(tdi);
+		}
+		
 		// mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
-		if (mapping_method == 0){
+		if (morpher_light){
+			QuickMapper * quick_mapper = static_cast<QuickMapper*>(mapper);
+			mappingSuccess = quick_mapper->QuickMap(tempCGRA, &tempDFG);
+		}else if (mapping_method == 0){
 			mappingSuccess = mapper->Map(tempCGRA, &tempDFG);
 		}else if(mapping_method  == 1){
 			SAMapper * sa_mapper = static_cast<SAMapper*>(mapper);
@@ -205,7 +213,7 @@ int main(int argn, char *argc[])
 
 			std::cout << "Map Success with II = "<< II <<"  (lat = "<<mapper->getMaxLat()<<")\n";
 			if(args.print_stat)
-			std::cout<<mapper->dumpCGRAMappingStat();
+				std::cout<<mapper->dumpCGRAMappingStat();
 			if(mapping_method  == 2){
 				break;
 			}
@@ -222,7 +230,7 @@ int main(int argn, char *argc[])
 	}
 	
 	auto end = chrono::steady_clock::now();
-	std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::seconds>(end - start).count() << " sec\n";
+	std::cout << "Elapsed time in seconds: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " ms\n";
 	std::ofstream result_file;
 	result_file.open ("result.txt", std::ios_base::app); 
 	result_file<< arch_name <<" "<<inputDFG_filename

@@ -62,6 +62,7 @@ public:
 	FU *getFU();
 
 	std::vector<LatPort> getNextPorts(LatPort currPort, HeuristicMapper *hm);
+	std::vector<LatPort> getNextPortsForQuickRoute(LatPort currPort, Port* src, Port * des,int des_lat, HeuristicMapper *hm);
 	std::vector<Port *> getNextPorts(Port *currPort);
 	std::vector<Port *> getFromPorts(Port *currPort, HeuristicMapper *hm);
 	std::vector<Port *> getFromPorts(Port *currPort);
