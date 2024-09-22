@@ -2086,9 +2086,9 @@ std::string CGRAXMLCompile::HeuristicMapper::dumpCGRAMappingStat(){
 			// std::cout<<"unmapped_node:"<<node->idx<<"\n";
 			continue;
 		}
-		int lat = node->rootDP->get_t();
+		int ii_ = node->rootDP->get_t();
 		// std::cout<<"node:"<<node->idx<<" lat "<<lat<<"\n";
-		II_to_node_vector[lat].insert(node);
+		II_to_node_vector[ii_].insert(node);
 		int x = node->rootDP->getPE()->getPosition_X();
 		int y = node->rootDP->getPE()->getPosition_Y();
 		physical_pe_mapped_nodes[std::make_pair(x, y)].insert(node);
@@ -2098,23 +2098,56 @@ std::string CGRAXMLCompile::HeuristicMapper::dumpCGRAMappingStat(){
 
 	//print the mapping
 	std::stringstream ss;
+	int max_x = this->cgra->get_x_max(), max_y = this->cgra->get_y_max();
 	ss<<"############## mapping info at each configuration time:\n";
 	for(int t = 0;  t < II_ ; t++ ){
-		ss<<"t = "<<t <<":\n\t";
-		for(auto node: II_to_node_vector[t]){
-			ss<<"("<<node->rootDP->getPE()->getPosition_X()<<", "<<node->rootDP->getPE()->getPosition_Y()<<")->"
-			 << node->idx <<"  ";
+		ss<<"t = "<<t <<":\n";
+		for(int x = 0; x<max_x; x++){
+			ss<<"\t";
+			for(int y = 0; y <  max_y; y++){
+				bool find_node = false;
+				for(auto node: II_to_node_vector[t]){
+					if(node->rootDP->getPE()->getPosition_X() == x && node->rootDP->getPE()->getPosition_Y() == y){
+						ss<<node->idx <<"  ";
+
+						//add more space to make it aligned with null
+						int digit_num = 1;
+						if(node->idx!=0){
+							digit_num = std::log10(std::abs(node->idx)) + 1;
+						}
+						digit_num =std::abs( 5-digit_num);
+						std::string padding = std::string( digit_num, ' ');
+						ss<<padding;
+
+						find_node = true;
+						break;
+					}
+				}
+				if(!find_node){
+					ss<<"null "<<"  ";
+				}
+			}
+			ss<<"\n";
 		}
-		ss<<"\n";
+		
 	}
 	ss<<"############## physical PE info:\n";
 	for(auto [pe, nodes]:physical_pe_mapped_nodes ){
 		ss<<"("<<pe.first<<", "<<pe.second<<"):\t";
-		ss<<"utilization:"<< std::fixed << std::setprecision(2)<< (float)nodes.size()/II_<<"\t mapped nodes:";
+		ss<<"util:"<< std::fixed << std::setprecision(2)<< (float)nodes.size()/II_<<"\t mapped nodes:";
 		for(auto node: nodes){
-			ss<<node->idx<<", ";
+			ss<<"("<<node->idx<<", "<<node->op<<"), ";
 		}
 		ss<<"\n";
+	}
+
+	ss<<"############## DFG status:\n";
+	std::map<std::string,int> op_frequency;
+	for(auto node:sortedNodeList){
+		op_frequency[node->op] +=1;
+	}
+	for(auto [op, fq]: op_frequency){
+		ss<<op<<","<<fq<<"\n";
 	}
 	
 	
