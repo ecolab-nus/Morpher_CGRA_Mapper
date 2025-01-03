@@ -1,5 +1,5 @@
-set(CMAKE_C_COMPILER "gcc-7")
-set(CMAKE_CXX_COMPILER "/usr/bin/g++-7")
+# set(CMAKE_C_COMPILER "gcc-7")
+# set(CMAKE_CXX_COMPILER "/usr/bin/g++-7")
 
 FILE(GLOB_RECURSE MyCPPSources *.cpp)
 FILE(GLOB_RECURSE MyHSources *.h)
