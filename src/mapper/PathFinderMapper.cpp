@@ -3065,6 +3065,8 @@ std::vector<CGRAXMLCompile::DFGNode *> CGRAXMLCompile::PathFinderMapper::getLong
 	q_init.insert(std::make_pair(src, oplatencyMap[src->op]));
 	std::map<DFGNode *, std::map<int, DFGNode *>> cameFrom;
 	q.push(q_init);
+
+	std::set<DFGNode *> visited;
 	std::stringstream output_ss;
 	while (!q.empty())
 	{
@@ -3079,12 +3081,20 @@ std::vector<CGRAXMLCompile::DFGNode *> CGRAXMLCompile::PathFinderMapper::getLong
 			{
 				if (node->childNextIter[child] == 1)
 					continue;
+				if (node->childrenOPType[child] == "PS")
+					continue;
+				if(visited.find(child) != visited.end())
+					continue;
+				visited.insert(child);
+
 				int nextLat = p1.second + oplatencyMap[child->op];
 				next.insert(std::make_pair(child, nextLat));
 				cameFrom[child][nextLat] = node;
 			}
 		}
 		output_ss << "\n";
+		
+		
 		if (!next.empty())
 			q.push(next);
 	}
