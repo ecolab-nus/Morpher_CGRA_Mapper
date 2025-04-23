@@ -3928,6 +3928,11 @@ void CGRAXMLCompile::PathFinderMapper::printHyCUBEBinary(CGRA* cgra) {
 					else{
 						insF.negated_predicate = "0";
 					}
+
+					//check vadd and vmul. if so, marking 61 bit, so the RTL know we invoke FP8*8 unit.
+					if(mappedOP && (mappedOP->op == "VADD" || mappedOP->op == "VMUL")){
+						insF.constant[0] = '1';
+					}
 					InsFArr[getIndexOfBin(t+1, Y, X)] = insF;
  					// InsFArr[t+1][Y][X] = insF;
 

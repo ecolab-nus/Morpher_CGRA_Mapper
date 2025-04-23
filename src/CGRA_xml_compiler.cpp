@@ -223,6 +223,7 @@ int main(int argn, char *argc[])
 				std::cout << "\nPrinting HyCUBE Binary...\n";
 				mapper->printHyCUBEBinary(tempCGRA);
 			}
+		
 			
 			break;
 			

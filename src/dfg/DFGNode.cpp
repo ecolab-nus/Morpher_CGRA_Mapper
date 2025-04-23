@@ -32,6 +32,7 @@ std::string CGRAXMLCompile::DFGNode::get27bitConstantBinaryString() {
        return s;
 }
 
+
 std::string CGRAXMLCompile::DFGNode::getBinaryString() {
 
        if(op == "NOP"){
@@ -52,7 +53,10 @@ std::string CGRAXMLCompile::DFGNode::getBinaryString() {
        else if(op == "DIV"){
                return "00101";
        }
-       else if(op == "INVDIV"){
+	   else if(op == "VADD"){
+			   return "00110";
+	   }
+       else if(op == "VMUL"){
                return "00111";
        }
        else if(op == "LS"){
@@ -73,6 +77,12 @@ std::string CGRAXMLCompile::DFGNode::getBinaryString() {
        else if(op == "XOR"){
                return "01101";
        }
+	   else if(op == "LOADD"){
+		return "01110";
+		}
+		else if(op == "STORED"){
+			return "01111";
+		}
        else if(op == "SELECT"){
                return "10000";
        }
@@ -130,6 +140,7 @@ std::string CGRAXMLCompile::DFGNode::getBinaryString() {
        }
 
 }
+
 
 
 void CGRAXMLCompile::DFGNode::clear(DFG *dfg)
