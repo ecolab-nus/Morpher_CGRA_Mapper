@@ -1,0 +1,68 @@
+<MutexBB>
+<BB1 name="for.body_0_0">
+	<BB2 name="for.body_0_1"/>
+</BB1>
+<BB1 name="for.body_0_1">
+	<BB2 name="for.body_0_0"/>
+</BB1>
+</MutexBB>
+<DFG count="4">
+
+
+
+
+<Node idx="10" ASAP="5" ALAP="5"BB="for.body">
+<OP>LOAD</OP>
+<BasePointerName size="128">A</BasePointerName>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="8" nextiter="0" type="I2"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="7" ASAP="5" ALAP="5"BB="for.body">
+<OP>LOAD</OP>
+<BasePointerName size="128">B</BasePointerName>
+<Inputs>
+</Inputs>
+<Outputs>
+	<Output idx="8" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+<Node idx="8" ASAP="6" ALAP="6"BB="for.body">
+<OP>ADD</OP>
+<Inputs>
+	<Input idx="7"/>
+	<Input idx="10"/>
+</Inputs>
+<Outputs>
+	<Output idx="5" nextiter="0" type="I1"/>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+
+
+
+
+<Node idx="5" ASAP="7" ALAP="7"BB="for.body">
+<OP>STORE</OP>
+<BasePointerName size="128">C</BasePointerName>
+<Inputs>
+	<Input idx="8"/>
+</Inputs>
+<Outputs>
+</Outputs>
+<RecParents>
+</RecParents>
+</Node>
+
+
+</DFG>

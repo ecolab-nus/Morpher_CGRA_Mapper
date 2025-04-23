@@ -1,0 +1,7 @@
+var_name,base_addr
+B,8192
+A,64
+C,0
+loopstart,16383
+storestart,16383
+loopend,16382
